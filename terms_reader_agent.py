@@ -28,8 +28,7 @@ COLLECTION = "insurance_collection"
 
 # 넣을 PDF 파일들: (파일경로, 문서종류 태그)
 PDF_SOURCES = [
-    ("한화생명 e암보험(비갱신형)_보험약관.pdf",           "약관"),
-    ("한화생명 e암보험(비갱신형) 무배당_상품요약서.pdf",  "상품요약서"),
+    ("no_jaesoo_insurance_policy.pdf",           "약관"),
 ]
 
 # ─────────────────────────────────────────────
