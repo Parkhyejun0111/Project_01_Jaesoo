@@ -3,8 +3,8 @@
 Vercel의 Python 런타임은 모듈에서 `app` / `application` / `handler` 중 하나를
 찾는다. 아래 `app` 객체가 그 진입점이다.
 
-RAG 에이전트(terms_reader_agent)는 임베딩 모델과 벡터DB를 로드하느라 무겁고
-콜드스타트에서 실패할 수 있으므로, import 시점이 아니라 첫 요청 때 지연 로딩한다.
+RAG 에이전트(terms_reader_agent)는 임베딩 인덱스를 메모리에 올리므로,
+import 시점이 아니라 첫 요청 때 지연 로딩한다.
 """
 
 from fastapi import FastAPI
@@ -24,18 +24,18 @@ app.add_middleware(
 application = app
 handler = app
 
-# 지연 로딩된 RAG 체인 캐시
-_rag_chain = None
+# 지연 로딩된 RAG 함수 캐시
+_answer = None
 
 
-def get_rag_chain():
-    """terms_reader_agent 의 RAG 체인을 최초 호출 시 한 번만 로드한다."""
-    global _rag_chain
-    if _rag_chain is None:
-        from terms_reader_agent import rag_chain
+def get_answer_fn():
+    """terms_reader_agent.answer 를 최초 호출 시 한 번만 로드한다."""
+    global _answer
+    if _answer is None:
+        from terms_reader_agent import answer
 
-        _rag_chain = rag_chain
-    return _rag_chain
+        _answer = answer
+    return _answer
 
 
 class ChatRequest(BaseModel):
@@ -62,7 +62,7 @@ def chat(req: ChatRequest):
     if not req.message.strip():
         return ChatResponse(answer="질문을 입력해 주세요.")
     try:
-        return ChatResponse(answer=get_rag_chain().invoke(req.message))
+        return ChatResponse(answer=get_answer_fn()(req.message))
     except Exception as e:
         return ChatResponse(answer=f"오류가 발생했습니다: {e}")
 

@@ -1,82 +1,42 @@
-# 보험료 산정근거 + 약관 설명 LLM 에이전트 (RAG + Gradio)
-# LLM = Gemini(무료 한도), 임베딩 = 로컬 한국어 모델(내 PC 실행 · 한도/비용 없음)
-#   → Gemini 임베딩은 무료 한도가 분당 100건이라, 수백 쪽짜리 약관을 넣으면 429가 남.
-#     임베딩만 로컬로 돌리면 문서가 아무리 커도 무제한.
-# 실행 전: .env 에 GEMINI_API_KEY 설정
-# 실행:   python llm_1.py
+# 보험료 산정근거 + 약관 설명 LLM 에이전트 (RAG)
+# LLM = Claude(claude-opus-4-8), 임베딩 = Voyage AI(voyage-4-large)
+#
+# 검색은 사전 계산된 인덱스(index.npz + chunks.json)를 numpy 코사인 유사도로 조회한다.
+# 벡터DB나 로컬 임베딩 모델을 런타임에 띄우지 않으므로 서버리스에 그대로 올릴 수 있다.
+# 인덱스 갱신이 필요하면: python build_index.py
+#
+# 필요한 환경변수: ANTHROPIC_API_KEY, VOYAGE_API_KEY
 
+import json
 import os
+from pathlib import Path
+
+import anthropic
+import numpy as np
+import voyageai
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
-import gradio as gr
 
 load_dotenv()
 
 # ─────────────────────────────────────────────
-# 1. 전역 설정  
+# 1. 전역 설정
 # ─────────────────────────────────────────────
-LLM_MODEL = "gemini-2.5-flash"   # Gemini 채팅 모델
-PERSIST_DIR = "my_chroma_hanwha_local"   # 실제 한화 PDF + 로컬 임베딩용 폴더
-COLLECTION = "insurance_collection"
+LLM_MODEL = "claude-opus-4-8"
+EMBED_MODEL = "voyage-4-large"  # build_index.py 와 반드시 동일해야 함
+TOP_K = 5
 
-# 넣을 PDF 파일들: (파일경로, 문서종류 태그)
-PDF_SOURCES = [
-    ("no_jaesoo_insurance_policy.pdf",           "약관"),
-]
-
-# ─────────────────────────────────────────────
-# 2. 임베딩 + 벡터DB (있으면 로드, 없으면 생성)
-# ─────────────────────────────────────────────
-embeddings = HuggingFaceEmbeddings(
-    model_name="jhgan/ko-sroberta-multitask",   # 한국어 특화 임베딩(로컬 실행, 무제한)
-    encode_kwargs={"normalize_embeddings": True},
-)
-
-if os.path.exists(PERSIST_DIR):
-    vectordb = Chroma(
-        persist_directory=PERSIST_DIR,
-        embedding_function=embeddings,
-        collection_name=COLLECTION,
-    )
-    print("기존 ChromaDB 로드 완료.")
-else:
-    print("새 ChromaDB 생성 중 (PDF 분석)...")
-    all_docs = []
-    splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=80)
-    for path, source_tag in PDF_SOURCES:
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"PDF 없음: {path}  → 먼저 create_insurance_pdfs.py 를 실행하세요.")
-        pages = PyPDFLoader(path).load()
-        chunks = splitter.split_documents(pages)
-        for c in chunks:
-            c.metadata["source_tag"] = source_tag   # ★ 약관/선정기준 구분 태그
-        all_docs.extend(chunks)
-    vectordb = Chroma.from_documents(
-        documents=all_docs,
-        embedding=embeddings,
-        persist_directory=PERSIST_DIR,
-        collection_name=COLLECTION,
-    )
-    print(f"ChromaDB 생성 완료 (총 {len(all_docs)} 청크).")
-
-retriever = vectordb.as_retriever(search_kwargs={"k": 5})
+_BASE_DIR = Path(__file__).parent
+INDEX_PATH = _BASE_DIR / "index.npz"
+CHUNKS_PATH = _BASE_DIR / "chunks.json"
 
 # ─────────────────────────────────────────────
-# 3. 컴플라이언스 페르소나 프롬프트 
+# 2. 컴플라이언스 페르소나 프롬프트
 # ─────────────────────────────────────────────
-prompt = ChatPromptTemplate.from_template('''
-당신은 보험사의 "AI 보험 안내 도우미"입니다. 고객에게 보험 약관과 보험료 산정근거를
+SYSTEM_PROMPT = '''당신은 보험사의 "AI 보험 안내 도우미"입니다. 고객에게 보험 약관과 보험료 산정근거를
 쉽고 친절하게 설명하는 역할입니다. 아래 [컴플라이언스 규칙]을 반드시 지키세요.
 
 [컴플라이언스 규칙]
-1. 반드시 아래 [참고 문서]에 있는 내용만 근거로 답하세요. 문서에 없으면
+1. 반드시 [참고 문서]에 있는 내용만 근거로 답하세요. 문서에 없으면
    "제공된 약관/기준 문서에서 해당 내용을 확인할 수 없습니다"라고 답하고 절대 지어내지 마세요.
 2. 보험 가입을 단정적으로 권유하거나 "무조건 유리하다/이득이다" 같은 표현을 쓰지 마세요.
    당신은 안내자이지 판매자가 아닙니다.
@@ -86,65 +46,107 @@ prompt = ChatPromptTemplate.from_template('''
    계산 예시를 들 때도 문서에 있는 산정식만 사용하세요.
 5. 답변 마지막에는 항상 다음 안내를 덧붙이세요:
    "※ 본 답변은 제공된 문서 기반의 일반 안내이며, 정확한 내용은 약관 원문 및 정식 상담을 통해 확인하시기 바랍니다."
-6. 답변은 존댓말로, 핵심을 먼저 말한 뒤 근거 조항을 짚어주는 방식으로 친절하게 작성하세요.
+6. 답변은 존댓말로, 핵심을 먼저 말한 뒤 근거 조항을 짚어주는 방식으로 친절하게 작성하세요.'''
 
-[참고 문서]
+USER_TEMPLATE = """[참고 문서]
 {context}
 
 [고객 질문]
-{question}
-''')
+{question}"""
 
 # ─────────────────────────────────────────────
-# 4. LLM + RAG 체인 (LCEL)
+# 3. 인덱스 로드 (모듈 최초 사용 시 1회)
 # ─────────────────────────────────────────────
-llm = ChatGoogleGenerativeAI(
-    model=LLM_MODEL,
-    temperature=0.1,
-    google_api_key=os.getenv("GEMINI_API_KEY"),
-)
+_embeddings = None
+_chunks = None
+
+
+def _load_index():
+    """사전 계산된 임베딩 인덱스를 메모리에 올린다."""
+    global _embeddings, _chunks
+    if _embeddings is None:
+        if not INDEX_PATH.exists():
+            raise FileNotFoundError(
+                f"인덱스 없음: {INDEX_PATH}. 먼저 `python build_index.py` 를 실행하세요."
+            )
+        _embeddings = np.load(INDEX_PATH)["embeddings"]
+        _chunks = json.loads(CHUNKS_PATH.read_text(encoding="utf-8"))
+    return _embeddings, _chunks
+
+
+# ─────────────────────────────────────────────
+# 4. 검색 (코사인 유사도 상위 K개)
+# ─────────────────────────────────────────────
+_voyage = None
+_anthropic = None
+
+
+def _voyage_client():
+    global _voyage
+    if _voyage is None:
+        _voyage = voyageai.Client()  # VOYAGE_API_KEY 환경변수 사용
+    return _voyage
+
+
+def _anthropic_client():
+    global _anthropic
+    if _anthropic is None:
+        _anthropic = anthropic.Anthropic()  # ANTHROPIC_API_KEY 환경변수 사용
+    return _anthropic
+
+
+def retrieve(question, k=TOP_K):
+    """질문과 가장 가까운 약관 청크 k개를 반환한다."""
+    embeddings, chunks = _load_index()
+
+    result = _voyage_client().embed(
+        [question], model=EMBED_MODEL, input_type="query"
+    )
+    query_vec = np.array(result.embeddings[0], dtype=np.float32)
+    query_vec /= np.linalg.norm(query_vec)
+
+    # 인덱스는 이미 정규화되어 있으므로 내적 = 코사인 유사도
+    scores = embeddings @ query_vec
+    top_idx = np.argsort(-scores)[:k]
+    return [chunks[i] for i in top_idx]
 
 
 def format_docs(docs):
     """검색된 청크를 출처 태그와 함께 하나의 문자열로 포장"""
     blocks = []
     for d in docs:
-        tag = d.metadata.get("source_tag", "문서")
-        page = d.metadata.get("page", "?")
-        blocks.append(f"[출처: {tag} / p.{page}]\n{d.page_content}")
+        blocks.append(f"[출처: {d['source_tag']} / p.{d['page']}]\n{d['text']}")
     return "\n\n---\n\n".join(blocks)
 
 
-rag_chain = (
-    {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
-)
-
 # ─────────────────────────────────────────────
-# 5. Gradio 챗봇 UI
+# 5. 답변 생성 (Claude)
 # ─────────────────────────────────────────────
-def respond(message, history):
-    if not LLM_MODEL:
-        return "⚠️ 코드 상단의 LLM_MODEL 변수에 사용할 모델명(예: gpt-4o-mini)을 입력한 뒤 다시 실행하세요."
-    try:
-        return rag_chain.invoke(message)
-    except Exception as e:
-        return f"오류가 발생했습니다: {e}"
+def answer(question):
+    """약관 문서를 근거로 질문에 답한다."""
+    context = format_docs(retrieve(question))
 
+    response = _anthropic_client().messages.create(
+        model=LLM_MODEL,
+        max_tokens=4000,
+        system=SYSTEM_PROMPT,
+        # 문서 근거를 대조하는 작업이라 적응형 사고를 켠다. effort 는 챗봇 응답
+        # 지연을 감안해 medium; 답변 품질이 아쉬우면 "high" 로 올릴 것.
+        thinking={"type": "adaptive"},
+        output_config={"effort": "medium"},
+        messages=[
+            {
+                "role": "user",
+                "content": USER_TEMPLATE.format(context=context, question=question),
+            }
+        ],
+    )
 
-demo = gr.ChatInterface(
-    fn=respond,
-    title="🛡️ AI 보험 안내 도우미",
-    description="보험 약관과 보험료 산정기준 문서를 기반으로 안내해 드립니다. (예: '35세 남성 암특약 포함하면 보험료 어떻게 산정돼?')",
-    examples=[
-        "이 보험의 암 보장은 언제부터 적용되나요?",
-        "35세 남성이 암진단 특약을 넣으면 보험료가 어떻게 산정되나요?",
-        "보험금을 못 받는 경우는 어떤 경우인가요?",
-        "흡연자면 보험료가 얼마나 올라가나요?",
-    ],
-)
+    if response.stop_reason == "refusal":
+        return "죄송합니다. 해당 요청에는 답변할 수 없습니다."
+
+    return "".join(b.text for b in response.content if b.type == "text")
+
 
 if __name__ == "__main__":
-    demo.launch()
+    print(answer("이 보험의 암 보장은 언제부터 적용되나요?"))
