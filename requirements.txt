@@ -1,0 +1,5 @@
+# Vercel Python 런타임이 읽는 의존성 목록.
+# 서버리스 함수 용량 제한(250MB) 때문에 torch/sentence-transformers/chromadb 같은
+# 무거운 RAG 의존성은 여기에 넣지 않는다. 로컬 전체 실행은 pyproject.toml(uv sync) 사용.
+fastapi>=0.115.0
+pydantic>=2.0.0
