@@ -197,6 +197,23 @@ def _student_context(student_id: str) -> str:
         return ""
 
 
+@app.get("/api/policy/pages")
+def policy_pages(p: str = ""):
+    """근거로 인용된 약관 페이지들의 전문 반환 (챗봇 근거 팝업용)."""
+    try:
+        from rag_light import page_text
+
+        nums, seen = [], set()
+        for x in p.split(","):
+            x = x.strip()
+            if x.isdigit() and int(x) not in seen:
+                seen.add(int(x))
+                nums.append(int(x))
+        return {"pages": [page_text(n) for n in nums]}
+    except Exception as e:  # noqa: BLE001
+        return {"pages": [], "error": str(e)}
+
+
 @app.post("/api/chat", response_model=None)
 def chat(req: ChatRequest):
     if not req.message.strip():

@@ -40,6 +40,7 @@ class Component extends React.Component {
     homeScreen: 'ins01', myScreen: 'main', gradeState: 'needs_check',
     llmAnswer: '', llmFrom: 'ins01', llmInput: '', llmMessages: [], llmLoading: false, appealSubject: '국어', appealReason: '인식 오류',
     discountModalOpen: false, coverageModalOpen: false, quadrantModalOpen: false,
+    policyOpen: false, policyLoading: false, policyData: [], policyFocus: null,
     loggedIn: false, notifOpen: false, scanWarningOpen: false,
     notifToggles: { exam: true, billing: true, appeal: true, marketing: false },
     // 개인화/로그인/온보딩
@@ -66,6 +67,19 @@ class Component extends React.Component {
       sign: false,                                          // Ⅷ 자필서명
     },
   };
+
+  // 챗봇 근거(약관 페이지) 원문 팝업
+  openPolicy = async (pages, focus = null) => {
+    this.setState({ policyOpen: true, policyLoading: true, policyData: [], policyFocus: focus });
+    try {
+      const r = await fetch(`${API_BASE}/api/policy/pages?p=${(pages || []).join(',')}`);
+      const d = await r.json();
+      this.setState({ policyLoading: false, policyData: d.pages || [] });
+    } catch (e) {
+      this.setState({ policyLoading: false, policyData: [] });
+    }
+  };
+  closePolicy = () => this.setState({ policyOpen: false });
 
   loadTiers = async () => {
     try {
@@ -594,6 +608,8 @@ class Component extends React.Component {
       notifOpen: s.notifOpen,
       openNotifications: () => this.setState({ notifOpen: true }),
       closeNotifications: () => this.setState({ notifOpen: false }),
+      policyOpen: s.policyOpen, policyLoading: s.policyLoading, policyData: s.policyData, policyFocus: s.policyFocus,
+      openPolicy: this.openPolicy, closePolicy: this.closePolicy,
       notifications: this.notifDefs,
       scanWarningOpen: s.scanWarningOpen,
       openScanWarning: () => this.setState({ scanWarningOpen: true }),
@@ -1955,8 +1971,14 @@ class Component extends React.Component {
                           <div style={S("background:#fff;border:1px solid #E6E6E6;border-radius:4px 16px 16px 16px;padding:11px 13px;font-size:11.5px;color:#333;line-height:1.7;word-break:keep-all")}>
                             {this.renderRich(m.text)}
                             {(m.pages && m.pages.length > 0) && (<>
-                              <div style={S("margin-top:8px;font-size:9.5px;color:#0B8F58;font-weight:700;border-top:1px dashed #E0E0E0;padding-top:6px")}>
-                                📄 근거: 약관 p.{m.pages.join(', p.')}
+                              <div style={S("margin-top:8px;border-top:1px dashed #E0E0E0;padding-top:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px")}>
+                                <span style={S("font-size:9.5px;color:#0B8F58;font-weight:700")}>📄 근거</span>
+                                {m.pages.map((pg, pi) => (
+                                  <React.Fragment key={pi}>
+                                    <span onClick={() => vm.openPolicy(m.pages, pg)} style={S("font-size:9.5px;font-weight:800;color:#0B8F58;background:rgba(11,143,88,0.1);border:1px solid rgba(11,143,88,0.28);border-radius:20px;padding:2px 8px;cursor:pointer")}>약관 p.{pg}</span>
+                                  </React.Fragment>
+                                ))}
+                                <span style={S("font-size:8.5px;color:#9AA6A0")}>· 클릭하면 원문 보기</span>
                               </div>
                             </>)}
                           </div>
@@ -2120,6 +2142,43 @@ class Component extends React.Component {
                 <div style={S("width:44px;height:44px;border:4px solid rgba(11,143,88,0.18);border-top-color:#0B8F58;border-radius:50%;animation:spin 0.9s linear infinite")}></div>
                 <div style={S("font-size:16px;font-weight:800;color:#0B5E3A;text-align:center;line-height:1.5")}>우리 집 기준으로<br/>환산하고 있어요…</div>
                 <div style={S("font-size:11.5px;color:#6C8579;text-align:center")}>저축·등록금·노후 계획 단위로 바꾸는 중</div>
+              </div>
+            </>)}
+            {(vm.policyOpen) && (<>
+              <div style={S("position:absolute;inset:0;background:rgba(12,20,16,0.5);z-index:45;display:flex;align-items:flex-end")} onClick={vm.closePolicy}>
+                <div style={S("width:100%;max-height:88%;background:#fff;border-radius:22px 22px 0 0;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(0,0,0,0.2)")} onClick={e=>e.stopPropagation()}>
+                  <div style={S("flex:none;padding:16px 18px 12px;border-bottom:1px solid #EEF0F1;display:flex;align-items:center;gap:10px")}>
+                    <span style={S("width:34px;height:34px;border-radius:10px;background:#E4F0EA;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none")}>📄</span>
+                    <div style={S("flex:1;min-width:0")}>
+                      <div style={S("font-size:14px;font-weight:900;color:#111")}>약관 원문 근거</div>
+                      <div style={S("font-size:10px;color:#999;margin-top:2px")}>노재수가 답변에 참고한 약관 페이지 전문이에요</div>
+                    </div>
+                    <span style={S("font-size:20px;color:#888;cursor:pointer;flex:none")} onClick={vm.closePolicy}>✕</span>
+                  </div>
+                  <div style={S("flex:1;overflow-y:auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch")}>
+                    {(vm.policyLoading) && (<>
+                      <div style={S("display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 0")}>
+                        <div style={S("width:34px;height:34px;border:3px solid rgba(11,143,88,0.18);border-top-color:#0B8F58;border-radius:50%;animation:spin 0.9s linear infinite")}></div>
+                        <div style={S("font-size:11.5px;color:#888")}>약관 원문을 불러오는 중…</div>
+                      </div>
+                    </>)}
+                    {(!vm.policyLoading && vm.policyData.length === 0) && (<>
+                      <div style={S("font-size:11.5px;color:#999;text-align:center;padding:40px 0")}>약관 원문을 불러오지 못했어요.</div>
+                    </>)}
+                    {(!vm.policyLoading) && vm.policyData.map((pg, pi) => (
+                      <React.Fragment key={pi}>
+                        <div style={S(`border:1.5px solid ${pg.page===vm.policyFocus?'#0B8F58':'#E7EAEC'};border-radius:16px;overflow:hidden`)}>
+                          <div style={S(`padding:10px 14px;background:${pg.page===vm.policyFocus?'rgba(11,143,88,0.08)':'#F7F8F8'};display:flex;align-items:center;gap:8px`)}>
+                            <span style={S("font-size:10px;font-weight:900;color:#fff;background:#0B8F58;border-radius:6px;padding:3px 8px;flex:none")}>p.{pg.page}</span>
+                            <span style={S("font-size:11.5px;font-weight:800;color:#0B5E3A;flex:1;min-width:0")}>{pg.title || '약관 본문'}</span>
+                          </div>
+                          <div style={S("padding:13px 15px;font-size:11px;color:#3A3E44;line-height:1.85;white-space:pre-wrap;word-break:keep-all")}>{pg.text || '(이 페이지에서 추출된 본문이 없어요)'}</div>
+                        </div>
+                      </React.Fragment>
+                    ))}
+                    <div style={S("font-size:8.5px;color:#B4B9BC;text-align:center;line-height:1.5;margin-top:4px")}>※ 브라우저 인쇄본에서 추출한 원문으로, 실제 약관과 서식이 다를 수 있어요.</div>
+                  </div>
+                </div>
               </div>
             </>)}
             {(vm.notifOpen) && (<>

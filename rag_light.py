@@ -204,6 +204,26 @@ def retrieve(query: str, k: int = 5) -> list[dict]:
     ]
 
 
+@lru_cache(maxsize=1)
+def _page_texts() -> dict:
+    """PDF 페이지별 전체 텍스트(정제본). 근거 팝업용."""
+    from pypdf import PdfReader
+
+    reader = PdfReader(PDF_PATH)
+    out: dict[int, str] = {}
+    for pageno, page in enumerate(reader.pages, start=1):
+        out[pageno] = _clean(page.extract_text() or "")
+    return out
+
+
+def page_text(pageno: int) -> dict:
+    """지정 페이지의 조항 제목 추정 + 전문 반환."""
+    txt = _page_texts().get(int(pageno), "")
+    titles = re.findall(r"제\s*\d+\s*조\s*\([^)]*\)", txt)
+    title = re.sub(r"\s+", " ", titles[0]).strip() if titles else ""
+    return {"page": int(pageno), "title": title, "text": txt}
+
+
 def _format_docs(hits: list[dict]) -> str:
     return "\n\n---\n\n".join(f"[출처: 약관 / p.{h['page']} / {h['title']}]\n{h['text']}" for h in hits)
 
