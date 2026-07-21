@@ -46,17 +46,38 @@ Vercel 대시보드에서 **추가 설정 없이** 임포트만 하면 됩니다
 
 ---
 
-## RAG 챗봇 (로컬 전용)
+## AI 약관 챗봇 백엔드 — 두 가지 방식
 
-`chromadb`, `sentence-transformers` 등 무거운 의존성과 벡터 DB 파일을 사용하므로
-Vercel Serverless Function 용량 제한에 맞지 않습니다. **Vercel에는 배포되지 않습니다.**
+프론트엔드 `home → AI 상담` 화면의 칩(질문)을 누르면 백엔드 `/api/chat` 를 호출해
+**실제 약관 PDF(`no_jaesoo_insurance_policy_3.pdf`) 근거로 답변**합니다.
+(백엔드가 꺼져 있으면 미리 준비된 예시 답변으로 자동 폴백하므로 정적 배포도 화면은 뜹니다.)
+
+### 방식 A) 경량 RAG (권장 · Anthropic) — `main.py` + `rag_light.py`
+
+`pypdf` 로 PDF 를 읽어 순수 파이썬 TF-IDF 로 검색하고 **Claude(claude-opus-4-8)** 로 답변을
+생성합니다. `torch/chromadb` 가 필요 없어 설치가 가볍고 어디서나 실행됩니다.
 
 ```bash
-uv sync
-uv run terms_reader_agent.py
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements-rag.txt
+# .env 에 LLM_API_KEY=sk-ant-... 설정 (없으면 발췌 기반 폴백으로 동작)
+python -m uvicorn main:app --port 8000      # http://localhost:8000/api/chat
 ```
 
-`.env`에 API 키가 필요합니다 (`.gitignore`에 포함되어 있어 커밋되지 않습니다).
+프론트엔드는 기본적으로 `http://localhost:8000` 을 호출합니다.
+다른 주소면 `frontend/.env` 에 `VITE_API_URL=https://...` 를 넣으세요.
 
-웹으로 공개하려면 Render, Railway, Fly.io 같은 컨테이너 호스팅에 별도 배포한 뒤
-프론트엔드에서 해당 API 주소를 호출하도록 연결해야 합니다.
+### 방식 B) 원본 RAG (Gemini + 로컬 임베딩) — `terms_reader_agent.py`
+
+`chromadb`, `sentence-transformers` 등 무거운 의존성을 사용합니다(로컬 Gradio UI 전용).
+
+```bash
+uv sync --extra rag
+uv run terms_reader_agent.py     # .env 에 GEMINI_API_KEY 필요
+```
+
+### 프론트엔드 ↔ 백엔드 연결 요약
+
+- `frontend/src/App.jsx` 상단 `API_BASE` 가 백엔드 주소(기본 `localhost:8000`)입니다.
+- 로컬 데모: 터미널 2개로 `uvicorn main:app --port 8000` 과 `cd frontend && npm run dev` 를 함께 실행.
+- 웹 공개: 백엔드를 Render/Railway/Fly.io 등에 배포하고 `VITE_API_URL` 로 그 주소를 가리키면 됩니다.
