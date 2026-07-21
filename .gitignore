@@ -22,3 +22,10 @@ outputs/
 
 # Editor/agent local settings
 .claude/
+
+# Node / Vite (frontend)
+node_modules
+*.log
+dist-ssr
+*.local
+.DS_Store
