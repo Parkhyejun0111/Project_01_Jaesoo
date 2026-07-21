@@ -25,19 +25,75 @@ const SEL = "display:inline-flex;align-items:center;padding:8px 14px;border-radi
 const UNSEL = "display:inline-flex;align-items:center;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:400;border:1px solid #E5E5E5;background:#fff;color:#666;cursor:pointer;white-space:nowrap";
 
 class Component extends React.Component {
+
   state = {
     activeTab: 'grades',
     gradeSeg: 0,
     a2Filter: 'all',
     converterScreen: 'intro',
-    save_m: 200, siblingCount: 2, retireGoal: 40000, income_m: 700, opp_on: false,
-    costForm: '재수종합학원', costAdjPct: 100,
-    homeScreen: 'ins01', myScreen: 'main', gradeState: 'needs_check',
-    llmAnswer: '', llmFrom: 'ins01', appealSubject: '국어', appealReason: '인식 오류',
-    discountModalOpen: false, coverageModalOpen: false, quadrantModalOpen: false,
-    loggedIn: false, notifOpen: false, scanWarningOpen: false,
-    notifToggles: { exam: true, billing: true, appeal: true, marketing: false },
+    save_m: 200,
+    siblingCount: 2,
+    retireGoal: 40000,
+    income_m: 700,
+    opp_on: false,
+    costForm: '재수종합학원',
+    costAdjPct: 100,
+    homeScreen: 'ins01',
+    myScreen: 'main',
+    gradeState: 'needs_check',
+    llmAnswer: '',
+    llmFrom: 'ins01',
+    appealSubject: '국어',
+    appealReason: '인식 오류',
+    discountModalOpen: false,
+    coverageModalOpen: false,
+    quadrantModalOpen: false,
+    loggedIn: false,
+    notifOpen: false,
+    scanWarningOpen: false,
+    notifToggles: {
+      exam: true,
+      billing: true,
+      appeal: true,
+      marketing: false
+    }
   };
+
+  async askLLM(message) {
+    this.setState({
+      llmAnswer: "답변을 생성하고 있습니다..."
+    });
+
+    try {
+      // 백엔드 주소는 VITE_API_BASE 환경변수로 주입한다.
+      // 미설정 시 같은 도메인의 /api/chat 을 호출한다.
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE ?? ""}/api/chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: message
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      this.setState({
+        llmAnswer: data.answer
+      });
+
+    } catch (e) {
+
+      this.setState({
+        llmAnswer: "AI 서버와 연결하지 못했습니다."
+      });
+
+    }
+  }
 
   notifDefs = [
     { title: '모의고사 성적을 등록하세요', body: '9월 모의고사 성적표를 스캔하면 예상 점수와 보험료가 최신 상태로 갱신돼요.', time: '2시간 전' },
@@ -214,7 +270,7 @@ class Component extends React.Component {
     ];
     const llmChips = Object.keys(this.llmQA).map(q => ({
       label: q, style: UNSEL,
-      onClick: () => this.setState({ llmAnswer: this.llmQA[q] }),
+      onClick: () => this.askLLM(q),
     }));
 
     const gradeBadgeMap = {
@@ -1679,3 +1735,5 @@ class Component extends React.Component {
   }
 }
 export default Component;
+
+
