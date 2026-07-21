@@ -23,13 +23,12 @@ load_dotenv()
 # 1. 전역 설정  
 # ─────────────────────────────────────────────
 LLM_MODEL = "gemini-2.5-flash"   # Gemini 채팅 모델
-PERSIST_DIR = "my_chroma_hanwha_local"   # 실제 한화 PDF + 로컬 임베딩용 폴더
+PERSIST_DIR = "chroma_jaesoo"   # PDF_SOURCES 를 바꾸면 이 폴더명도 같이 바꿔야 재인덱싱됨
 COLLECTION = "insurance_collection"
 
 # 넣을 PDF 파일들: (파일경로, 문서종류 태그)
 PDF_SOURCES = [
-    ("한화생명 e암보험(비갱신형)_보험약관.pdf",           "약관"),
-    ("한화생명 e암보험(비갱신형) 무배당_상품요약서.pdf",  "상품요약서"),
+    ("no_jaesoo_insurance_policy_3.pdf",           "약관"),
 ]
 
 # ─────────────────────────────────────────────
@@ -50,7 +49,7 @@ if os.path.exists(PERSIST_DIR):
 else:
     print("새 ChromaDB 생성 중 (PDF 분석)...")
     all_docs = []
-    splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=80)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=150)
     for path, source_tag in PDF_SOURCES:
         if not os.path.exists(path):
             raise FileNotFoundError(f"PDF 없음: {path}  → 먼저 create_insurance_pdfs.py 를 실행하세요.")
@@ -85,9 +84,14 @@ prompt = ChatPromptTemplate.from_template('''
    "약관 기준상 ~에 해당할 수 있으며, 실제 지급/인수 여부는 회사의 심사에 따라 달라집니다"처럼 안내하세요.
 4. 숫자(요율, 금액, 기간)를 인용할 때는 반드시 문서에 적힌 값을 그대로 사용하고, 임의 계산·추정을 덧붙이지 마세요.
    계산 예시를 들 때도 문서에 있는 산정식만 사용하세요.
-5. 답변 마지막에는 항상 다음 안내를 덧붙이세요:
+5. 답변 본문 아래에는 반드시 "📌 근거 조항" 항목을 만들어, 답변의 근거가 된 조항 원문을 그대로 게시하세요.
+   - 각 조항은 [참고 문서]에 표시된 출처와 페이지를 함께 적으세요. 예: "제12조(보험금의 지급사유) — 약관 p.7"
+   - 조항 원문은 요약하거나 바꿔 쓰지 말고 문서에 적힌 문장을 그대로 인용하세요.
+   - 조항 번호나 제목이 문서에 보이지 않으면 해당 부분의 원문과 페이지만 적으세요.
+   - 근거로 삼은 조항이 [참고 문서]에 없으면 규칙 1에 따라 답변하고, 근거 조항 항목은 "해당 조항을 확인할 수 없습니다"라고 적으세요.
+6. 답변 마지막에는 항상 다음 안내를 덧붙이세요:
    "※ 본 답변은 제공된 문서 기반의 일반 안내이며, 정확한 내용은 약관 원문 및 정식 상담을 통해 확인하시기 바랍니다."
-6. 답변은 존댓말로, 핵심을 먼저 말한 뒤 근거 조항을 짚어주는 방식으로 친절하게 작성하세요.
+7. 답변은 존댓말로, 핵심을 먼저 말한 뒤 근거 조항을 짚어주는 방식으로 친절하게 작성하세요.
 
 [참고 문서]
 {context}
@@ -138,12 +142,12 @@ def respond(message, history):
 demo = gr.ChatInterface(
     fn=respond,
     title="🛡️ AI 보험 안내 도우미",
-    description="보험 약관과 보험료 산정기준 문서를 기반으로 안내해 드립니다. (예: '35세 남성 암특약 포함하면 보험료 어떻게 산정돼?')",
+    description="보험 약관과 보험료 산정기준 문서를 기반으로 안내해 드립니다.",
     examples=[
-        "이 보험의 암 보장은 언제부터 적용되나요?",
-        "35세 남성이 암진단 특약을 넣으면 보험료가 어떻게 산정되나요?",
-        "보험금을 못 받는 경우는 어떤 경우인가요?",
-        "흡연자면 보험료가 얼마나 올라가나요?",
+        "보험료는 언제 지급되나요?",
+        "고등학교 2학년도 보험에 가입할 수 있나요?",
+        "플랜의 차이가 무엇인가요?",
+        "모의고사 미응시의 경우, 보험료가 얼마나 올라가나요?",
     ],
 )
 

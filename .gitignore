@@ -14,3 +14,11 @@ wheels/
 
 # Generated vector DB (rebuilt from PDFs on first run)
 my_chroma_hanwha_local/
+chroma_jaesoo/
+chroma_jaesoo_graph/
+
+# Generated outputs
+outputs/
+
+# Editor/agent local settings
+.claude/
