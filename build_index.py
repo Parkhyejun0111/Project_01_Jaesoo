@@ -12,6 +12,7 @@ index.npz + chunks.json 으로 저장하고, 그 두 파일을 레포에 커밋�
 
 import json
 import os
+import time
 
 import numpy as np
 import voyageai
@@ -27,7 +28,12 @@ PDF_SOURCES = [
 ]
 
 EMBED_MODEL = "voyage-4-large"  # 다국어 검색 품질 최상 (한국어 포함)
-BATCH_SIZE = 100  # Voyage API 요청당 최대 1000개지만 토큰 한도가 있어 보수적으로
+
+# Voyage 무료 등급은 3 RPM / 10K TPM 으로 묶여 있다. 결제수단을 등록하면
+# 한도가 크게 올라가므로, 그 경우 BATCH_SIZE 를 키우고 SLEEP_SECONDS 를 0 으로.
+BATCH_SIZE = 16
+SLEEP_SECONDS = 30
+MAX_RETRIES = 5
 
 INDEX_PATH = "index.npz"
 CHUNKS_PATH = "chunks.json"
@@ -52,12 +58,27 @@ def load_chunks():
     return chunks
 
 
+def _embed_batch(client, batch):
+    """배치 하나를 임베딩한다. 속도 제한에 걸리면 대기 후 재시도."""
+    for attempt in range(MAX_RETRIES):
+        try:
+            return client.embed(batch, model=EMBED_MODEL, input_type="document")
+        except voyageai.error.RateLimitError:
+            if attempt == MAX_RETRIES - 1:
+                raise
+            wait = SLEEP_SECONDS * (attempt + 2)
+            print(f"    속도 제한 - {wait}초 대기 후 재시도 ({attempt + 1}/{MAX_RETRIES})")
+            time.sleep(wait)
+
+
 def embed_documents(client, texts):
     """문서 청크를 배치로 임베딩한다."""
     vectors = []
-    for i in range(0, len(texts), BATCH_SIZE):
-        batch = texts[i : i + BATCH_SIZE]
-        result = client.embed(batch, model=EMBED_MODEL, input_type="document")
+    batches = range(0, len(texts), BATCH_SIZE)
+    for n, i in enumerate(batches):
+        if n > 0:
+            time.sleep(SLEEP_SECONDS)  # 무료 등급 RPM/TPM 한도 준수
+        result = _embed_batch(client, texts[i : i + BATCH_SIZE])
         vectors.extend(result.embeddings)
         print(f"  임베딩 {min(i + BATCH_SIZE, len(texts))}/{len(texts)}")
     return np.array(vectors, dtype=np.float32)

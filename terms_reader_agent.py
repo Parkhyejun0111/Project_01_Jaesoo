@@ -9,6 +9,7 @@
 
 import json
 import os
+import time
 from pathlib import Path
 
 import anthropic
@@ -95,14 +96,24 @@ def _anthropic_client():
     return _anthropic
 
 
+def _embed_query(question):
+    """질문을 임베딩한다. Voyage 무료 등급(3 RPM)에 걸리면 잠시 대기 후 재시도."""
+    for attempt in range(3):
+        try:
+            return _voyage_client().embed(
+                [question], model=EMBED_MODEL, input_type="query"
+            ).embeddings[0]
+        except voyageai.error.RateLimitError:
+            if attempt == 2:
+                raise
+            time.sleep(20 * (attempt + 1))
+
+
 def retrieve(question, k=TOP_K):
     """질문과 가장 가까운 약관 청크 k개를 반환한다."""
     embeddings, chunks = _load_index()
 
-    result = _voyage_client().embed(
-        [question], model=EMBED_MODEL, input_type="query"
-    )
-    query_vec = np.array(result.embeddings[0], dtype=np.float32)
+    query_vec = np.array(_embed_query(question), dtype=np.float32)
     query_vec /= np.linalg.norm(query_vec)
 
     # 인덱스는 이미 정규화되어 있으므로 내적 = 코사인 유사도
