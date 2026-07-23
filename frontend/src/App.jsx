@@ -23,11 +23,12 @@ function S(css) {
 }
 
 // 이미지 자산 (원본 PNG 를 표시 크기로 인라인)
-const IMG_D810F4E9 = "data:image/png;base64,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";
 const IMG_F7F53234 = "/jaesoo_character.png";
 const IMG_LOGO = "/logo_final_white.png";
 const IMG_LOGO_DARK = "/jaesoo_logo.png";
-const IMG_NO = "/no_icon.png";
+const IMG_DONWORRY = "/donworry_icon4.png";
+const IMG_NO = "/no_icon_v2.png";
+const IMG_PAW = "/paw_print.png";
 
 const SEL = "display:inline-flex;align-items:center;padding:8px 14px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px solid #0B8F58;background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;cursor:pointer;white-space:nowrap";
 const UNSEL = "display:inline-flex;align-items:center;padding:8px 14px;border-radius:20px;font-size:11px;font-weight:400;border:1px solid #E5E5E5;background:#fff;color:#666;cursor:pointer;white-space:nowrap";
@@ -37,13 +38,23 @@ class Component extends React.Component {
     activeTab: 'grades',
     gradeSeg: 0,
     a2Filter: 'all',
-    converterScreen: 'intro', convLoading: false,
+    converterScreen: 'intro', convLoading: false, resultDetail: false,
+    examOpen: {}, examSortDesc: true,
     save_m: 200, siblingCount: 2, retireGoal: 40000, income_m: 700, opp_on: false,
     costForm: '재수종합학원', costAdjPct: 100, region: '수도권',
     homeScreen: 'ins01', myScreen: 'main', gradeState: 'needs_check',
+    claimScreen: 'home',
+    claimElg: 'yes', claimSeverity: 'severe', claimForm: '재수종합학원',
+    claimCardsOn: { k1: true, k2: true, k3: false, k4: false, k5: false, k6: false },
+    claimCardTails: { k1: '4821', k2: '7715' },
+    claimCostsOn: { c1: true, c2: true, c3: true, c4: true, c5: true },
+    claimUpload: false, claimAgreeGuardian: false, claimAgreeFinal: false,
+    claimConnectingCard: null, claimLinkReturn: 'home', claimLastSync: '2027.12.09 09:30',
+    claimSubmitting: false,
     llmAnswer: '', llmFrom: 'ins01', llmInput: '', llmMessages: [], llmLoading: false, appealSubject: '국어', appealReason: '인식 오류',
     discountModalOpen: false, coverageModalOpen: false, quadrantModalOpen: false,
     policyOpen: false, policyLoading: false, policyData: [], policyFocus: null,
+    paymentDetail: null, paymentsYear: null, paymentsShowAll: false,
     loggedIn: false, notifOpen: false, scanWarningOpen: false, splashDone: false,
     notifToggles: { exam: true, billing: true, appeal: true, marketing: false },
     // 개인화/로그인/온보딩
@@ -240,6 +251,28 @@ class Component extends React.Component {
     );
   };
 
+  // AI 채팅 로딩 캐릭터가 지나가며 남기는 발자국 위치
+  chatLoadingFootprints = [10, 20, 30];
+
+  // 빈 상태(성적/알림/납입 내역 없음) 공통 UI — 원형 하이라이트 안에 라인 아이콘 + 제목/설명
+  renderEmptyState = (icon, title, desc, opts = {}) => {
+    const compact = opts.compact;
+    return (
+      <div style={S(compact
+        ? "display:flex;flex-direction:column;align-items:center;text-align:center;padding:30px 20px"
+        : "flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px 34px")}>
+        <div style={S(`width:${compact ? 72 : 120}px;height:${compact ? 72 : 120}px;border-radius:50%;background:#E3F2EA;display:flex;align-items:center;justify-content:center;margin-bottom:${compact ? 14 : 22}px;flex:none`)}>
+          {icon}
+        </div>
+        <div style={S(compact ? "font-size:14px;font-weight:700;color:#111" : "font-size:19px;font-weight:800;color:#111;line-height:1.4")}>{title}</div>
+        <div style={S(compact ? "font-size:12px;color:#999;line-height:1.6;margin-top:6px;max-width:230px" : "font-size:13.5px;color:#555;line-height:1.7;margin-top:12px;max-width:270px")}>{desc}</div>
+        {opts.hint && (
+          <div style={S("display:inline-flex;align-items:center;gap:6px;margin-top:20px;background:#F6F6F6;border-radius:20px;padding:8px 14px;font-size:12px;color:#555")}>{opts.hint}</div>
+        )}
+      </div>
+    );
+  };
+
   // AI 답변 텍스트에서 마크다운 표(| a | b |)를 실제 표로 렌더링
   renderRich = (text) => {
     const lines = String(text || '').split('\n');
@@ -273,6 +306,13 @@ class Component extends React.Component {
   };
 
   chatScrollRef = React.createRef();
+  chatInputRef = React.createRef();
+  autosizeChatInput = () => {
+    const el = this.chatInputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  };
   componentDidUpdate() {
     const el = this.chatScrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -288,7 +328,7 @@ class Component extends React.Component {
   ];
 
   // 채팅 화면 진입 — 대화를 첫 인사로 초기화
-  openLlm = (from) => this.setState({ homeScreen: 'llm', llmFrom: from, llmMessages: [this.llmGreeting], llmInput: '', llmLoading: false });
+  openLlm = (from) => this.setState({ activeTab: 'home', homeScreen: 'llm', llmFrom: from, llmMessages: [this.llmGreeting], llmInput: '', llmLoading: false });
 
   // 실제 약관 PDF 기반 RAG 백엔드(/api/chat)에 질문을 보내 답변을 받아온다.
   //   · 사용자 질문/AI 답변을 말풍선(llmMessages)으로 채팅창에 누적
@@ -407,6 +447,90 @@ class Component extends React.Component {
     '재수종합학원': { monthly: 191, total: 1910, note: '메이저 재종합반 5개사 평균(시대인재·강남대성 등)', cap: 140, voucherPct: 40 },
     '기숙학원': { monthly: 360, total: 3600, note: '상위 기숙학원 5개사 평균', cap: 200, voucherPct: 20 },
   };
+
+  // ── 보험금 청구(수능 이후) ──
+  EXAM_DATE = '2026-11-19';
+  CLAIM_RATE = 0.7;
+  CLAIM_LIMITS = {
+    '독학재수(독서실·인강)': { mild: 2100000, severe: 4200000 },
+    '단과 통학': { mild: 4200000, severe: 8400000 },
+    '재수종합학원': { mild: 7020000, severe: 14040000 },
+    '기숙학원': { mild: 10500000, severe: 21000000 },
+  };
+  CLAIM_CARDS_META = [
+    { id: 'k1', name: '신한카드', short: '신한', color: '#1E4FD8' },
+    { id: 'k2', name: '국민카드', short: 'KB', color: '#6B5B3E' },
+    { id: 'k3', name: '삼성카드', short: '삼성', color: '#1428A0' },
+    { id: 'k4', name: '현대카드', short: '현대', color: '#1F1F1F' },
+    { id: 'k5', name: '롯데카드', short: '롯데', color: '#C8102E' },
+    { id: 'k6', name: '하나카드', short: '하나', color: '#00857D' },
+  ];
+  CLAIM_COSTS_META = {
+    1: [
+      { id: 'c1', date: '2026.12.08', name: '재수학원 1분기 등록금', amt: 4800000, card: 'k1', auto: true },
+      { id: 'c2', date: '2027.01.14', name: '교재·모의고사 패키지', amt: 400000, card: 'k2', auto: true },
+    ],
+    2: [
+      { id: 'c3', date: '2027.02.03', name: '재수학원 2분기 등록금', amt: 3200000, card: 'k1', auto: true },
+      { id: 'c4', date: '2027.04.20', name: '재수학원 3분기 등록금', amt: 3000000, card: 'k1', auto: true },
+      { id: 'c5', date: '2027.05.11', name: '파이널 특강·모의고사', amt: 600000, card: null, auto: false },
+    ],
+  };
+  CLAIM_ROUND_META = {
+    1: { label: '1차 (6월)', period: '2027.01.01 ~ 05.31', window: '2027.06.01 ~ 06.30', deadline: '6월 30일', date: '2027.06.09 09:41', no: 'RC-2027-0091' },
+    2: { label: '2차 (12월)', period: '2027.06.01 ~ 11.30', window: '2027.12.01 ~ 12.31', deadline: '12월 31일', date: '2027.12.09 09:41', no: 'RC-2027-0188' },
+  };
+  CLAIM_GRADE_PROFILE = {
+    no: { x: 143, y: 78, score: 52, drop: 11, col: '#5C6360' },
+    mild: { x: 100, y: 118, score: 43, drop: 20, col: '#E5484D' },
+    severe: { x: 66, y: 135, score: 30, drop: 33, col: '#E5484D' },
+  };
+
+  examPassed() {
+    return new Date() >= new Date(this.EXAM_DATE);
+  }
+  claimYear() {
+    return new Date(this.EXAM_DATE).getFullYear() + 1;
+  }
+  // 청구 회차·창 상태를 "실제 오늘 날짜" 대비로 계산: 수능 다음 해 6월(1차)·12월(2차)에만 열림
+  claimRoundWindow() {
+    const now = new Date();
+    const y = this.claimYear();
+    const r1Open = new Date(`${y}-06-01`), r1Close = new Date(`${y}-06-30T23:59:59`);
+    const r2Open = new Date(`${y}-12-01`), r2Close = new Date(`${y}-12-31T23:59:59`);
+    if (now > r2Close) return { round: 2, window: 'dead', nextOpen: null };
+    if (now >= r2Open) return { round: 2, window: 'open', nextOpen: null };
+    if (now >= r1Close) return { round: 2, window: 'wait', nextOpen: r2Open };
+    if (now >= r1Open) return { round: 1, window: 'open', nextOpen: null };
+    return { round: 1, window: 'wait', nextOpen: r1Open };
+  }
+  fmtDateDot(d) {
+    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+  }
+  claimLimit(s) {
+    if (s.claimElg === 'no') return 0;
+    const lim = this.CLAIM_LIMITS[s.claimForm];
+    return s.claimSeverity === 'severe' ? lim.severe : lim.mild;
+  }
+  claimVisibleCosts(round, s) {
+    return this.CLAIM_COSTS_META[round].filter(c => !c.auto || !!(s.claimCardsOn && s.claimCardsOn[c.card]));
+  }
+  claimEngine(s) {
+    const r = s.claimRound;
+    const sumOn = (list) => list.reduce((sum, c) => sum + ((s.claimCostsOn && s.claimCostsOn[c.id] !== false) ? c.amt : 0), 0);
+    const prevCost = r === 2 ? sumOn(this.claimVisibleCosts(1, s)) : 0;
+    const limit = this.claimLimit(s);
+    const prevPaid = r === 2 ? Math.min(prevCost * this.CLAIM_RATE, limit) : 0;
+    const thisCost = sumOn(this.claimVisibleCosts(r, s));
+    const cumCost = prevCost + thisCost;
+    const rawEnt = cumCost * this.CLAIM_RATE;
+    const cumEnt = Math.min(rawEnt, limit);
+    return {
+      round: r, prevCost, prevPaid, thisCost, cumCost, rawEnt, cumEnt,
+      capped: rawEnt > limit, payout: cumEnt - prevPaid, remaining: Math.max(0, limit - cumEnt),
+    };
+  }
+
   // 우리 동네 시세: 지역별 평균 대비 배율(%)
   regions = [
     { name: '서울 학군지', pct: 120, desc: '강남·목동·중계 등' },
@@ -416,7 +540,7 @@ class Component extends React.Component {
   ];
 
   chipList(options, curVal, keyName) {
-    const NONE_UNSEL = UNSEL.replace('border:1px solid #E5E5E5', 'border:1px solid #0B8F58').replace('background:#fff', 'background:rgba(11,143,88,0.12)').replace('color:#666', 'color:#0B8F58');
+    const NONE_UNSEL = UNSEL.replace('border:1px solid #E5E5E5', 'border:1px solid #0B8F58').replace('color:#666', 'color:#0B8F58');
     const NONE_SEL = SEL;
     return options.map(o => {
       const isNone = o.v === null;
@@ -526,19 +650,25 @@ class Component extends React.Component {
       onClick: () => this.setState({ costForm: name, costAdjPct: 100, region: '수도권' }),
     }));
 
-    const mkTab = (key) => {
-      const active = s.activeTab === key;
+    const mkTab = (key, opts = {}) => {
+      const active = opts.active !== undefined ? opts.active : s.activeTab === key;
       return {
         iconColor: active ? '#fff' : '#999',
         labelColor: active ? '#0B8F58' : '#999',
         labelWeight: active ? 700 : 400,
         circleStyle: `width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${active ? '#0B8F58' : 'transparent'}`,
-        onClick: () => this.setState({ activeTab: key }),
+        onClick: opts.onClick || (() => this.setState({ activeTab: key })),
       };
     };
-    const homeTab = mkTab('home'), gradesTab = mkTab('grades'), converterTab = mkTab('converter'), mypageTab = mkTab('mypage');
+    const homeTab = mkTab('home', { active: s.activeTab === 'home' && s.homeScreen !== 'llm' });
+    const gradesTab = mkTab('grades'), converterTab = mkTab('converter'), mypageTab = mkTab('mypage');
+    const aiTab = mkTab('ai', { active: s.activeTab === 'home' && s.homeScreen === 'llm', onClick: () => this.openLlm('ins01') });
 
     const fmtWon = n => n.toLocaleString('ko-KR') + '만원';
+    const saveValLabel = fmtWon(saveVal);
+    const incomeValLabel = fmtWon(incomeVal);
+    const semesterCostLabel = fmtWon(this.SEMESTER_COST);
+    const retireGoalLabel = s.retireGoal ? fmtWon(s.retireGoal) : '';
 
     const premium_m = eff.premium_m, prev_m = eff.prev_m;
     const premiumLabel = premium_m.toLocaleString('ko-KR') + '원';
@@ -551,7 +681,49 @@ class Component extends React.Component {
       { date: '2026년 7월', amount: '45,000원', status: '완료' },
       { date: '2026년 6월', amount: '45,000원', status: '완료' },
       { date: '2026년 5월', amount: '48,000원', status: '완료' },
+      { date: '2026년 4월', amount: '48,000원', status: '완료' },
+      { date: '2026년 3월', amount: '46,500원', status: '완료' },
+      { date: '2026년 2월', amount: '44,000원', status: '완료' },
+      { date: '2026년 1월', amount: '44,000원', status: '완료' },
+      { date: '2025년 12월', amount: '47,000원', status: '완료' },
+      { date: '2025년 11월', amount: '47,000원', status: '완료' },
+      { date: '2025년 10월', amount: '43,500원', status: '완료' },
+      { date: '2025년 9월', amount: '43,500원', status: '완료' },
+      { date: '2025년 8월', amount: '41,000원', status: '완료' },
+      { date: '2025년 7월', amount: '41,000원', status: '완료' },
+      { date: '2025년 6월', amount: '39,500원', status: '완료' },
+      { date: '2025년 5월', amount: '39,500원', status: '완료' },
+      { date: '2025년 4월', amount: '38,000원', status: '완료' },
+      { date: '2025년 3월', amount: '38,000원', status: '완료' },
     ];
+    const paymentYearOf = (p) => { const m = /(\d+)년/.exec(p.date || ''); return m ? m[1] : ''; };
+    const paymentYears = [...new Set(payments.map(paymentYearOf))].sort((a, b) => b - a);
+    const paymentsYear = paymentYears.includes(s.paymentsYear) ? s.paymentsYear : paymentYears[0];
+    const paymentsOfYear = payments.filter(p => paymentYearOf(p) === paymentsYear);
+    const PAYMENTS_PAGE = 6;
+    const paymentsShowAll = !!s.paymentsShowAll;
+    const paymentsVisible = paymentsShowAll ? paymentsOfYear : paymentsOfYear.slice(0, PAYMENTS_PAGE);
+    const paymentsRemainCount = paymentsOfYear.length - paymentsVisible.length;
+    const paymentsYearTotal = paymentsOfYear.reduce((sum, p) => sum + parseInt(p.amount.replace(/[^0-9]/g, ''), 10), 0);
+    const paymentsTotalLabel = paymentsYearTotal.toLocaleString('ko-KR') + '원';
+    const paymentsReceiptNo = 'RCPT-' + joinedAt.replace(/\./g, '') + '-' + String(payments.length).padStart(3, '0');
+    let paymentDetailView = null;
+    if (s.paymentDetail) {
+      const p = s.paymentDetail;
+      const dm = /(\d+)년\s*(\d+)월/.exec(p.date || '');
+      const y = dm ? dm[1] : '', mo = dm ? dm[2].padStart(2, '0') : '';
+      const amountNum = parseInt(String(p.amount).replace(/[^0-9]/g, ''), 10) || 0;
+      const supplyAmount = Math.round(amountNum / 1.1);
+      const vat = amountNum - supplyAmount;
+      paymentDetailView = {
+        date: p.date, amount: p.amount,
+        approvalNo: `${y}${mo}05-${String(amountNum % 90000 + 10000)}`,
+        paidAt: `${y}.${mo}.05 10:15:22`,
+        method: '신한카드 (****-1092)',
+        supplyAmountLabel: supplyAmount.toLocaleString('ko-KR') + '원',
+        vatLabel: vat.toLocaleString('ko-KR') + '원',
+      };
+    }
     const llmChips = this.RECO_QS.map(q => ({
       label: q, style: UNSEL,
       onClick: () => this.askLLM(q),
@@ -577,6 +749,106 @@ class Component extends React.Component {
       label: r, style: s.appealReason === r ? SEL : UNSEL,
       onClick: () => this.setState({ appealReason: r }),
     }));
+
+    const examGradeOf = (v) => v>=96?1:v>=89?2:v>=77?3:v>=60?4:v>=40?5:v>=23?6:v>=11?7:v>=4?8:9;
+    const examDates = ['2023.09.06','2023.11.16','2024.03.28','2024.06.04','2024.09.04','2024.11.14','2025.03.27','2025.06.04','2025.09.03'];
+    const examSubjNames = ['국어','수학','영어','탐구'];
+    const examHistoryChron = this.examLabels.map((label, i) => {
+      const percentile = Math.round(comp[i]);
+      const prevPercentile = i > 0 ? Math.round(comp[i - 1]) : null;
+      const subjectsRow = examSubjNames.map(name => {
+        const traj = this.subjects[name].traj;
+        const score = traj[i];
+        const prevScore = i > 0 ? traj[i - 1] : null;
+        const grade = examGradeOf(score);
+        const prevGrade = prevScore != null ? examGradeOf(prevScore) : null;
+        return { name, score, grade, gradeDiff: prevGrade != null ? grade - prevGrade : null };
+      });
+      return { label, date: examDates[i] || '', percentile, percentileDiff: prevPercentile != null ? percentile - prevPercentile : null, subjects: subjectsRow };
+    });
+    const examSortDesc = s.examSortDesc !== false;
+    const examHistory = examSortDesc ? [...examHistoryChron].reverse() : examHistoryChron;
+    const examAllOpen = examHistoryChron.length > 0 && examHistoryChron.every(e => !!(s.examOpen || {})[e.label]);
+
+    // ── 보험금 청구(수능 이후) ──
+    const examPassed = this.examPassed();
+    const wonFmt = n => Math.round(n).toLocaleString('ko-KR') + '원';
+    const manFmt = n => Math.round(n / 10000).toLocaleString('ko-KR') + '만원';
+    const claimNo = s.claimElg === 'no';
+    const claimGradeLabel = s.claimSeverity === 'severe' ? '중증' : '경증';
+    const claimRW = this.claimRoundWindow();
+    const claimEffState = { ...s, claimRound: claimRW.round, claimWindow: claimRW.window };
+    const claimLimit = this.claimLimit(claimEffState);
+    const claimEngine = this.claimEngine(claimEffState);
+    const claimRoundMeta = this.CLAIM_ROUND_META[claimRW.round];
+    const claimYear = this.claimYear();
+    const claimExamDateLabel = this.fmtDateDot(new Date(this.EXAM_DATE));
+    const claimJudgeDateLabel = this.fmtDateDot(new Date(new Date(this.EXAM_DATE).getTime() + 15 * 86400000));
+    const claimValidityEndLabel = `${claimYear}.12.31`;
+    const claimDaysUntilOpen = claimRW.nextOpen ? Math.max(0, Math.ceil((claimRW.nextOpen - new Date()) / 86400000)) : 0;
+    const claimLinkedCards = this.CLAIM_CARDS_META.filter(c => s.claimCardsOn[c.id]).map(c => ({ ...c, tail: s.claimCardTails[c.id] || '' }));
+    const claimOffCards = this.CLAIM_CARDS_META.filter(c => !s.claimCardsOn[c.id]);
+    const claimCardOf = (id) => this.CLAIM_CARDS_META.find(c => c.id === id);
+    const claimGauge = (paid, pending, dark) => {
+      const rest = Math.max(0, claimLimit - paid - pending);
+      const pct = (v) => claimLimit ? (v / claimLimit * 100) : 0;
+      return { paid, pending, rest, paidPct: pct(paid), pendingPct: pct(pending), restPct: pct(rest), dark };
+    };
+    const claimCostRow = (c, tappable) => {
+      const k = c.card ? claimCardOf(c.card) : null;
+      const on = s.claimCostsOn[c.id] !== false;
+      return { ...c, on, tappable, cardMeta: k, metaLabel: c.date + (k ? ' · ' + k.name + ' ' + (s.claimCardTails[k.id] || '') : ''), amtLabel: wonFmt(c.amt) };
+    };
+
+    let claimEligibilityView = null;
+    {
+      const key = claimNo ? 'no' : s.claimSeverity;
+      const p = this.CLAIM_GRADE_PROFILE[key];
+      claimEligibilityView = {
+        profile: p,
+        title: claimNo ? '이번 수능은\n보장 대상이 아니에요' : '보장 자격이 확인됐어요',
+        lede: claimNo ? '수능 성적은 자동으로 연동돼요. 아래는 판정에 쓰인 실제 값이에요.' : '수능 성적은 자동으로 연동돼요. 확정 전까지 등급별로 나뉜 예상 보장이에요.',
+        verdictKind: claimNo ? 'no' : s.claimSeverity,
+        verdictLabel: claimNo ? '보장 대상이 아니에요' : (s.claimSeverity === 'severe' ? '중증 등급으로 보장 대상이에요' : '경증 등급으로 보장 대상이에요'),
+        verdictDesc: claimNo
+          ? `수능 ${p.score}점, 예상 점수 63점 대비 ${p.drop}점 하락했지만, 보장 기준선 48점은 넘었어요. 기준선(예상 범위 하단) 대비 15점 초과 하락이어야 보장돼요.`
+          : (s.claimSeverity === 'severe'
+            ? `수능 ${p.score}점, 예상 점수 63점 대비 ${p.drop}점 하락했어요. 25점 이상 하락한 중증 등급으로, ${s.claimForm} 중증 보장이 적용돼요.`
+            : `수능 ${p.score}점, 예상 점수 63점 대비 ${p.drop}점 하락했어요. 15~24점 하락한 경증 등급으로, ${s.claimForm} 경증 보장이 적용돼요.`),
+        tierLine: s.claimForm,
+        gradeLine: claimGradeLabel,
+        limitLine: wonFmt(claimLimit),
+      };
+    }
+
+    // ── 홈 진입 카드(examPassed일 때 대체 표시) ──
+    let claimHome = null;
+    if (examPassed) {
+      let kind, title, desc, gaugeData;
+      if (claimNo) {
+        kind = 'no'; title = '이번 수능은 보장 대상이 아니에요';
+        desc = '하락폭이 보장 기준을 넘지 못했어요. 판정 근거를 확인하고 이의를 신청할 수 있어요.';
+        gaugeData = null;
+      } else if (claimRW.window === 'dead') {
+        kind = 'dead'; title = '보장 자격이 종료됐어요';
+        desc = `${claimYear}년 12월 31일이 지나 남은 한도 ${manFmt(claimEngine.remaining)}이 소멸했어요.`;
+        gaugeData = claimGauge(claimEngine.cumEnt, 0, false);
+      } else if (claimRW.window === 'wait') {
+        kind = 'wait'; title = `${claimRoundMeta.label.charAt(0)}차 청구는 ${claimRW.round === 1 ? '6월 1일' : '12월 1일'}부터 열려요`;
+        desc = `그 사이 결제 내역을 자동으로 모으고 있어요. 모인 금액 ${manFmt(claimEngine.thisCost)}.`;
+        gaugeData = claimGauge(claimEngine.prevPaid, 0, false);
+      } else {
+        kind = 'open'; title = `${claimRoundMeta.label.charAt(0)}차 청구가 열렸어요`;
+        desc = `${claimRoundMeta.deadline}까지 제출할 수 있어요. 연동된 결제 ${manFmt(claimEngine.thisCost)}이 준비돼 있어요.`;
+        gaugeData = claimGauge(claimEngine.prevPaid, 0, true);
+      }
+      claimHome = {
+        kind, title, desc, gauge: gaugeData,
+        eligLine: claimNo ? `${claimExamDateLabel} 판정 · 비대상` : `${claimExamDateLabel} 판정 · ${claimGradeLabel} · 한도 ${manFmt(claimLimit)}`,
+        linkedCount: claimLinkedCards.length,
+        prevPaidLine: claimRW.round === 2 ? `1차 지급완료 · ${manFmt(claimEngine.prevPaid)}` : '아직 청구 내역이 없어요',
+      };
+    }
 
     return {
       isGrades: s.activeTab === 'grades',
@@ -641,8 +913,89 @@ class Component extends React.Component {
       }),
       premiumLabel, renewAt, joinedAt, coverPeriod, dday: 134,
       deltaLabel, deltaColor, riskFactors, payments,
+      paymentsTotalLabel, paymentsReceiptNo,
+      paymentYearChips: paymentYears.map(y => ({
+        year: y, active: y === paymentsYear,
+        onClick: () => this.setState({ paymentsYear: y, paymentsShowAll: false }),
+      })),
+      paymentsVisible, paymentsRemainCount, paymentsShowAll,
+      togglePaymentsShowAll: () => this.setState(s2 => ({ paymentsShowAll: !s2.paymentsShowAll })),
+      paymentDetailView,
+      openPaymentDetail: (p) => this.setState({ paymentDetail: p }),
+      closePaymentDetail: () => this.setState({ paymentDetail: null }),
       goIns02: () => this.setState({ homeScreen: 'ins02' }),
       backIns01: () => this.setState({ homeScreen: 'ins01' }),
+
+      // ── 보험금 청구 ──
+      examPassed,
+      claimHome,
+      claimEligibilityView,
+      claimRoundMeta, claimEngine, claimLimit, claimGradeLabel, claimNo,
+      claimForm: s.claimForm, claimSeverity: s.claimSeverity, claimRound: claimRW.round, claimWindow: claimRW.window,
+      claimJudgeDateLabel, claimValidityEndLabel, claimExamDateLabel, claimDaysUntilOpen, claimYear,
+      claimGaugeMain: examPassed ? claimGauge(claimEngine.prevPaid, s.claimScreen === 'calc' ? claimEngine.payout : 0, false) : null,
+      claimIs: {
+        home: s.claimScreen === 'home', eligibility: s.claimScreen === 'eligibility', syncing: s.claimScreen === 'syncing',
+        link: s.claimScreen === 'link', cardConnecting: s.claimScreen === 'cardConnecting', intro: s.claimScreen === 'intro',
+        step1: s.claimScreen === 'step1', pay: s.claimScreen === 'pay', calc: s.claimScreen === 'calc',
+        submitting: s.claimScreen === 'submitting', done: s.claimScreen === 'done', status: s.claimScreen === 'status',
+        windowClosed: s.claimScreen === 'windowClosed', expired: s.claimScreen === 'expired',
+      },
+      goClaim: (screen) => this.setState({ claimScreen: screen }),
+      backClaimHome: () => this.setState({ claimScreen: 'home' }),
+
+      claimLinkedCards, claimOffCards,
+      claimLinkSummary: (() => {
+        const collected = [...this.claimVisibleCosts(1, s), ...this.claimVisibleCosts(2, s)].filter(c => c.auto);
+        const total = collected.reduce((sum, c) => sum + c.amt, 0);
+        return { count: claimLinkedCards.length, items: collected.length, totalLabel: manFmt(total), lastSync: s.claimLastSync, recent: collected.slice(-3).reverse().map(c => claimCostRow(c, false)) };
+      })(),
+      openClaimLink: (from) => {
+        this.setState({ claimLinkReturn: from || 'home' });
+        const anyLinked = Object.values(this.state.claimCardsOn).some(Boolean);
+        if (!anyLinked) { this.setState({ claimScreen: 'link' }); return; }
+        this.setState({ claimScreen: 'syncing' });
+        setTimeout(() => { this.setState({ claimLastSync: '방금', claimScreen: 'link' }); }, 900);
+      },
+      backClaimLink: () => this.setState(s2 => ({ claimScreen: s2.claimLinkReturn || 'home' })),
+      claimConnectingCard: s.claimConnectingCard ? claimCardOf(s.claimConnectingCard) : null,
+      connectClaimCard: (id) => {
+        this.setState({ claimConnectingCard: id, claimScreen: 'cardConnecting' });
+        setTimeout(() => {
+          this.setState(s2 => {
+            const tails = { ...s2.claimCardTails };
+            if (!tails[id]) tails[id] = String(1000 + Math.floor(Math.random() * 8999));
+            return { claimCardsOn: { ...s2.claimCardsOn, [id]: true }, claimCardTails: tails, claimScreen: 'link' };
+          });
+        }, 1200);
+      },
+      toggleClaimCard: (id) => this.setState(s2 => ({ claimCardsOn: { ...s2.claimCardsOn, [id]: !s2.claimCardsOn[id] } })),
+      toggleClaimCost: (id) => this.setState(s2 => ({ claimCostsOn: { ...s2.claimCostsOn, [id]: s2.claimCostsOn[id] === false ? true : false } })),
+      claimAutoCosts1: this.claimVisibleCosts(1, s).filter(c => c.auto).map(c => claimCostRow(c, true)),
+      claimManualCosts1: this.claimVisibleCosts(1, s).filter(c => !c.auto).map(c => claimCostRow(c, true)),
+      claimStepCosts: this.claimVisibleCosts(claimRW.round, s).filter(c => c.auto).map(c => claimCostRow(c, true))
+        .concat(this.claimVisibleCosts(claimRW.round, s).filter(c => !c.auto).map(c => claimCostRow(c, true))),
+      claimWindowCosts: this.claimVisibleCosts(claimRW.round, s).map(c => claimCostRow(c, false)),
+      claimUpload: s.claimUpload,
+      toggleClaimUpload: () => this.setState(s2 => ({ claimUpload: !s2.claimUpload })),
+      claimAgreeGuardian: s.claimAgreeGuardian,
+      toggleClaimAgreeGuardian: () => this.setState(s2 => ({ claimAgreeGuardian: !s2.claimAgreeGuardian })),
+      claimAgreeFinal: s.claimAgreeFinal,
+      toggleClaimAgreeFinal: () => this.setState(s2 => ({ claimAgreeFinal: !s2.claimAgreeFinal })),
+      claimStep1CtaDisabled: !(claimEngine.thisCost > 0 && s.claimAgreeGuardian),
+      claimStep3CtaDisabled: !s.claimAgreeFinal,
+      goClaimStep1: () => this.setState({ claimScreen: 'step1' }),
+      goClaimPay: () => this.setState({ claimScreen: 'pay' }),
+      goClaimCalc: () => this.setState({ claimScreen: 'calc' }),
+      claimFormVoucherPct: this.costForms[s.claimForm].voucherPct,
+      claimFormCashPct: 100 - this.costForms[s.claimForm].voucherPct,
+      claimVoucherAmt: wonFmt(claimEngine.payout * this.costForms[s.claimForm].voucherPct / 100),
+      claimCashAmt: wonFmt(claimEngine.payout - claimEngine.payout * this.costForms[s.claimForm].voucherPct / 100),
+      submitClaim: () => {
+        this.setState({ claimScreen: 'submitting' });
+        setTimeout(() => this.setState({ claimScreen: 'done' }), 1300);
+      },
+      wonFmt, manFmt,
       goLlm: () => this.openLlm('ins01'),
       goLlmSeeded: () => { this.openLlm('ins01'); this.askLLM('왜 수학 변동성이 보험료에 영향을 주나요?'); },
       backIns02: () => this.setState({ homeScreen: 'ins02' }),
@@ -652,7 +1005,12 @@ class Component extends React.Component {
       llmMessages: s.llmMessages, llmLoading: s.llmLoading,
       llmInput: s.llmInput,
       onLlmInput: e => this.setState({ llmInput: e.target.value }),
-      submitLlm: () => { const q = (this.state.llmInput || '').trim(); if (q) this.askLLM(q); },
+      submitLlm: () => {
+        const q = (this.state.llmInput || '').trim();
+        if (!q) return;
+        this.askLLM(q);
+        if (this.chatInputRef.current) this.chatInputRef.current.style.height = 'auto';
+      },
 
       myIs: { main: s.myScreen === 'main', statusDetail: s.myScreen === 'statusDetail', gradeHistory: s.myScreen === 'gradeHistory', scan: s.myScreen === 'scan', analyzing: s.myScreen === 'analyzing', result: s.myScreen === 'result', appeal: s.myScreen === 'appeal', payment: s.myScreen === 'payment', address: s.myScreen === 'address', notifSettings: s.myScreen === 'notifSettings', terms: s.myScreen === 'terms' },
       goStatusDetail: () => this.setState({ myScreen: 'statusDetail' }),
@@ -677,12 +1035,16 @@ class Component extends React.Component {
       }),
       termsRows: ['보험상품 약관'],
       statusHistory: this.statusHistoryDefs,
-      examHistory: this.examLabels.map((label, i) => ({
-        label,
-        kor: this.subjects.국어.traj[i], math: this.subjects.수학.traj[i],
-        eng: this.subjects.영어.traj[i], sci: this.subjects.탐구.traj[i],
-        percentile: Math.round(comp[i]),
-      })).reverse(),
+      examHistory, examAllOpen,
+      examSortDesc,
+      toggleExamSort: () => this.setState(s2 => ({ examSortDesc: (s2.examSortDesc === false) ? true : false })),
+      examOpen: s.examOpen || {},
+      toggleExamOpen: (label) => this.setState(s2 => ({ examOpen: { ...s2.examOpen, [label]: !s2.examOpen[label] } })),
+      toggleAllExams: () => {
+        const next = {};
+        examHistoryChron.forEach(e => { next[e.label] = !examAllOpen; });
+        this.setState({ examOpen: next });
+      },
       gradeBadgeLabel: gb.label,
       gradeBadgeStyle: `font-size:9.5px;font-weight:700;color:${gb.color};background:${gb.bg};padding:3px 9px;border-radius:20px;white-space:nowrap`,
       gradeStateDesc: gb.desc,
@@ -711,7 +1073,7 @@ class Component extends React.Component {
       startInput: () => this.setState({ converterScreen: 'input' }),
       backConv: () => {
         const map = { input: 'intro', costbase: 'input', result: 'costbase' };
-        this.setState({ converterScreen: map[s.converterScreen] || 'intro' });
+        this.setState({ converterScreen: map[s.converterScreen] || 'intro', resultDetail: false });
       },
       saveChips: this.chipList(this.saveOptions, s.save_m, 'save_m'),
       siblingChips: this.chipList(this.siblingOptions, s.siblingCount, 'siblingCount'),
@@ -739,7 +1101,7 @@ class Component extends React.Component {
       adjSignLabel: s.region,
       convLoading: s.convLoading,
       goResult: () => {
-        this.setState({ convLoading: true });
+        this.setState({ convLoading: true, resultDetail: false });
         setTimeout(() => this.setState({ convLoading: false, converterScreen: 'result' }), 1700);
       },
       costForm: s.costForm,
@@ -747,11 +1109,14 @@ class Component extends React.Component {
       formVoucherPct: form.voucherPct, formCashPct: 100 - form.voucherPct,
       oppAmountLabel: fmtWon(this.OPP_AMOUNT),
       hasAnyCard, noCards: !hasAnyCard,
+      resultDetail: s.resultDetail,
+      toggleResultDetail: () => this.setState(s2 => ({ resultDetail: !s2.resultDetail })),
       saveMonths, tuitionSemesters, retirePct, incomeMonths,
+      saveValLabel, incomeValLabel, semesterCostLabel, retireGoalLabel,
       costSelfLabel: fmtWon(selfPay), costCoveredLabel: fmtWon(covered),
-      backToInput: () => this.setState({ converterScreen: 'input' }),
+      backToInput: () => this.setState({ converterScreen: 'input', resultDetail: false }),
       goToGrades: () => this.setState({ activeTab: 'grades', gradeSeg: 0 }),
-      homeTab, gradesTab, converterTab, mypageTab,
+      homeTab, gradesTab, converterTab, mypageTab, aiTab,
     };
   }
 
@@ -986,7 +1351,7 @@ class Component extends React.Component {
 
               {/* 화면 하단에서 왼쪽 → 오른쪽으로 걸어가는 캐릭터 */}
               <div style={S("position:absolute;left:0;right:0;bottom:0;height:64px;overflow:hidden")}>
-                <div style={S("position:absolute;bottom:8px;width:50px;height:50px;animation:su-walk-x 5.5s linear infinite")}>
+                <div style={S("position:absolute;bottom:8px;width:50px;height:50px;animation:su-walk-x 2.4s linear infinite")}>
                   <img src={IMG_F7F53234} alt="재수없수 캐릭터" style={S("width:100%;height:100%;object-fit:contain;animation:su-walk-y 0.5s ease-in-out infinite")} />
                 </div>
               </div>
@@ -998,7 +1363,7 @@ class Component extends React.Component {
             <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:10px")}>
               <img src={IMG_F7F53234} alt="재수없수 로고" style={S("width:64px;height:64px;object-fit:contain;margin-bottom:6px")} />
               <div style={S("font-size:21px;font-weight:900;color:#0B8F58;letter-spacing:-0.8px")}>재수없수</div>
-              <div style={S("font-size:12px;color:#0B8F58;font-weight:700;margin-bottom:18px;letter-spacing:-0.2px")}>재수없는 우리 아이! 부담없는 우리집!</div>
+              <div style={S("font-size:12px;color:#0B8F58;font-weight:500;margin-bottom:18px;letter-spacing:-0.2px")}>재수없는 우리 아이! 부담없는 우리집!</div>
               <input type="text" placeholder="아이디" style={S("width:100%;height:48px;border:1px solid #E5E5E5;border-radius:16px;padding:0 14px;font-size:12px;font-family:inherit;box-sizing:border-box")} />
               <input type="password" placeholder="비밀번호" style={S("width:100%;height:48px;border:1px solid #E5E5E5;border-radius:16px;padding:0 14px;font-size:12px;font-family:inherit;box-sizing:border-box;margin-top:8px")} />
               <div style={S("width:100%;background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:13px;font-weight:700;border-radius:16px;height:50px;display:flex;align-items:center;justify-content:center;margin-top:16px;cursor:pointer")} onClick={vm.doLogin}>로그인</div>
@@ -1007,10 +1372,7 @@ class Component extends React.Component {
           </>)}
           {(vm.mode === 'app' && vm.loggedIn) && (<>
             <div style={S("height:62px;flex:none;display:flex;align-items:center;justify-content:center;position:relative;border-bottom:1px solid #F2F2F2")}>
-              <div style={S("display:flex;align-items:center;gap:9px")}>
-                <img src={IMG_LOGO_DARK} alt="재수없수 로고" style={S("width:40px;height:40px;border-radius:12px;object-fit:cover")} />
-                <span style={S("font-size:22px;font-weight:900;color:#0B8F58;letter-spacing:-0.8px")}>재수없수</span>
-              </div>
+              <img src={IMG_LOGO_DARK} alt="재수없수 로고" style={S("width:40px;height:40px;border-radius:12px;object-fit:cover")} />
               <div style={S("position:absolute;right:18px;display:flex")} onClick={vm.openNotifications}>
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0B8F58" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"></path>
@@ -1083,9 +1445,8 @@ class Component extends React.Component {
                         </React.Fragment>
                       ))}
                     </svg>
-                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-left:4px solid #D9534F;border-radius:16px;padding:10px 12px;margin-top:10px;font-size:12px;color:#555;line-height:1.6")}>
-                      빨간 선(48점)은 
-                      <b>보험 보장 기준선</b>
+                    <div style={S("background:#FCE9EC;border-radius:16px;padding:10px 12px;margin-top:10px;font-size:12px;color:#9A3B3B;line-height:1.6")}>
+                      빨간 선(48점)은 <b style={S("color:#9A3B3B")}>보험 보장 기준선</b>
                       이에요. 평소 예상 범위보다 15점 넘게 떨어지는 건 실력이 아니라 '그날의 불운'으로 보고, 이 선 아래로 내려가 재수하게 되면 보험이 재수 비용을 보장해요.
                     </div>
                   </div>
@@ -1155,10 +1516,10 @@ class Component extends React.Component {
             
                     </div>
                   </div>
-                  <div style={S("background:#fff;border:1px solid #E2E2E2;border-left:4px solid #0B8F58;border-radius:22px;padding:15px 16px")}>
-                    <div style={S("font-size:12.5px;font-weight:700;color:#111")}>💡 고3 성적이 내려간 것처럼 보여도 걱정 마세요</div>
-                    <div style={S("font-size:10.5px;color:#333;line-height:1.6;margin-top:8px")}>
-                      고3이 되면 재수생들이 시험에 들어와서 등수(백분위)가 자연스럽게 내려가요. 
+                  <div style={S("background:#E4F5EC;border-radius:22px;padding:15px 16px")}>
+                    <div style={S("font-size:12.5px;font-weight:700;color:#0B8F58")}>💡 고3 성적이 내려간 것처럼 보여도 걱정 마세요</div>
+                    <div style={S("font-size:10.5px;color:#3F5B4E;line-height:1.6;margin-top:8px")}>
+                      고3이 되면 재수생들이 시험에 들어와서 등수(백분위)가 자연스럽게 내려가요.
                       <b>실력이 떨어진 게 아니라 경쟁자가 늘어난 것</b>
                        — 위 예상 점수는 이 효과를 빼고 계산했어요.
                     </div>
@@ -1167,7 +1528,7 @@ class Component extends React.Component {
                 {(vm.segIs1) && (<>
                   <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;padding:18px")}>
                     <div style={S("display:flex;align-items:center;justify-content:space-between")}>
-                      <span style={S("font-size:14px;font-weight:800;color:#111")}>성적 꾸준함 점수</span>
+                      <span style={S("font-size:14px;font-weight:800;color:#111")}>안정성 점수</span>
                       <span style={S(`font-size:10.5px;font-weight:700;color:#fff;background:${vm.stabilityColor};padding:4px 11px;border-radius:20px;flex:none`)}>{vm.stabilityLabel}</span>
                     </div>
                     <div style={S("display:flex;align-items:baseline;gap:6px;margin-top:14px")}>
@@ -1178,20 +1539,22 @@ class Component extends React.Component {
                       <div style={S(`height:100%;border-radius:7px;background:${vm.stabilityColor};width:${vm.stability}%`)}></div>
                     </div>
                     <div style={S("font-size:11.5px;color:#666;line-height:1.65;margin-top:14px")}>
-                      점수가 클수록 시험마다 성적이 <b>꾸준</b>하다는 뜻이에요. 지금은 <b style={S("color:#111")}>{vm.topVolSubj}</b> 과목의 등락이 가장 커서, 이 과목의 컨디션 관리가 보험료 안정에 도움이 돼요.
+                      점수가 클수록 시험마다 성적이 <b>안정적</b>이라는 뜻이에요. 지금은 <b style={S("color:#111")}>{vm.topVolSubj}</b> 과목의 등락이 가장 커서, 이 과목의 컨디션 관리가 보험료 안정에 도움이 돼요.
                     </div>
                   </div>
 
                   <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;padding:18px")}>
                     <div style={S("display:flex;align-items:baseline;justify-content:space-between")}>
-                      <span style={S("font-size:13.5px;font-weight:800;color:#111")}>과목별 변동성</span>
+                      <span style={S("font-size:13.5px;font-weight:800;color:#111")}>과목별 안정성</span>
                       <span style={S("font-size:9px;color:#B4B9C2;font-weight:600")}>낮음 ← 0 · 100 → 높음</span>
                     </div>
-                    <div style={S("font-size:10px;color:#999;margin-top:4px")}>숫자가 클수록 성적 기복이 큰 과목이에요</div>
+                    <div style={S("font-size:10px;color:#999;margin-top:4px")}>숫자가 클수록 성적이 안정적인 과목이에요</div>
                     <div style={S("display:flex;flex-direction:column;margin-top:12px")}>
                       {(vm.volCards || []).map((v, $index) => {
                         const p = ({국어:{ink:'#0B7A4A'},수학:{ink:'#1E56C8'},영어:{ink:'#C43B7E'},탐구:{ink:'#C06A08'}})[v.name] || {ink:'#6B3AD1'};
-                        const w = Math.min(v.vol, 100);
+                        const stab = Math.max(0, 100 - v.vol);
+                        const w = Math.min(stab, 100);
+                        const stabLevel = v.level === '높음' ? '낮음' : v.level === '낮음' ? '높음' : '보통';
                         return (
                         <React.Fragment key={$index}>
                           <div style={S(`display:flex;align-items:center;gap:10px;padding:9px 0;${$index>0?'border-top:1px solid #F2F3F5;':''}`)}>
@@ -1199,20 +1562,20 @@ class Component extends React.Component {
                             <div style={S("flex:1;min-width:0;height:9px;background:#F0F1F4;border-radius:5px;position:relative;overflow:hidden")}>
                               <div style={S(`position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:${p.ink};opacity:0.9;width:${w}%`)}></div>
                             </div>
-                            <span style={S(`font-size:15px;font-weight:900;color:${p.ink};width:26px;text-align:right;flex:none;letter-spacing:-0.5px`)}>{v.vol}</span>
-                            <span style={S(`font-size:9px;font-weight:800;color:${p.ink};background:${p.ink}1A;border-radius:20px;padding:3px 8px;flex:none;width:34px;text-align:center;box-sizing:border-box`)}>{v.level}</span>
+                            <span style={S(`font-size:15px;font-weight:900;color:${p.ink};width:26px;text-align:right;flex:none;letter-spacing:-0.5px`)}>{stab}</span>
+                            <span style={S(`font-size:9px;font-weight:800;color:${p.ink};background:${p.ink}1A;border-radius:20px;padding:3px 8px;flex:none;width:34px;text-align:center;box-sizing:border-box`)}>{stabLevel}</span>
                           </div>
                         </React.Fragment>
                         );
                       })}
                     </div>
-                    <div style={S("font-size:9.5px;color:#AAA;margin-top:12px;line-height:1.5")}>※ 변동성 지수는 최근 모의고사 성적의 등락 폭(표준편차)을 0~100으로 환산한 값이에요.</div>
+                    <div style={S("font-size:9.5px;color:#AAA;margin-top:12px;line-height:1.5;white-space:nowrap;letter-spacing:-0.1px")}>※ 안정성 지수는 최근 모의고사 성적의 등락 폭(표준편차)이 작을수록 높게 환산한 값이에요.</div>
                   </div>
                 </>)}
                 {(vm.segIs1) && (<>
                   <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;padding:18px")}>
                     <div style={S("font-size:13.5px;font-weight:800;color:#111")}>과목 포지션 한눈에 보기</div>
-                    <div style={S("font-size:10px;color:#999;margin-top:4px")}>가로축 = 점수 수준 · 세로축 = 성적 꾸준함. 왼쪽 아래일수록 먼저 챙겨야 해요.</div>
+                    <div style={S("font-size:10px;color:#999;margin-top:4px")}>가로축 = 점수 수준 · 세로축 = 안정성. 왼쪽 아래일수록 먼저 챙겨야 해요.</div>
                     <svg viewBox="0 0 300 230" style={S("width:100%;margin-top:12px")}>
                       {/* 사분면 배경 */}
                       <rect x="45" y="18" width="117" height="92" fill="#F3F4F6"></rect>
@@ -1223,16 +1586,16 @@ class Component extends React.Component {
                       <line x1="162" y1="18" x2="162" y2="202" stroke="#fff" strokeWidth="2"></line>
                       <line x1="45" y1="110" x2="280" y2="110" stroke="#fff" strokeWidth="2"></line>
                       {/* 사분면 라벨 */}
-                      <text x="52" y="32" fontSize="8.5" fontWeight="700" fill="#C0304A">🚨 먼저 챙길</text>
-                      <text x="228" y="32" fontSize="8.5" fontWeight="700" fill="#0B8F58" textAnchor="end">강점 💪</text>
-                      <text x="52" y="197" fontSize="8.5" fontWeight="700" fill="#8A9098">🌱 차근차근</text>
+                      <text x="52" y="197" fontSize="8.5" fontWeight="700" fill="#C0304A">🚨 먼저 챙길</text>
+                      <text x="273" y="32" fontSize="8.5" fontWeight="700" fill="#0B8F58" textAnchor="end">💪 강점 </text>
+                      <text x="52" y="32" fontSize="8.5" fontWeight="700" fill="#8A9098">🌱 차근차근</text>
                       <text x="273" y="197" fontSize="8.5" fontWeight="700" fill="#B45309" textAnchor="end">⚠️ 당일 변수</text>
                       {/* 축 화살표 */}
                       <defs><marker id="ah" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#111"></path></marker></defs>
                       <line x1="45" y1="202" x2="288" y2="202" stroke="#111" strokeWidth="1.5" markerEnd="url(#ah)"></line>
                       <line x1="45" y1="202" x2="45" y2="12" stroke="#111" strokeWidth="1.5" markerEnd="url(#ah)"></line>
-                      <text x="286" y="216" fontSize="9" fontWeight="700" fill="#111" textAnchor="end">점수 높음 →</text>
-                      <text x="38" y="16" fontSize="9" fontWeight="700" fill="#111" transform="rotate(-90 38 16)" textAnchor="start">꾸준함 ↑</text>
+                      <text x="286" y="216" fontSize="9" fontWeight="500" fill="#111" textAnchor="end">점수 높음 →</text>
+                      <text x="37" y="20" fontSize="9" fontWeight="500" fill="#111" textAnchor="end">안정성 ↑</text>
                       {/* 과목 점 */}
                       {(vm.priorityList || []).map((p, $pi) => {
                         const cx = 45 + (Math.min(Math.max(p.mean,25),95)-25)/70*235;
@@ -1270,34 +1633,27 @@ class Component extends React.Component {
               </>)}
               {(vm.isConverter) && (<>
                 {(vm.convIs.intro) && (<>
-                  <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:0;justify-content:center")}>
-                    <div style={S("font-size:20px;font-weight:800;color:#111;line-height:1.4")}>
-                      재수 비용,
-                      <br />
-                      우리 집 기준으로 얼마일까요?
+                  <div style={S("flex:1;display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;min-height:0")}>
+                    <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:0")}>
+                      <div style={S("font-size:30px;font-weight:500;color:#2F3D36;line-height:1.4;margin-top:37px;flex:none")}>
+                        <span style={S("color:#0B8F58;font-weight:800")}>재수 비용</span>,
+                        <br />
+                        우리 집 기준으로 <span style={S("color:#0B8F58;font-weight:800")}>얼마</span>일까요?
+                      </div>
+                      <div style={S("flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0")}>
+                        <img src={IMG_DONWORRY} alt="재수 비용 계산" style={S("width:190px;height:auto")} />
+                      </div>
                     </div>
-                    <img src={IMG_D810F4E9} alt="재수 비용 계산" style={S("width:150px;height:150px;object-fit:contain;margin-top:24px")} />
-                    <div style={S("font-size:13px;color:#888;line-height:1.6;margin-top:14px")}>
-                      학원비 통계가 아니라, 
-                      <b>우리 집의 저축·등록금·노후 계획</b>
-                      <br />
-                      단위로 바꿔서 보여드려요.
+                    <div style={S("width:100%;flex:none;margin-bottom:-90px")}>
+                      <div style={S("font-size:12px;color:#0B8F58;font-weight:500;margin-bottom:14px")}>입력하신 정보는 보험료와 무관하며 기기에만 저장돼요.</div>
+                      <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:15px;font-weight:700;border-radius:16px;height:54px;width:100%;display:flex;align-items:center;justify-content:center")} onClick={vm.startInput}>1분 만에 계산하기</div>
                     </div>
                   </div>
-                  <div style={S("font-size:12px;color:#0B8F58;font-weight:700;margin-bottom:14px")}>입력하신 정보는 보험료와 무관하며 기기에만 저장돼요.</div>
-                  <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:15px;font-weight:700;border-radius:16px;height:54px;width:100%;display:flex;align-items:center;justify-content:center")} onClick={vm.startInput}>1분 만에 계산하기</div>
                 </>)}
                 {(vm.convIs.input) && (<>
                   <div style={S("display:flex;align-items:center;gap:6px")} onClick={vm.backConv}>
                     <span style={S("font-size:15px;color:#555")}>‹</span>
                     <span style={S("font-size:11px;color:#555")}>뒤로</span>
-                  </div>
-                  <div style={S("background:#fff;border:1px solid #E2E2E2;border-left:4px solid #0B8F58;border-radius:16px;padding:11px 12px;font-size:10px;color:#333;line-height:1.6")}>
-                    🔒 여기 입력하는 정보는 
-                    <b>보험료 계산에 쓰이지 않고</b>
-                    , 서버로 보내지 않고 
-                    <b>이 기기에만 저장</b>
-                    돼요. 언제든 지울 수 있어요.
                   </div>
                   <div style={S("background:#fff;border:1px solid #EAF0EC;border-radius:18px;padding:15px 15px 16px;box-shadow:0 4px 14px rgba(11,143,88,0.05)")}>
                     <div style={S("display:flex;align-items:center;gap:7px")}>
@@ -1365,7 +1721,10 @@ class Component extends React.Component {
                       <div style={S("font-size:9px;color:#A6ADA9;margin-top:8px")}>미입력 시 평균 가구 기준값(660만원)이 적용돼요</div>
                     </>)}
                   </div>
-                  <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:15px;font-weight:700;border-radius:20px;height:58px;width:100%;box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:center;margin-top:4px")} onClick={vm.goCostBase}>다음</div>
+                  <div style={S("font-size:10px;color:#888;line-height:1.6")}>
+                    🔒 여기 입력하는 정보는 <b>보험료 계산에 쓰이지 않고</b> 서버로 보내지 않고 <b>이 기기에만 저장</b>돼요. 언제든 지울 수 있어요.
+                  </div>
+                  <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:15px;font-weight:600;border-radius:20px;height:40px;width:100%;box-sizing:border-box;flex:none;display:flex;align-items:center;justify-content:center;margin-top:4px")} onClick={vm.goCostBase}>다음</div>
                 </>)}
                 {(vm.convIs.costbase) && (<>
                   <div style={S("display:flex;align-items:center;gap:6px")} onClick={vm.backConv}>
@@ -1377,8 +1736,11 @@ class Component extends React.Component {
                     <div style={S("font-size:12.5px;color:#888;margin-top:6px")}>평균 통계로 시작하고, 우리 동네 시세에 맞게 조정하세요.</div>
                   </div>
                   {/* ① 재수 유형 선택 */}
-                  <div>
-                    <div style={S("font-size:13px;font-weight:800;color:#1A2620;margin-bottom:8px")}>재수 유형 선택</div>
+                  <div style={S("background:#fff;border:1px solid #EAF0EC;border-radius:18px;padding:15px 15px 16px;box-shadow:0 4px 14px rgba(11,143,88,0.05)")}>
+                    <div style={S("display:flex;align-items:center;gap:7px;margin-bottom:11px")}>
+                      <span style={S("font-size:15px")}>🎯</span>
+                      <span style={S("font-size:12.5px;font-weight:800;color:#1A2620")}>재수 유형 선택</span>
+                    </div>
                     <div style={S("display:grid;grid-template-columns:1fr 1fr;gap:8px")}>
                       {(vm.formChips || []).map((c, $index) => (
                         <React.Fragment key={$index}>
@@ -1390,27 +1752,30 @@ class Component extends React.Component {
                     </div>
                   </div>
                   {/* ② 우리 동네 시세 조정 */}
-                  <div>
-                    <div style={S("font-size:14px;font-weight:700;color:#111")}>우리 동네 시세에 맞게 조정</div>
+                  <div style={S("background:#fff;border:1px solid #EAF0EC;border-radius:18px;padding:15px 15px 16px;box-shadow:0 4px 14px rgba(11,143,88,0.05)")}>
+                    <div style={S("display:flex;align-items:center;gap:7px")}>
+                      <span style={S("font-size:15px")}>📍</span>
+                      <span style={S("font-size:12.5px;font-weight:800;color:#1A2620")}>우리 동네 시세에 맞게 조정</span>
+                    </div>
                     <div style={S("font-size:10.5px;color:#888;margin-top:4px")}>지역마다 학원 시세가 달라요. 우리 동네를 골라주세요.</div>
                     <div style={S("display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px")}>
                       {(vm.regionChips || []).map((r, $index) => (
                         <React.Fragment key={$index}>
                           <div style={S(`border-radius:16px;padding:11px 12px;cursor:pointer;box-sizing:border-box;border:1.5px solid ${r.sel ? '#0B8F58' : '#E5E5E5'};background:${r.sel ? 'rgba(11,143,88,0.07)' : '#fff'}`)} onClick={r.onClick}>
-                            <div style={S(`font-size:12px;font-weight:700;color:${r.sel ? '#0B8F58' : '#111'}`)}>{r.name}</div>
+                            <div style={S(`font-size:12px;font-weight:400;color:${r.sel ? '#0B8F58' : '#111'}`)}>{r.name}</div>
                             <div style={S("font-size:9px;color:#999;margin-top:2px")}>{r.desc}</div>
                           </div>
                         </React.Fragment>
                       ))}
                     </div>
-                    <div style={S("font-size:11px;color:#0B8F58;font-weight:700;margin-top:10px")}>
+                    <div style={S("font-size:11px;color:#0B8F58;font-weight:400;margin-top:10px")}>
                       {vm.adjLabel}
                     </div>
                   </div>
                   {/* ③ 월 평균 비용 요약 (연두-연노랑) */}
                   <div style={S("background:linear-gradient(140deg,#EAF7EC 0%,#FBFBE6 100%);border:1.5px solid #CFE9D6;border-radius:22px;padding:20px 18px;box-shadow:0 8px 22px rgba(11,143,88,0.08)")}>
                     <div style={S("display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:2px 0")}>
-                      <span style={S("color:#4B6B58;font-weight:600")}>월 평균 비용</span>
+                      <span style={S("color:#4B6B58;font-weight:500")}>월 평균 비용</span>
                       <span style={S("font-weight:800;color:#0B5E3A")}>
                         {vm.formMonthlyLabel}
                       </span>
@@ -1425,7 +1790,7 @@ class Component extends React.Component {
                       </span>
                     </div>
                   </div>
-                  <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:15px;font-weight:700;border-radius:16px;min-height:60px;flex:none;box-sizing:border-box;padding:18px;display:flex;align-items:center;justify-content:center;margin-top:4px")} onClick={vm.goResult}>우리 집 기준으로 환산하기</div>
+                  <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:15px;font-weight:600;border-radius:16px;height:40px;width:100%;flex:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;margin-top:4px")} onClick={vm.goResult}>우리 집 기준으로 환산하기</div>
                 </>)}
                 {(vm.convIs.result) && (<>
                   <div style={S("display:flex;align-items:center;gap:6px")} onClick={vm.backConv}>
@@ -1433,7 +1798,7 @@ class Component extends React.Component {
                     <span style={S("font-size:11px;color:#555")}>뒤로</span>
                   </div>
                   <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;padding:18px 16px;text-align:center")}>
-                    <div style={S("font-size:12px;font-weight:700;color:#111")}>1년동안 발생하는 재수 비용은 얼마일까요?</div>
+                    <div style={S("font-size:14px;font-weight:500;color:#111")}>1년동안 발생하는 재수 비용은 얼마일까요?</div>
                     <div style={S("font-size:31px;font-weight:900;color:#0B8F58;margin-top:10px")}>
                       {vm.costTotalLabel}
                     </div>
@@ -1441,62 +1806,68 @@ class Component extends React.Component {
                       {vm.costForm} · {vm.adjSignLabel} 시세 반영
                     </div>
                   </div>
-                  <div style={S("background:#0B8F58;border-radius:22px;padding:15px 16px")}>
+                  <div style={S("background:#0B8F58;border-radius:26px;padding:40px 20px")}>
                     <div style={S("display:flex;align-items:center;gap:8px")}>
-                      <span style={S("font-size:12px;font-weight:700;color:#fff;white-space:nowrap")}>지금 가입한 보장을 적용하면</span>
-                      <span style={S("font-size:8.5px;background:#fff;border-radius:20px;padding:2px 8px;color:#0B8F58;font-weight:700;white-space:nowrap;flex-shrink:0")}>스탠다드</span>
+                      <span style={S("font-size:17px;font-weight:700;color:#fff;white-space:nowrap")}>지금 가입한 보장을 적용하면</span>
+                      <span style={S("font-size:12px;background:#fff;border-radius:20px;padding:4px 12px;color:#0B8F58;font-weight:700;white-space:nowrap;flex-shrink:0")}>스탠다드</span>
                     </div>
-                    <div style={S("display:flex;align-items:center;gap:10px;margin-top:12px")}>
+                    <div style={S("display:flex;align-items:center;gap:12px;margin-top:22px")}>
                       <div style={S("flex:1")}>
-                        <div style={S("font-size:9px;color:rgba(255,255,255,0.75)")}>보장 없이</div>
-                        <div style={S("font-size:13px;font-weight:700;color:rgba(255,255,255,0.9)")}>
+                        <div style={S("font-size:13px;color:rgba(255,255,255,0.75)")}>보장 없이</div>
+                        <div style={S("font-size:19px;font-weight:700;color:rgba(255,255,255,0.9)")}>
                           {vm.costTotalLabel}
                         </div>
                       </div>
-                      <span style={S("color:#fff;font-size:15px")}>→</span>
+                      <span style={S("color:#fff;font-size:20px")}>→</span>
                       <div style={S("flex:1")}>
-                        <div style={S("font-size:9px;color:rgba(255,255,255,0.75)")}>내 부담</div>
-                        <div style={S("font-size:21px;font-weight:800;color:#fff")}>
+                        <div style={S("font-size:13px;color:rgba(255,255,255,0.75)")}>내 부담</div>
+                        <div style={S("font-size:30px;font-weight:800;color:#fff")}>
                           {vm.costSelfLabel}
                         </div>
                       </div>
                     </div>
-                    <div style={S("font-size:9.5px;font-weight:700;color:#fff;margin-top:6px")}>
-                      보험이 
-                      <b>
-                        {vm.costCoveredLabel}
-                      </b>
-                       함께 부담해요
+                    <div style={S("font-size:14px;font-weight:700;color:#fff;margin-top:16px")}>
+                      보험이 <b>{vm.costCoveredLabel}을</b> 함께 부담해요
                     </div>
-                    <div style={S("font-size:9px;color:rgba(255,255,255,0.85);margin-top:8px")}>
-                      현물(바우처) {vm.formVoucherPct}% + 현금(실손) {vm.formCashPct}% 지급 · 월 보장 상한 {vm.formCapLabel}
-                    </div>
-                    <div style={S("font-size:9px;color:rgba(255,255,255,0.7);margin-top:8px;line-height:1.5")}>이 시뮬레이션은 실제 보장 상품의 예시 조건을 대입한 결과이며, 가입 시점·인수 조건·특약 구성 및 제휴 학원 계약 상태에 따라 최종 지급 금액과 자기부담금은 달라질 수 있어요.</div>
+                     <div style={S("font-size:11px;color:#fff;margin-top:8px")}>현물(바우처) {vm.formVoucherPct}% + 현금(실손) {vm.formCashPct}% 지급 · 월 보장 상한 {vm.formCapLabel}</div>
                   </div>
                   {(vm.hasAnyCard) && (<>
-                    <div style={S("font-size:14px;font-weight:900;color:#111;margin-bottom:-2px")}>📊 이 금액, 우리집엔 얼마나 클까요?</div>
+                    <div style={S("display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:16px;margin-bottom:-2px")}>
+                      <div style={S("font-size:14px;font-weight:900;color:#111")}><span style={S("background:linear-gradient(to top, #F1E3A6 44%, transparent 44%)")}>{vm.costTotalLabel}</span>, 우리집엔 얼마나 클까요?</div>
+                      <span style={S("display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:#0B8F58;background:rgba(11,143,88,0.1);border:1px solid rgba(11,143,88,0.3);border-radius:20px;padding:5px 11px;white-space:nowrap;flex:none;cursor:pointer")} onClick={vm.toggleResultDetail}>
+                        {(vm.resultDetail) ? (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h6v6"></path><path d="M20 10h-6V4"></path><path d="M14 10l7-7"></path><path d="M3 21l7-7"></path></svg>
+                        ) : (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M16 3h3a2 2 0 0 1 2 2v3"></path><path d="M8 21H5a2 2 0 0 1-2-2v-3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
+                        )}
+                        {vm.resultDetail ? '간단히 접기' : '상세히 보기'}
+                      </span>
+                    </div>
                     <div style={S("font-size:10px;color:#999;margin-top:-8px")}>연간 재수 비용을 우리집 가계 단위로 바꿔봤어요</div>
-                    <div style={S("display:flex;flex-direction:column;gap:12px")}>
+                    <div style={S(`display:flex;flex-direction:column;gap:${vm.resultDetail ? 12 : 8}px;transition:gap .28s ease`)}>
                       {[
-                        {show:vm.saveMonths, icon:'💰', label:'우리집 월 저축액으로', val:vm.saveMonths, unit:'개월', sub:'이만큼 저축해야 모을 수 있는 금액', cap:24, fill:'#E4F5EC', ink:'#0B7A4A'},
-                        {show:vm.tuitionSemesters, icon:'🎓', label:'동생 대학 등록금으로', val:vm.tuitionSemesters, unit:'학기', sub:'이만큼 대학교를 다닐 수 있는 학기', cap:8, fill:'#E7F0FE', ink:'#1E56C8'},
-                        {show:vm.retirePct, icon:'🏦', label:'노후 자금 목표 대비', val:vm.retirePct, unit:'%', sub:'노후 목표액에서 차지하는 비중', cap:100, fill:'#FCF1DF', ink:'#C06A08'},
-                        {show:vm.incomeMonths, icon:'💵', label:'우리집 월 소득으로', val:vm.incomeMonths, unit:'개월', sub:'몇 달치 소득에 해당하는 금액', cap:12, fill:'#F1EAFD', ink:'#6B3AD1'},
+                        {id:'save', show:vm.saveMonths, icon:'💰', label:'우리집 월 저축액으로', val:vm.saveMonths, unit:'개월', sub:'이만큼 저축해야 모을 수 있는 금액이에요', cap:24, fill:'#E4F5EC', ink:'#0B7A4A', formula:`${vm.costTotalLabel} ÷ ${vm.saveValLabel} = ${vm.saveMonths}개월`},
+                        {id:'tuition', show:vm.tuitionSemesters, icon:'🎓', label:'동생 대학 등록금으로', val:vm.tuitionSemesters, unit:'학기', sub:'이만큼 대학교를 다닐 수 있는 학기예요', cap:8, fill:'#E7F0FE', ink:'#1E56C8', formula:`${vm.costTotalLabel} ÷ ${vm.semesterCostLabel} = ${vm.tuitionSemesters}학기`},
+                        {id:'retire', show:vm.retirePct, icon:'🏦', label:'노후 자금 목표 대비', val:vm.retirePct, unit:'%', sub:'노후 목표액에서 차지하는 비중이에요', cap:100, fill:'#FCF1DF', ink:'#C06A08', formula:`${vm.costTotalLabel} ÷ ${vm.retireGoalLabel} × 100 = ${vm.retirePct}%`},
+                        {id:'income', show:vm.incomeMonths, icon:'💵', label:'우리집 월 소득으로', val:vm.incomeMonths, unit:'개월', sub:'몇 달치 소득에 해당하는 금액이에요', cap:12, fill:'#F1EAFD', ink:'#6B3AD1', formula:`${vm.costTotalLabel} ÷ ${vm.incomeValLabel} = ${vm.incomeMonths}개월`},
                       ].filter(x=>x.show).map((x,xi)=>(
                         <React.Fragment key={xi}>
-                          <div style={S(`background:linear-gradient(145deg,${x.fill} 0%,rgba(255,255,255,0.72) 135%);border:1.5px solid rgba(255,255,255,0.85);border-radius:24px;padding:17px 18px;box-shadow:0 10px 26px rgba(0,0,0,0.055),inset 0 1px 2px rgba(255,255,255,0.95);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)`)}>
+                          <div style={S(`background:linear-gradient(145deg,${x.fill} 0%,rgba(255,255,255,0.72) 135%);border:1.5px solid rgba(255,255,255,0.85);border-radius:24px;padding:${vm.resultDetail ? '15px 18px' : '11px 16px'};box-shadow:0 10px 26px rgba(0,0,0,0.055),inset 0 1px 2px rgba(255,255,255,0.95);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:padding .28s ease`)}>
                             <div style={S("display:flex;align-items:center;gap:12px")}>
-                              <div style={S("width:44px;height:44px;border-radius:16px;background:rgba(255,255,255,0.85);box-shadow:0 2px 7px rgba(0,0,0,0.07),inset 0 1px 1px #fff;display:flex;align-items:center;justify-content:center;font-size:21px;flex:none")}>{x.icon}</div>
+                              <div style={S("width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.85);box-shadow:0 2px 7px rgba(0,0,0,0.07),inset 0 1px 1px #fff;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none")}>{x.icon}</div>
                               <div style={S(`flex:1;min-width:0;font-size:12.5px;font-weight:800;color:${x.ink}`)}>{x.label}</div>
                               <div style={S("display:flex;align-items:baseline;gap:2px;flex:none")}>
-                                <span style={S(`font-size:32px;font-weight:800;line-height:0.9;color:${x.ink}`)}>{x.val}</span>
-                                <span style={S(`font-size:13px;font-weight:700;color:${x.ink}`)}>{x.unit}</span>
+                                <span style={S(`font-size:22px;font-weight:800;line-height:0.9;color:${x.ink}`)}>{x.val}</span>
+                                <span style={S(`font-size:12px;font-weight:700;color:${x.ink}`)}>{x.unit}</span>
                               </div>
                             </div>
-                            <div style={S("height:12px;background:rgba(255,255,255,0.55);border-radius:8px;margin-top:14px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,0.05)")}>
-                              <div style={S(`height:100%;border-radius:8px;background:${x.ink};opacity:0.85;width:${Math.max(Math.min(Number(x.val)/x.cap,1)*100,7)}%`)}></div>
+                            <div style={S(`overflow:hidden;transition:max-height .32s ease, opacity .28s ease, margin-top .32s ease;max-height:${vm.resultDetail ? '200px' : '0px'};opacity:${vm.resultDetail ? 1 : 0};margin-top:${vm.resultDetail ? '14px' : '0px'}`)}>
+                              <div style={S("height:12px;background:rgba(255,255,255,0.55);border-radius:8px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,0.05)")}>
+                                <div style={S(`height:100%;border-radius:8px;background:${x.ink};opacity:0.85;width:${Math.max(Math.min(Number(x.val)/x.cap,1)*100,7)}%`)}></div>
+                              </div>
+                              <div style={S(`font-size:9.5px;color:${x.ink};opacity:0.72;margin-top:7px`)}>{x.sub}</div>
+                              <div style={S(`font-size:13px;font-weight:700;color:${x.ink};background:rgba(255,255,255,0.6);border-radius:10px;padding:8px 10px;margin-top:10px;text-align:center;letter-spacing:0px`)}>{x.formula}</div>
                             </div>
-                            <div style={S(`font-size:9.5px;color:${x.ink};opacity:0.72;margin-top:7px`)}>{x.sub}이에요</div>
                           </div>
                         </React.Fragment>
                       ))}
@@ -1509,11 +1880,13 @@ class Component extends React.Component {
                     </div>
                   </>)}
                   <div style={S("font-size:8.5px;color:#AAA")}>환산은 이해를 돕기 위한 참고 계산이에요. 실제 가계 상황과 다를 수 있어요.</div>
-                  <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:12px;font-weight:700;border-radius:16px;height:48px;display:flex;align-items:center;justify-content:center")} onClick={vm.backToInput}>입력 수정</div>
+                  <div style={S("font-size:8.5px;color:#AAA;line-height:1.5")}>이 시뮬레이션은 실제 보장 상품의 예시 조건을 대입한 결과이며, 가입 시점·인수 조건·특약 구성 및 제휴 학원 계약 상태에 따라 최종 지급 금액과 자기부담금은 달라질 수 있어요.</div>
+                  <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:13px;font-weight:500;border-radius:16px;height:32px;flex:none;display:flex;align-items:center;justify-content:center")} onClick={vm.backToInput}>입력 수정</div>
                 </>)}
               </>)}
               {(vm.isHome) && (<>
                 {(vm.homeIs.ins01) && (<>
+                {!(vm.examPassed) && (<>
                   <div style={S("background:linear-gradient(135deg,#076B41 0%,#0B8F58 48%,#23C088 100%);border-radius:26px;padding:22px 20px;color:#fff;box-shadow:0 10px 26px rgba(0,74,44,0.30)")}>
                     <div style={S("font-size:17px;font-weight:900")}>{vm.studentName} 학생 학부모님, 안녕하세요 👋</div>
                     <div style={S("font-size:11.5px;color:rgba(255,255,255,0.88);margin-top:6px;line-height:1.55")}>우리 아이, 오늘도 목표를 향해 가고 있어요.<br/>성적이 오르면 보험료도 함께 관리돼요.</div>
@@ -1544,7 +1917,8 @@ class Component extends React.Component {
                       <div style={S("display:flex;justify-content:space-between")}>
                         <span>보장 기간</span>
                         <span style={S("font-weight:700;color:#111")}>
-                          {vm.coverPeriod}
+                          {vm.coverPeriod.replace('(자동 갱신)', '')}
+                          <span style={S("font-weight:400")}>(자동 갱신)</span>
                         </span>
                       </div>
                     </div>
@@ -1560,7 +1934,33 @@ class Component extends React.Component {
                     <div style={S("font-size:12px;color:#888;margin-top:8px")}>
                       다음 갱신일 {vm.renewAt} · 재산정까지 D-{vm.dday}
                     </div>
-                    <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:14px;font-weight:700;border-radius:16px;height:50px;display:flex;align-items:center;justify-content:center;margin-top:16px")} onClick={vm.goIns02}>상세 내역 보기 ›</div>
+                    <div style={S("border-top:1px solid #EEE;margin-top:16px;padding-top:16px")}>
+                      <div style={S("display:flex;justify-content:space-between;align-items:center")}>
+                        <span style={S("font-size:13.5px;font-weight:700;color:#111")}>왜 이 금액일까요?</span>
+                        <span style={S("font-size:10.5px;color:#999")}>영향 요소 {(vm.riskFactors || []).length}</span>
+                      </div>
+                      {(vm.riskFactors || []).map((r, $index) => {
+                        const badge = (r.level === '높음' || r.level === '상')
+                          ? { bg: '#FBE4E8', fg: '#C0304A' }
+                          : (r.level === '낮음' || r.level === '하')
+                          ? { bg: '#DFF3E7', fg: '#0B8F58' }
+                          : { bg: '#FBEFD8', fg: '#B45309' };
+                        return (
+                          <React.Fragment key={$index}>
+                            <div style={S("margin-top:12px")}>
+                              <div style={S("display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#555")}>
+                                <span>{r.name}</span>
+                                <span style={S(`font-size:10px;font-weight:700;color:${badge.fg};background:${badge.bg};padding:2px 9px;border-radius:20px`)}>{r.level}</span>
+                              </div>
+                              <div style={S("height:7px;border-radius:20px;background:#E9E9E9;margin-top:5px")}>
+                                <div style={S(`height:7px;border-radius:20px;background:#0B8F58;width:${r.pct}%`)}></div>
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                    <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:14px;font-weight:700;border-radius:16px;height:50px;display:flex;align-items:center;justify-content:center;margin-top:16px")} onClick={vm.goIns02}>납입 내역 보기 ›</div>
                   </div>
                   <div style={S("background:linear-gradient(145deg,#FFF7D6,#FFFBEC);border:1.5px solid #F1E3A6;border-radius:22px;padding:15px 17px;display:flex;align-items:center;gap:12px;box-shadow:0 6px 16px rgba(212,180,60,0.12)")}>
                     <span style={S("font-size:24px;flex:none")}>💛</span>
@@ -1569,6 +1969,553 @@ class Component extends React.Component {
                       <div style={S("font-size:10.5px;color:#A98B2E;margin-top:2px;line-height:1.5")}>모의고사가 갱신될 때마다 변동성이 반영돼 재산정돼요</div>
                     </div>
                   </div>
+                </>)}
+                {(vm.examPassed) && (<>
+                  {(vm.claimIs.home) && (<>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;padding:16px 18px")}>
+                      <div style={S("font-size:13.5px;font-weight:700;color:#111")}>가입 정보</div>
+                      <div style={S("display:flex;flex-direction:column;gap:9px;margin-top:12px;font-size:12.5px;color:#555")}>
+                        <div style={S("display:flex;justify-content:space-between")}><span>가입 티어</span><span style={S("font-weight:700;color:#111")}>스탠다드</span></div>
+                        <div style={S("display:flex;justify-content:space-between")}><span>가입한 재수 형태</span><span style={S("font-weight:700;color:#111")}>{vm.claimForm}</span></div>
+                      </div>
+                    </div>
+                    <div style={S(`border-radius:16px;padding:18px;cursor:pointer;${vm.claimHome.kind === 'open' ? 'background:#0B8F58' : vm.claimHome.kind === 'wait' ? 'background:#fff;border:1px solid #E2E2E2' : 'background:#F4F5F4;border:1px solid #E2E2E2'}`)}
+                      onClick={() => vm.goClaim(vm.claimHome.kind === 'no' ? 'eligibility' : vm.claimHome.kind === 'dead' ? 'expired' : vm.claimHome.kind === 'wait' ? 'windowClosed' : 'intro')}>
+                      <div style={S(`font-size:12px;font-weight:700;color:${vm.claimHome.kind === 'open' ? '#CFE9DB' : vm.claimHome.kind === 'wait' ? '#0B8F58' : '#888'}`)}>{vm.claimHome.eligLine}</div>
+                      <div style={S(`font-size:17px;font-weight:800;margin-top:5px;line-height:1.4;color:${vm.claimHome.kind === 'open' ? '#fff' : '#111'}`)}>{vm.claimHome.title}</div>
+                      <div style={S(`font-size:12.5px;margin-top:6px;line-height:1.55;color:${vm.claimHome.kind === 'open' ? '#DBEFE4' : '#555'}`)}>{vm.claimHome.desc}</div>
+                      {(vm.claimHome.gauge) && (<>
+                        <div style={S("margin-top:15px")}>
+                          <div style={S(`display:flex;height:10px;border-radius:20px;overflow:hidden;background:${vm.claimHome.gauge.dark ? 'rgba(255,255,255,0.28)' : '#E9E9E9'}`)}>
+                            <div style={S(`width:${vm.claimHome.gauge.paidPct}%;background:${vm.claimHome.gauge.dark ? '#fff' : '#0B8F58'}`)}></div>
+                            <div style={S(`width:${vm.claimHome.gauge.pendingPct}%;background:${vm.claimHome.gauge.dark ? 'rgba(255,255,255,0.6)' : '#6FC79B'}`)}></div>
+                          </div>
+                          <div style={S("display:flex;gap:12px;margin-top:9px;flex-wrap:wrap")}>
+                            {(vm.claimHome.gauge.paid > 0) && (<div style={S(`display:flex;align-items:center;gap:5px;font-size:11px;color:${vm.claimHome.gauge.dark ? '#CFE9DB' : '#888'}`)}><span style={S(`width:8px;height:8px;border-radius:3px;background:${vm.claimHome.gauge.dark ? '#fff' : '#0B8F58'}`)}></span>기지급 <b style={S(`font-weight:700;color:${vm.claimHome.gauge.dark ? '#fff' : '#111'}`)}>{vm.manFmt(vm.claimHome.gauge.paid)}</b></div>)}
+                            <div style={S(`display:flex;align-items:center;gap:5px;font-size:11px;color:${vm.claimHome.gauge.dark ? '#CFE9DB' : '#888'}`)}><span style={S(`width:8px;height:8px;border-radius:3px;background:${vm.claimHome.gauge.dark ? 'rgba(255,255,255,0.28)' : '#E9E9E9'}`)}></span>잔여 <b style={S(`font-weight:700;color:${vm.claimHome.gauge.dark ? '#fff' : '#111'}`)}>{vm.manFmt(vm.claimHome.gauge.rest)}</b></div>
+                          </div>
+                        </div>
+                      </>)}
+                      <div style={S(`font-size:14px;font-weight:700;border-radius:12px;height:46px;display:flex;align-items:center;justify-content:center;margin-top:15px;${vm.claimHome.kind === 'open' ? 'background:#fff;color:#0B8F58' : vm.claimHome.kind === 'wait' ? 'background:rgba(11,143,88,0.1);color:#00703E' : 'background:#E8EAE9;color:#555'}`)}>
+                        {vm.claimHome.kind === 'no' ? '판정 근거 보기' : vm.claimHome.kind === 'dead' ? '최종 정산 보기' : vm.claimHome.kind === 'wait' ? '청구 일정 보기' : '청구 시작하기'}
+                      </div>
+                    </div>
+                    <div style={S("display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:15px 16px;cursor:pointer")} onClick={() => vm.goClaim('eligibility')}>
+                      <span style={S("font-size:13px;font-weight:700;color:#111")}>보장 자격 상세<span style={S("display:block;font-size:11.5px;font-weight:400;color:#888;margin-top:3px")}>{vm.claimHome.eligLine}</span></span>
+                      <span style={S("color:#BBB")}>›</span>
+                    </div>
+                    {!(vm.claimNo) && (<>
+                      <div style={S("display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:15px 16px;cursor:pointer")} onClick={() => vm.openClaimLink('home')}>
+                        <span style={S("font-size:13px;font-weight:700;color:#111")}>결제 내역 연동<span style={S("display:block;font-size:11.5px;font-weight:400;color:#888;margin-top:3px")}>{vm.claimHome.linkedCount ? `${vm.claimHome.linkedCount}개 카드 연동됨` : '연동된 카드가 없어요'}</span></span>
+                        <span style={S("color:#BBB")}>›</span>
+                      </div>
+                      <div style={S("display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:15px 16px;cursor:pointer")} onClick={() => vm.goClaim('status')}>
+                        <span style={S("font-size:13px;font-weight:700;color:#111")}>내 청구 내역<span style={S("display:block;font-size:11.5px;font-weight:400;color:#888;margin-top:3px")}>{vm.claimHome.prevPaidLine}</span></span>
+                        <span style={S("color:#BBB")}>›</span>
+                      </div>
+                    </>)}
+                  </>)}
+                  {(vm.claimIs.eligibility) && (<>
+                    <div style={S("display:flex;align-items:center;gap:6px")} onClick={() => vm.goClaim('home')}>
+                      <span style={S("font-size:15px;color:#555")}>‹</span>
+                      <span style={S("font-size:12px;color:#555")}>보험현황</span>
+                    </div>
+                    <span style={S("display:inline-block;font-size:11px;font-weight:700;color:#0B8F58;background:#E3F2EA;padding:5px 11px;border-radius:20px;align-self:flex-start")}>보장 자격</span>
+                    <h2 style={S("font-size:20px;font-weight:800;color:#111;margin-top:2px;line-height:1.35")}>{vm.claimEligibilityView.title.split('\n').map((line,li)=>(<React.Fragment key={li}>{li>0 && <br/>}{line}</React.Fragment>))}</h2>
+                    <p style={S("font-size:13.5px;color:#555;line-height:1.65;margin-top:8px")}>{vm.claimEligibilityView.lede}</p>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:14px 16px 6px")}>
+                      <svg viewBox="0 0 320 150" style={S("width:100%;height:auto")}>
+                        <rect x="222" y="28" width="66" height="34" rx="7" fill="#E3F2EA"></rect>
+                        <text x="255" y="22" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#00703E">예상 범위 56~70</text>
+                        <line x1="20" y1="30" x2="300" y2="30" stroke="#EEE" strokeWidth="1"></line>
+                        <line x1="20" y1="95" x2="300" y2="95" stroke="#E5484D" strokeWidth="2" strokeDasharray="7 5"></line>
+                        <rect x="20" y="84" width="66" height="22" rx="11" fill="#E5484D"></rect>
+                        <text x="53" y="99" textAnchor="middle" fontSize="11" fontWeight="800" fill="#fff">기준선 48</text>
+                        <circle cx="250" cy="45" r="7" fill="#0B8F58"></circle>
+                        <text x="250" y="72" textAnchor="middle" fontSize="10" fontWeight="700" fill="#0B8F58">예상 63</text>
+                        <line x1={vm.claimEligibilityView.profile.x} y1="45" x2={vm.claimEligibilityView.profile.x} y2={vm.claimEligibilityView.profile.y} stroke={vm.claimEligibilityView.profile.col} strokeWidth="2" strokeDasharray="4 5"></line>
+                        <circle cx={vm.claimEligibilityView.profile.x} cy={vm.claimEligibilityView.profile.y} r="8" fill="#fff" stroke={vm.claimEligibilityView.profile.col} strokeWidth="4"></circle>
+                        <text x={vm.claimEligibilityView.profile.x} y={vm.claimEligibilityView.profile.y + 24} textAnchor="middle" fontSize="10.5" fontWeight="800" fill={vm.claimEligibilityView.profile.col}>수능 {vm.claimEligibilityView.profile.score}</text>
+                      </svg>
+                    </div>
+                    <div style={S(`border-radius:16px;padding:18px;color:#fff;background:${vm.claimNo ? '#5C6360' : '#0B8F58'}`)}>
+                      <div style={S(`font-size:12px;font-weight:700;color:${vm.claimNo ? '#D6DAD8' : '#CFE9DB'}`)}>보장 판정</div>
+                      <div style={S("font-size:19px;font-weight:800;margin-top:4px")}>{vm.claimEligibilityView.verdictLabel}</div>
+                      <div style={S(`font-size:12.5px;margin-top:6px;line-height:1.55;color:${vm.claimNo ? '#E3E6E5' : '#DBEFE4'}`)}>{vm.claimEligibilityView.verdictDesc}</div>
+                    </div>
+                    {!(vm.claimNo) && (<>
+                      <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:8px 16px 12px")}>
+                        <div style={S("border:0")}>
+                          <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>판정일</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.claimJudgeDateLabel}</b></div>
+                          <div style={S("height:1px;background:#E2E2E2")}></div>
+                          <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>가입 티어 · 재수 형태</span><b style={S("font-size:14px;font-weight:700;color:#111")}>스탠다드 · {vm.claimEligibilityView.tierLine}</b></div>
+                          <div style={S("height:1px;background:#E2E2E2")}></div>
+                          <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>판정 등급</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.claimEligibilityView.gradeLine}</b></div>
+                          <div style={S("height:1px;background:#E2E2E2")}></div>
+                          <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>보장 한도</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.claimEligibilityView.limitLine}</b></div>
+                          <div style={S("height:1px;background:#E2E2E2")}></div>
+                          <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>보장 비율</span><b style={S("font-size:14px;font-weight:700;color:#111")}>재수 비용의 70%</b></div>
+                          <div style={S("height:1px;background:#E2E2E2")}></div>
+                          <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>자격 유효기간</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.claimValidityEndLabel}</b></div>
+                        </div>
+                      </div>
+                      <div style={S("font-size:11px;color:#AAA;line-height:1.6;margin-top:10px")}>※ 보장 한도는 가입 티어와 판정 등급(경증·중증)에 따라 다르며, 보장 비율은 연간 총 재수 비용에 한 번 적용돼요.</div>
+                    </>)}
+                  </>)}
+                  {(vm.claimIs.eligibility) && (
+                    <div style={S("flex:none;padding:12px 0 0")}>
+                      {vm.claimNo
+                        ? <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:14px;font-weight:700;border-radius:14px;height:52px;display:flex;align-items:center;justify-content:center")}>판정에 이의 신청하기</div>
+                        : <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:14px;font-weight:700;border-radius:14px;height:52px;display:flex;align-items:center;justify-content:center")} onClick={() => vm.goClaim('home')}>확인</div>}
+                    </div>
+                  )}
+                  {(vm.claimIs.syncing) && (<>
+                    <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;padding:32px")}>
+                      <div style={S("width:40px;height:40px;border-radius:50%;border:4px solid #E3F2EA;border-top-color:#0B8F58;animation:spin 0.8s linear infinite")}></div>
+                      <h2 style={S("font-size:16px;font-weight:800;color:#111;margin-top:16px")}>결제 내역을 동기화하는 중이에요</h2>
+                      <p style={S("font-size:12.5px;color:#888;margin-top:4px")}>연동된 카드에서 새 결제가 있는지 확인하고 있어요</p>
+                    </div>
+                  </>)}
+                  {(vm.claimIs.link) && (<>
+                    <div style={S("display:flex;align-items:center;gap:6px")} onClick={vm.backClaimLink}>
+                      <span style={S("font-size:15px;color:#555")}>‹</span>
+                      <span style={S("font-size:11px;color:#555")}>뒤로</span>
+                    </div>
+                    <span style={S("display:inline-block;font-size:11px;font-weight:700;color:#0B8F58;background:#E3F2EA;padding:5px 11px;border-radius:20px;align-self:flex-start")}>결제 내역 연동</span>
+                    <h2 style={S("font-size:19px;font-weight:800;color:#111;margin-top:2px;line-height:1.35")}>카드를 연동하면<br/>청구 결제가 자동으로 모여요</h2>
+                    <p style={S("font-size:13.5px;color:#555;line-height:1.65;margin-top:8px")}>연동한 카드에서 학원·교재 결제만 골라 가져와요. 청구할 때 영수증을 하나씩 찾지 않아도 돼요.</p>
+                    <div style={S(`display:flex;align-items:center;gap:11px;border-radius:14px;padding:12px 14px;background:${vm.claimLinkSummary.count ? '#E3F2EA' : '#F2F4F3'}`)}>
+                      <span style={S(`width:3px;align-self:stretch;border-radius:3px;background:${vm.claimLinkSummary.count ? '#0B8F58' : '#9AA29C'}`)}></span>
+                      <div>
+                        <div style={S(`font-size:12.5px;font-weight:800;color:${vm.claimLinkSummary.count ? '#00703E' : '#3D4642'}`)}>{vm.claimLinkSummary.count ? `${vm.claimLinkSummary.count}개 카드에서 ${vm.claimLinkSummary.items}건, ${vm.claimLinkSummary.totalLabel} 모였어요` : '연동된 카드가 없어요'}</div>
+                        <div style={S(`font-size:11.5px;margin-top:3px;line-height:1.5;color:${vm.claimLinkSummary.count ? '#4B6558' : '#6E766F'}`)}>{vm.claimLinkSummary.count ? `마지막 확인 ${vm.claimLinkSummary.lastSync} · 하루 한 번 자동으로 확인해요` : '카드를 연동하지 않으면 청구할 때마다 영수증을 직접 첨부해야 해요'}</div>
+                      </div>
+                    </div>
+                    <div style={S("font-size:14px;font-weight:700;color:#111;margin-top:6px")}>연동된 카드</div>
+                    <div style={S("display:flex;flex-direction:column;gap:8px")}>
+                      {(vm.claimLinkedCards.length > 0) ? vm.claimLinkedCards.map((c, $index) => (
+                        <React.Fragment key={$index}>
+                          <div style={S("display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border:1px solid #E2E2E2;border-radius:14px")}>
+                            <div style={S("display:flex;align-items:center;gap:11px")}>
+                              <span style={S(`width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:${c.color}`)}>{c.short}</span>
+                              <span style={S("font-size:13px;font-weight:700;color:#111")}>{c.name} •••• {c.tail}<small style={S("display:block;font-size:11.5px;font-weight:400;color:#888;margin-top:3px")}>{vm.claimLinkSummary.lastSync} 확인</small></span>
+                            </div>
+                            <span style={S("font-size:12px;font-weight:700;color:#888;cursor:pointer;white-space:nowrap")} onClick={() => vm.toggleClaimCard(c.id)}>해제</span>
+                          </div>
+                        </React.Fragment>
+                      )) : (
+                        <div style={S("border:1px dashed #D4D8D6;border-radius:14px;padding:22px 18px;text-align:center")}>
+                          <div style={S("font-size:13px;font-weight:700;color:#111")}>아직 연동한 카드가 없어요</div>
+                          <div style={S("font-size:11.5px;color:#888;margin-top:5px;line-height:1.55")}>아래에서 카드사를 골라 연동해 보세요</div>
+                        </div>
+                      )}
+                    </div>
+                    <div style={S("font-size:14px;font-weight:700;color:#111;margin-top:6px")}>연동할 수 있는 카드</div>
+                    <div style={S("display:flex;flex-direction:column;gap:8px")}>
+                      {vm.claimOffCards.map((c, $index) => (
+                        <React.Fragment key={$index}>
+                          <div style={S("display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border:1px solid #E2E2E2;border-radius:14px")}>
+                            <div style={S("display:flex;align-items:center;gap:11px")}>
+                              <span style={S(`width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:${c.color}`)}>{c.short}</span>
+                              <span style={S("font-size:13px;font-weight:700;color:#111")}>{c.name}</span>
+                            </div>
+                            <span style={S("font-size:12px;font-weight:700;color:#0B8F58;background:#fff;border:1px solid #0B8F58;border-radius:10px;padding:7px 13px;cursor:pointer;white-space:nowrap")} onClick={() => vm.connectClaimCard(c.id)}>연동</span>
+                          </div>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:15px 16px")}>
+                      <div style={S("font-size:14px;font-weight:700;color:#111;margin-bottom:8px")}>어떤 결제를 가져오나요</div>
+                      <div style={S("font-size:12.5px;color:#555;line-height:1.7")}>등록된 재수 학원·교육기관의 <b style={S("color:#111")}>사업자등록번호</b>와 일치하는 결제만 가져와요. 식비·교통비처럼 보장 대상이 아닌 결제는 가져오지 않아요.</div>
+                    </div>
+                    <div style={S("font-size:14px;font-weight:700;color:#111;margin-top:6px")}>최근 가져온 결제</div>
+                    <div style={S("display:flex;flex-direction:column;gap:8px")}>
+                      {(vm.claimLinkSummary.recent.length > 0) ? vm.claimLinkSummary.recent.map((c, $index) => (
+                        <React.Fragment key={$index}>
+                          <div style={S("display:flex;gap:11px;align-items:center;padding:12px 14px;border:1px solid #E2E2E2;border-radius:14px")}>
+                            <div style={S("flex:1;min-width:0")}>
+                              <div style={S("font-size:13px;font-weight:700;color:#111;line-height:1.4")}>{c.name}<span style={S("font-size:10px;font-weight:700;color:#0B8F58;background:#E3F2EA;padding:2px 6px;border-radius:6px;margin-left:6px")}>자동</span></div>
+                              <div style={S("font-size:11px;color:#888;margin-top:3px")}>{c.metaLabel}</div>
+                            </div>
+                            <span style={S("font-size:13.5px;font-weight:800;color:#111;white-space:nowrap")}>{c.amtLabel}</span>
+                          </div>
+                        </React.Fragment>
+                      )) : (
+                        <div style={S("border:1px dashed #D4D8D6;border-radius:14px;padding:22px 18px;text-align:center")}>
+                          <div style={S("font-size:13px;font-weight:700;color:#111")}>가져온 결제가 없어요</div>
+                          <div style={S("font-size:11.5px;color:#888;margin-top:5px;line-height:1.55")}>카드를 연동하면 학원 결제가 여기에 모여요</div>
+                        </div>
+                      )}
+                    </div>
+                    <div style={S("font-size:11px;color:#AAA;line-height:1.6;margin-top:6px")}>※ 연동을 해제해도 이미 가져온 결제 내역은 남아있어요. 목록에서 직접 지울 수 있어요.</div>
+                    <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:15px;font-weight:700;border-radius:14px;height:52px;display:flex;align-items:center;justify-content:center;margin-top:4px")} onClick={vm.backClaimLink}>완료</div>
+                  </>)}
+                  {(vm.claimIs.cardConnecting) && (vm.claimConnectingCard) && (<>
+                    <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;padding:32px")}>
+                      <div style={S(`width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;background:${vm.claimConnectingCard.color}`)}>{vm.claimConnectingCard.short}</div>
+                      <h2 style={S("font-size:16px;font-weight:800;color:#111;margin-top:16px")}>{vm.claimConnectingCard.name}와 연결하는 중이에요</h2>
+                      <p style={S("font-size:12.5px;color:#888;margin-top:4px")}>본인 인증 결과를 확인하고 있어요</p>
+                      <div style={S("width:22px;height:22px;border-radius:50%;border:3px solid #E3F2EA;border-top-color:#0B8F58;animation:spin 0.8s linear infinite;margin-top:18px")}></div>
+                    </div>
+                  </>)}
+                  {(vm.claimIs.intro) && (<>
+                    <div style={S("display:flex;align-items:center;gap:6px")} onClick={() => vm.goClaim('home')}>
+                      <span style={S("font-size:15px;color:#555")}>‹</span>
+                      <span style={S("font-size:12px;color:#555")}>보험현황</span>
+                    </div>
+                    <span style={S("display:inline-block;font-size:11px;font-weight:700;color:#0B8F58;background:#E3F2EA;padding:5px 11px;border-radius:20px;align-self:flex-start")}>보험금 청구</span>
+                    <h2 style={S("font-size:20px;font-weight:800;color:#111;margin-top:2px;line-height:1.35")}>{vm.studentName}님의<br/>보험금 청구를 시작합니다</h2>
+                    <p style={S("font-size:13.5px;color:#555;line-height:1.65;margin-top:8px")}>연간 재수 비용의 최대 <b style={S("color:#0B8F58")}>70%, 최대 {vm.manFmt(vm.claimLimit)}</b>까지 보장돼요. 6월과 12월, 연 2회 나눠 청구할 수 있어요.</p>
+                    <div style={S("display:flex;align-items:center;gap:11px;background:#E3F2EA;border-radius:14px;padding:12px 14px")}>
+                      <span style={S("width:3px;align-self:stretch;border-radius:3px;background:#0B8F58")}></span>
+                      <div>
+                        <div style={S("font-size:12.5px;font-weight:800;color:#00703E")}>{vm.claimRoundMeta.label} 청구 · {vm.claimRoundMeta.deadline} 마감</div>
+                        <div style={S("font-size:11.5px;color:#4B6558;margin-top:3px;line-height:1.5")}>인정 지출 기간 {vm.claimRoundMeta.period}{vm.claimRound === 2 ? ' · 1차에 청구하지 않은 지출도 함께 낼 수 있어요' : ''}</div>
+                      </div>
+                    </div>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:16px 18px")}>
+                      <div style={S("font-size:14px;font-weight:700;color:#111;margin-bottom:4px")}>청구에 필요한 것</div>
+                      {[['재수 학원 등록·결제 증빙', '연동한 카드 결제에서 고르거나, 직접 첨부해요.'], ['보호자 동의', '미성년자라면 보호자 동의가 필요해요.'], ['입금 계좌', '등록된 계좌로 보험금이 입금돼요.']].map((row, $index) => (
+                        <React.Fragment key={$index}>
+                          <div style={S(`display:flex;gap:10px;align-items:flex-start;padding:10px 0;${$index < 2 ? 'border-bottom:1px solid #F2F2F2' : ''}`)}>
+                            <div style={S("width:22px;height:22px;border-radius:50%;background:#E3F2EA;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px")}>
+                              <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" fill="none" stroke="#0B8F58" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                            </div>
+                            <div><div style={S("font-size:13.5px;font-weight:700;color:#111")}>{row[0]}</div><div style={S("font-size:12px;color:#888;margin-top:2px;line-height:1.5")}>{row[1]}</div></div>
+                          </div>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:14px 16px")}>
+                      <div style={S("font-size:12.5px;color:#555")}>이 순서로 <b style={S("color:#111")}>비용 증빙 → 받는 방법 → 지급액 확인</b>까지 진행돼요</div>
+                    </div>
+                    <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:15px;font-weight:700;border-radius:14px;height:52px;display:flex;align-items:center;justify-content:center;margin-top:4px")} onClick={vm.goClaimStep1}>{vm.claimRoundMeta.label} 청구 시작하기</div>
+                  </>)}
+                  {(vm.claimIs.step1) && (<>
+                    <div style={S("display:flex;align-items:center;gap:6px")} onClick={() => vm.goClaim('intro')}>
+                      <span style={S("font-size:15px;color:#555")}>‹</span>
+                      <span style={S("font-size:11px;color:#555")}>뒤로</span>
+                    </div>
+                    <div style={S("flex:none")}>
+                      <div style={S("font-size:11.5px;font-weight:700;color:#0B8F58")}>STEP 1 / 3 · 비용 증빙 · {vm.claimRoundMeta.label}</div>
+                      <div style={S("display:flex;gap:5px;margin-top:7px")}>
+                        <span style={S("flex:1;height:4px;border-radius:20px;background:#0B8F58")}></span>
+                        <span style={S("flex:1;height:4px;border-radius:20px;background:#E7E7E7")}></span>
+                        <span style={S("flex:1;height:4px;border-radius:20px;background:#E7E7E7")}></span>
+                      </div>
+                    </div>
+                    <h2 style={S("font-size:18px;font-weight:800;color:#111;margin-top:2px;line-height:1.35")}>이번 회차에 청구할<br/>비용을 확인해 주세요</h2>
+                    <div style={S("display:flex;align-items:center;justify-content:space-between;margin-top:4px")}>
+                      <span style={S("font-size:14px;font-weight:700;color:#111")}>연동된 카드 결제</span>
+                      <span style={S("font-size:12px;font-weight:700;color:#0B8F58;cursor:pointer")} onClick={() => vm.openClaimLink('step1')}>연동 관리</span>
+                    </div>
+                    <div style={S("display:flex;flex-direction:column;gap:8px")}>
+                      {(vm.claimStepCosts.length > 0) ? vm.claimStepCosts.map((c, $index) => (
+                        <React.Fragment key={$index}>
+                          <div style={S(`display:flex;gap:11px;align-items:center;padding:12px 14px;border-radius:14px;cursor:pointer;border:1px solid ${c.on ? '#0B8F58' : '#E2E2E2'};background:${c.on ? '#F7FBF9' : '#fff'}`)} onClick={() => vm.toggleClaimCost(c.id)}>
+                            <span style={S(`width:20px;height:20px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;border:2px solid ${c.on ? '#0B8F58' : '#CFCFCF'};background:${c.on ? '#0B8F58' : 'transparent'}`)}>
+                              {c.on && <svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"></path></svg>}
+                            </span>
+                            <div style={S("flex:1;min-width:0")}>
+                              <div style={S("font-size:13px;font-weight:700;color:#111;line-height:1.4")}>{c.name}{c.auto ? <span style={S("font-size:10px;font-weight:700;color:#0B8F58;background:#E3F2EA;padding:2px 6px;border-radius:6px;margin-left:6px")}>자동</span> : <span style={S("font-size:10px;font-weight:700;color:#7A6A3F;background:#FAF3E0;padding:2px 6px;border-radius:6px;margin-left:6px")}>직접 첨부</span>}</div>
+                              <div style={S("font-size:11px;color:#888;margin-top:3px")}>{c.metaLabel}</div>
+                            </div>
+                            <span style={S("font-size:13.5px;font-weight:800;color:#111;white-space:nowrap")}>{c.amtLabel}</span>
+                          </div>
+                        </React.Fragment>
+                      )) : (
+                        <div style={S("border:1px dashed #D4D8D6;border-radius:14px;padding:22px 18px;text-align:center")}>
+                          <div style={S("font-size:13px;font-weight:700;color:#111")}>연동된 카드가 없어요</div>
+                          <div style={S("font-size:11.5px;color:#888;margin-top:5px;line-height:1.55")}>카드를 연동하면 학원 결제를 자동으로 가져와요.<br/>연동하지 않으면 아래에서 직접 첨부해 주세요.</div>
+                        </div>
+                      )}
+                    </div>
+                    <div style={S(`border:1.5px dashed #CFCFCF;border-radius:14px;padding:16px;text-align:center;cursor:pointer;${vm.claimUpload ? 'border-style:solid;border-color:#0B8F58;background:#E3F2EA' : ''}`)} onClick={vm.toggleClaimUpload}>
+                      <div style={S("font-size:13px;font-weight:700;color:#111")}>{vm.claimUpload ? '영수증_0511.jpg 첨부됨' : '연동되지 않은 결제 직접 첨부'}</div>
+                      <div style={S("font-size:11.5px;color:#888;margin-top:3px")}>{vm.claimUpload ? '다시 선택하려면 탭하세요' : '영수증·등록증을 촬영하거나 갤러리에서 선택하세요'}</div>
+                    </div>
+                    <div style={S("display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:#F7FBF9;border:1px solid #CFE9DB;border-radius:14px")}>
+                      <span style={S("font-size:12.5px;font-weight:700;color:#555")}>이번 회차 인정 비용</span>
+                      <b style={S("font-size:16px;font-weight:800;color:#111")}>{vm.wonFmt(vm.claimEngine.thisCost)}</b>
+                    </div>
+                    <div style={S("display:flex;gap:10px;align-items:flex-start;padding:12px 0;cursor:pointer")} onClick={vm.toggleClaimAgreeGuardian}>
+                      <span style={S(`width:22px;height:22px;border-radius:6px;border:2px solid ${vm.claimAgreeGuardian ? '#0B8F58' : '#CFCFCF'};background:${vm.claimAgreeGuardian ? '#0B8F58' : 'transparent'};flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px`)}>
+                        {vm.claimAgreeGuardian && <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"></path></svg>}
+                      </span>
+                      <span style={S("font-size:12.5px;color:#555;line-height:1.55")}>피보험자가 미성년자로, <b style={S("color:#111")}>보호자 동의</b>를 확인합니다.</span>
+                    </div>
+                    <div style={S("background:#FDF2F2;border:1px solid #F3C9C9;border-radius:14px;padding:13px 15px;font-size:11.5px;color:#B4363B;line-height:1.65")}>⚠ 증빙을 위조·변조하거나 사실과 다르게 제출하면 <b style={S("color:#8F2226")}>계약 해지·보험금 회수</b> 및 보험사기방지 특별법에 따른 불이익이 발생할 수 있어요.</div>
+                    <div style={S(`font-size:15px;font-weight:700;border-radius:14px;height:52px;display:flex;align-items:center;justify-content:center;margin-top:4px;${vm.claimStep1CtaDisabled ? 'background:#C7D8CE;color:#fff' : 'background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;cursor:pointer'}`)} onClick={() => { if (!vm.claimStep1CtaDisabled) vm.goClaimPay(); }}>다음</div>
+                  </>)}
+                  {(vm.claimIs.pay) && (<>
+                    <div style={S("display:flex;align-items:center;gap:6px")} onClick={() => vm.goClaim('step1')}>
+                      <span style={S("font-size:15px;color:#555")}>‹</span>
+                      <span style={S("font-size:11px;color:#555")}>뒤로</span>
+                    </div>
+                    <div style={S("flex:none")}>
+                      <div style={S("font-size:11.5px;font-weight:700;color:#0B8F58")}>STEP 2 / 3 · 받는 방법</div>
+                      <div style={S("display:flex;gap:5px;margin-top:7px")}>
+                        <span style={S("flex:1;height:4px;border-radius:20px;background:#0B8F58")}></span>
+                        <span style={S("flex:1;height:4px;border-radius:20px;background:#0B8F58")}></span>
+                        <span style={S("flex:1;height:4px;border-radius:20px;background:#E7E7E7")}></span>
+                      </div>
+                    </div>
+                    <h2 style={S("font-size:18px;font-weight:800;color:#111;margin-top:2px;line-height:1.35")}>보험금을 어떻게<br/>받을지 확인해 주세요</h2>
+                    <p style={S("font-size:13.5px;color:#555;line-height:1.65;margin-top:8px")}>가입한 재수 형태에 따라 <b style={S("color:#111")}>{vm.claimForm}</b> 기준으로 나눠 지급돼요.</p>
+                    <div style={S("font-size:14px;font-weight:700;color:#111;margin-top:6px")}>학원비 바우처</div>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:14px 16px")}>
+                      <div style={S("font-size:12.5px;color:#555;line-height:1.6")}>일부 재수 학원에서는 바우처로 바로 정산할 수 있어요. 승인되면 학원에 발급돼요.</div>
+                    </div>
+                    <div style={S("font-size:14px;font-weight:700;color:#111;margin-top:6px")}>입금 계좌</div>
+                    <div style={S("display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border:1px solid #E2E2E2;border-radius:14px")}>
+                      <span style={S("font-size:13px;font-weight:700;color:#111")}>신한 •••• 4821<small style={S("display:block;font-size:11.5px;font-weight:400;color:#888;margin-top:3px")}>바우처를 뺀 나머지가 이 계좌로 입금돼요</small></span>
+                      <span style={S("font-size:12px;font-weight:700;color:#0B8F58;cursor:pointer;white-space:nowrap")}>변경</span>
+                    </div>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:8px 16px 12px")}>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>가입한 재수 형태</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.claimForm}</b></div>
+                      <div style={S("height:1px;background:#E2E2E2")}></div>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>학원비 바우처</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.claimFormVoucherPct}%</b></div>
+                      <div style={S("height:1px;background:#E2E2E2")}></div>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>계좌 입금</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.claimFormCashPct}%</b></div>
+                    </div>
+                    <div style={S("font-size:11px;color:#AAA;line-height:1.6;margin-top:6px")}>※ 지급 비율은 가입할 때 정해진 재수 형태를 따르며, 청구 회차와 관계없이 같아요.</div>
+                    <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:15px;font-weight:700;border-radius:14px;height:52px;display:flex;align-items:center;justify-content:center;margin-top:4px")} onClick={vm.goClaimCalc}>다음</div>
+                  </>)}
+                  {(vm.claimIs.calc) && (<>
+                    <div style={S("display:flex;align-items:center;gap:6px")} onClick={() => vm.goClaim('pay')}>
+                      <span style={S("font-size:15px;color:#555")}>‹</span>
+                      <span style={S("font-size:11px;color:#555")}>뒤로</span>
+                    </div>
+                    <div style={S("flex:none")}>
+                      <div style={S("font-size:11.5px;font-weight:700;color:#0B8F58")}>STEP 3 / 3 · 지급액 확인</div>
+                      <div style={S("display:flex;gap:5px;margin-top:7px")}>
+                        <span style={S("flex:1;height:4px;border-radius:20px;background:#0B8F58")}></span>
+                        <span style={S("flex:1;height:4px;border-radius:20px;background:#0B8F58")}></span>
+                        <span style={S("flex:1;height:4px;border-radius:20px;background:#0B8F58")}></span>
+                      </div>
+                    </div>
+                    <h2 style={S("font-size:18px;font-weight:800;color:#111;margin-top:2px;line-height:1.35")}>이번 회차 지급액을<br/>확인해 주세요</h2>
+                    <div style={S("border:1px solid #E2E2E2;border-radius:16px;padding:6px 16px 14px")}>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;font-size:13px;color:#555")}><span>이번 회차 인정 비용</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.wonFmt(vm.claimEngine.thisCost)}</b></div>
+                      {(vm.claimRound === 2) && (<>
+                        <div style={S("height:1px;background:#E2E2E2;margin:5px 0")}></div>
+                        <div style={S("display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;font-size:13px;color:#555")}><span>1차 인정 비용</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.wonFmt(vm.claimEngine.prevCost)}</b></div>
+                      </>)}
+                      <div style={S("height:2px;background:#DADADA;margin:7px 0")}></div>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;font-size:13px;color:#555")}><span>누적 인정 비용</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.wonFmt(vm.claimEngine.cumCost)}</b></div>
+                      <div style={S("height:1px;background:#E2E2E2;margin:5px 0")}></div>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;font-size:13px;color:#555")}><span>× 보장 비율 70%</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.wonFmt(vm.claimEngine.rawEnt)}</b></div>
+                      <div style={S("height:1px;background:#E2E2E2;margin:5px 0")}></div>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;font-size:13px;color:#555")}><span>연간 한도 {vm.manFmt(vm.claimLimit)} 적용</span><b style={S("font-size:14px;font-weight:700;color:#111")}>{vm.wonFmt(vm.claimEngine.cumEnt)}</b></div>
+                      {(vm.claimEngine.capped) && (<div style={S("font-size:11px;color:#00703E;background:#E3F2EA;border-radius:8px;padding:6px 9px;margin-top:2px;line-height:1.5")}>한도를 넘어서 {vm.manFmt(vm.claimEngine.rawEnt - vm.claimEngine.cumEnt)}이 조정됐어요</div>)}
+                      {(vm.claimRound === 2) && (<>
+                        <div style={S("height:1px;background:#E2E2E2;margin:5px 0")}></div>
+                        <div style={S("display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;font-size:13px;color:#C2454A")}><span>− 1차 기지급</span><b style={S("font-size:14px;font-weight:700;color:#C2454A")}>−{vm.wonFmt(vm.claimEngine.prevPaid)}</b></div>
+                      </>)}
+                      <div style={S("height:2px;background:#DADADA;margin:7px 0")}></div>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:11px 0 4px")}><span style={S("font-size:13.5px;font-weight:700;color:#111")}>이번 지급 예정액</span><b style={S("font-size:23px;font-weight:800;color:#0B8F58;letter-spacing:-0.02em")}>{vm.wonFmt(vm.claimEngine.payout)}</b></div>
+                      <div style={S("display:flex;justify-content:space-between;font-size:12px;color:#888;padding:5px 0")}><span>학원비 바우처 {vm.claimFormVoucherPct}%</span><b style={S("font-size:12.5px;font-weight:700;color:#555")}>{vm.claimVoucherAmt}</b></div>
+                      <div style={S("display:flex;justify-content:space-between;font-size:12px;color:#888;padding:5px 0")}><span>계좌 입금 {vm.claimFormCashPct}%</span><b style={S("font-size:12.5px;font-weight:700;color:#555")}>{vm.claimCashAmt}</b></div>
+                    </div>
+                    <div style={S("font-size:14px;font-weight:700;color:#111;margin-top:6px")}>연간 한도 사용 현황</div>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:16px 18px")}>
+                      <div style={S("display:flex;height:10px;border-radius:20px;overflow:hidden;background:#E9E9E9")}>
+                        <div style={S(`width:${vm.claimGaugeMain ? (vm.claimEngine.prevPaid / (vm.claimLimit || 1) * 100) : 0}%;background:#0B8F58`)}></div>
+                        <div style={S(`width:${vm.claimGaugeMain ? (vm.claimEngine.payout / (vm.claimLimit || 1) * 100) : 0}%;background:#6FC79B`)}></div>
+                      </div>
+                      <div style={S("display:flex;gap:12px;margin-top:9px;flex-wrap:wrap")}>
+                        {(vm.claimEngine.prevPaid > 0) && (<div style={S("display:flex;align-items:center;gap:5px;font-size:11px;color:#888")}><span style={S("width:8px;height:8px;border-radius:3px;background:#0B8F58")}></span>기지급 <b style={S("color:#111;font-weight:700")}>{vm.manFmt(vm.claimEngine.prevPaid)}</b></div>)}
+                        <div style={S("display:flex;align-items:center;gap:5px;font-size:11px;color:#888")}><span style={S("width:8px;height:8px;border-radius:3px;background:#6FC79B")}></span>이번 지급 <b style={S("color:#111;font-weight:700")}>{vm.manFmt(vm.claimEngine.payout)}</b></div>
+                        <div style={S("display:flex;align-items:center;gap:5px;font-size:11px;color:#888")}><span style={S("width:8px;height:8px;border-radius:3px;background:#E9E9E9")}></span>잔여 <b style={S("color:#111;font-weight:700")}>{vm.manFmt(vm.claimEngine.remaining)}</b></div>
+                      </div>
+                    </div>
+                    <div style={S("display:flex;align-items:center;gap:11px;background:#F2F4F3;border-radius:14px;padding:12px 14px")}>
+                      <span style={S("width:3px;align-self:stretch;border-radius:3px;background:#9AA29C")}></span>
+                      {(vm.claimRound === 1) ? (
+                        <div><div style={S("font-size:12.5px;font-weight:800;color:#3D4642")}>다음 청구는 12월 1일부터예요</div><div style={S("font-size:11.5px;color:#6E766F;margin-top:3px;line-height:1.5")}>6~11월 지출은 12월에 한 번 더 청구할 수 있어요. 남은 한도 {vm.manFmt(vm.claimEngine.remaining)}.</div></div>
+                      ) : (
+                        <div><div style={S("font-size:12.5px;font-weight:800;color:#3D4642")}>이번이 올해 마지막 청구예요</div><div style={S("font-size:11.5px;color:#6E766F;margin-top:3px;line-height:1.5")}>남은 한도 {vm.manFmt(vm.claimEngine.remaining)}은 {vm.claimYear}년 12월 31일에 소멸해요.</div></div>
+                      )}
+                    </div>
+                    <div style={S("display:flex;gap:10px;align-items:flex-start;padding:12px 0;cursor:pointer")} onClick={vm.toggleClaimAgreeFinal}>
+                      <span style={S(`width:22px;height:22px;border-radius:6px;border:2px solid ${vm.claimAgreeFinal ? '#0B8F58' : '#CFCFCF'};background:${vm.claimAgreeFinal ? '#0B8F58' : 'transparent'};flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px`)}>
+                        {vm.claimAgreeFinal && <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"></path></svg>}
+                      </span>
+                      <span style={S("font-size:12.5px;color:#555;line-height:1.55")}>제출 내용이 사실과 같으며, 허위 제출 시 불이익에 동의합니다.</span>
+                    </div>
+                    <div style={S(`font-size:15px;font-weight:700;border-radius:14px;height:52px;display:flex;align-items:center;justify-content:center;margin-top:4px;${vm.claimStep3CtaDisabled ? 'background:#C7D8CE;color:#fff' : 'background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;cursor:pointer'}`)} onClick={() => { if (!vm.claimStep3CtaDisabled) vm.submitClaim(); }}>청구 제출</div>
+                  </>)}
+                  {(vm.claimIs.submitting) && (<>
+                    <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;padding:32px")}>
+                      <div style={S("width:40px;height:40px;border-radius:50%;border:4px solid #E3F2EA;border-top-color:#0B8F58;animation:spin 0.8s linear infinite")}></div>
+                      <h2 style={S("font-size:16px;font-weight:800;color:#111;margin-top:16px")}>제출 내용을 확인하고 있어요</h2>
+                      <p style={S("font-size:12.5px;color:#888;margin-top:4px")}>잠시만 기다려 주세요</p>
+                    </div>
+                  </>)}
+                  {(vm.claimIs.done) && (<>
+                    <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px")}>
+                      <div style={S("width:84px;height:84px;border-radius:50%;background:#E3F2EA;display:flex;align-items:center;justify-content:center;margin-bottom:18px")}>
+                        <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="#0B8F58" strokeWidth="2.5"></circle><path d="M12 20l5 5 11-12" fill="none" stroke="#0B8F58" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                      </div>
+                      <span style={S("display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:#fff;background:#0B8F58;padding:4px 10px;border-radius:20px")}>{vm.claimRoundMeta.label}</span>
+                      <h2 style={S("font-size:22px;font-weight:800;color:#111;margin:12px 0 0")}>청구가 접수됐어요</h2>
+                      <p style={S("font-size:13.5px;color:#555;line-height:1.6;margin:10px 0 0")}>심사가 완료되면 알림으로 알려드릴게요.<br/>진행 상황은 언제든 확인할 수 있어요.</p>
+                      <div style={S("width:100%;background:#F8F8F8;border-radius:14px;padding:14px 16px;margin-top:20px;text-align:left")}>
+                        <div style={S("display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0")}><span style={S("color:#888")}>접수번호</span><b style={S("color:#111")}>{vm.claimRoundMeta.no}</b></div>
+                        <div style={S("display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0")}><span style={S("color:#888")}>청구 회차</span><b style={S("color:#111")}>{vm.claimRoundMeta.label}</b></div>
+                        <div style={S("display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0")}><span style={S("color:#888")}>인정 지출 기간</span><b style={S("color:#111")}>{vm.claimRoundMeta.period}</b></div>
+                        <div style={S("display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0")}><span style={S("color:#888")}>지급 예정액</span><b style={S("color:#111")}>{vm.wonFmt(vm.claimEngine.payout)}</b></div>
+                        <div style={S("display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0")}><span style={S("color:#888")}>예상 심사 기간</span><b style={S("color:#111")}>약 3영업일</b></div>
+                      </div>
+                      <div style={S("width:100%;margin-top:14px")}>
+                        <div style={S("display:flex;align-items:center;gap:11px;background:#F2F4F3;border-radius:14px;padding:12px 14px")}>
+                          <span style={S("width:3px;align-self:stretch;border-radius:3px;background:#9AA29C")}></span>
+                          {(vm.claimRound === 1) ? (
+                            <div><div style={S("font-size:12.5px;font-weight:800;color:#3D4642")}>다음 청구는 12월 1일부터</div><div style={S("font-size:11.5px;color:#6E766F;margin-top:3px;line-height:1.5")}>남은 한도 {vm.manFmt(vm.claimEngine.remaining)} · 청구창이 열리면 알려드릴게요</div></div>
+                          ) : (
+                            <div><div style={S("font-size:12.5px;font-weight:800;color:#3D4642")}>올해 마지막 청구예요</div><div style={S("font-size:11.5px;color:#6E766F;margin-top:3px;line-height:1.5")}>남은 한도 {vm.manFmt(vm.claimEngine.remaining)}은 12월 31일에 소멸해요</div></div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={S("flex:none;display:flex;flex-direction:column;gap:8px;padding-top:4px")}>
+                      <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:15px;font-weight:700;border-radius:14px;height:52px;display:flex;align-items:center;justify-content:center")} onClick={() => vm.goClaim('status')}>청구 진행 상황 보기</div>
+                      <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:14px;font-weight:700;border-radius:14px;height:48px;display:flex;align-items:center;justify-content:center")} onClick={() => vm.goClaim('home')}>홈으로</div>
+                    </div>
+                  </>)}
+                  {(vm.claimIs.status) && (<>
+                    <div style={S("display:flex;align-items:center;gap:6px")} onClick={() => vm.goClaim('home')}>
+                      <span style={S("font-size:15px;color:#555")}>‹</span>
+                      <span style={S("font-size:12px;color:#555")}>보험현황</span>
+                    </div>
+                    <div style={S("display:flex;align-items:center;gap:8px")}>
+                      <span style={S("display:inline-block;font-size:11px;font-weight:700;color:#0B8F58;background:#E3F2EA;padding:5px 11px;border-radius:20px")}>청구 진행 상황</span>
+                      <span style={S("display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:#00703E;background:#E3F2EA;padding:4px 10px;border-radius:20px")}>{vm.claimRoundMeta.label}</span>
+                    </div>
+                    <h2 style={S("font-size:18px;font-weight:800;color:#111;margin-top:2px;line-height:1.35")}>심사를 진행하고 있어요</h2>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:18px")}>
+                      <div style={S("position:relative;padding-left:8px")}>
+                        {[
+                          { st: 'done', tt: '청구 접수됨', dd: vm.claimRoundMeta.date },
+                          { st: 'cur', tt: '심사 진행 중', dd: '제출 서류를 확인하고 있어요 · 약 3영업일' },
+                          { st: 'pending', tt: '지급 심사', dd: '최종 인정 비용으로 지급액을 확정해요' },
+                          { st: 'pending', tt: '지급 완료', dd: '바우처 발급 · 계좌 입금' },
+                        ].map((it, $index) => (
+                          <React.Fragment key={$index}>
+                            <div style={S(`display:flex;gap:14px;position:relative;padding-bottom:${$index < 3 ? '22px' : '0'}`)}>
+                              {($index < 3) && <div style={S(`position:absolute;left:12px;top:22px;bottom:0;width:2px;background:${it.st === 'done' ? '#0B8F58' : '#E4E4E4'}`)}></div>}
+                              <div style={S(`width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;z-index:1;background:${it.st === 'done' ? '#0B8F58' : '#fff'};${it.st === 'cur' ? 'border:3px solid #0B8F58' : (it.st === 'pending' ? 'background:#EDEDED' : '')}`)}>
+                                {it.st === 'done' && <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"></path></svg>}
+                              </div>
+                              <div>
+                                <div style={S(`font-size:14px;font-weight:700;color:${it.st === 'pending' ? '#B4B4B4' : '#111'}`)}>{it.tt}</div>
+                                <div style={S(`font-size:11.5px;margin-top:2px;line-height:1.5;color:${it.st === 'cur' ? '#0B8F58' : '#888'};${it.st === 'cur' ? 'font-weight:700' : ''}`)}>{it.dd}</div>
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={S("font-size:14px;font-weight:700;color:#111;margin-top:2px")}>접수 내역</div>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:14px 16px")}>
+                      <div style={S("display:flex;flex-direction:column;gap:9px;font-size:13px;color:#555")}>
+                        <div style={S("display:flex;justify-content:space-between")}><span>접수번호</span><b style={S("color:#111")}>{vm.claimRoundMeta.no}</b></div>
+                        <div style={S("display:flex;justify-content:space-between")}><span>청구 회차</span><b style={S("color:#111")}>{vm.claimRoundMeta.label}</b></div>
+                        <div style={S("display:flex;justify-content:space-between")}><span>인정 비용</span><b style={S("color:#111")}>{vm.wonFmt(vm.claimEngine.thisCost)}</b></div>
+                        <div style={S("display:flex;justify-content:space-between")}><span>지급 예정액</span><b style={S("color:#111")}>{vm.wonFmt(vm.claimEngine.payout)}</b></div>
+                      </div>
+                    </div>
+                    <div style={S("font-size:14px;font-weight:700;color:#111;margin-top:2px")}>지난 청구</div>
+                    {(vm.claimRound === 2) ? (
+                      <div style={S("display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border:1px solid #E2E2E2;border-radius:14px")}>
+                        <span style={S("font-size:13px;font-weight:700;color:#111")}>1차 (6월) 지급완료<small style={S("display:block;font-size:11.5px;font-weight:400;color:#888;margin-top:3px")}>2027.06.14 입금 · 인정 비용 {vm.wonFmt(vm.claimEngine.prevCost)}</small></span>
+                        <b style={S("font-size:14px")}>{vm.wonFmt(vm.claimEngine.prevPaid)}</b>
+                      </div>
+                    ) : (
+                      <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:16px;text-align:center;font-size:12.5px;color:#888")}>이번이 첫 청구예요</div>
+                    )}
+                    <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:14px;font-weight:700;border-radius:14px;height:52px;display:flex;align-items:center;justify-content:center;margin-top:4px")} onClick={() => vm.goClaim('home')}>홈으로</div>
+                  </>)}
+                  {(vm.claimIs.windowClosed) && (<>
+                    <div style={S("display:flex;align-items:center;gap:6px")} onClick={() => vm.goClaim('home')}>
+                      <span style={S("font-size:15px;color:#555")}>‹</span>
+                      <span style={S("font-size:12px;color:#555")}>보험현황</span>
+                    </div>
+                    <span style={S("display:inline-block;font-size:11px;font-weight:700;color:#0B8F58;background:#E3F2EA;padding:5px 11px;border-radius:20px;align-self:flex-start")}>청구 일정</span>
+                    <h2 style={S("font-size:19px;font-weight:800;color:#111;margin-top:2px;line-height:1.35")}>다음 청구는<br/>{vm.claimRound === 1 ? '6월 1일' : '12월 1일'}부터 가능해요</h2>
+                    <p style={S("font-size:13.5px;color:#555;line-height:1.65;margin-top:8px")}>청구는 6월과 12월, 연 2회 열려요. 그 사이 결제 내역을 자동으로 모아둘게요.</p>
+                    <div style={S("text-align:center;padding:22px 18px;border:1px solid #E2E2E2;border-radius:16px")}>
+                      <div style={S("font-size:12px;font-weight:700;color:#888")}>{vm.claimRoundMeta.label} 청구 시작까지</div>
+                      <div style={S("font-size:38px;font-weight:800;color:#0B8F58;letter-spacing:-0.03em;margin:4px 0 2px")}>D-{vm.claimDaysUntilOpen}</div>
+                      <div style={S("font-size:12.5px;color:#555")}>{vm.claimRoundMeta.window} 접수</div>
+                    </div>
+                    <div style={S("display:flex;align-items:center;justify-content:space-between;margin-top:4px")}>
+                      <span style={S("font-size:14px;font-weight:700;color:#111")}>지급까지 모은 결제</span>
+                      <span style={S("font-size:12px;font-weight:700;color:#0B8F58;cursor:pointer")} onClick={() => vm.openClaimLink('windowClosed')}>연동 관리</span>
+                    </div>
+                    <div style={S("display:flex;flex-direction:column;gap:8px")}>
+                      {(vm.claimWindowCosts.length > 0) ? vm.claimWindowCosts.map((c, $index) => (
+                        <React.Fragment key={$index}>
+                          <div style={S("display:flex;gap:11px;align-items:center;padding:12px 14px;border:1px solid #E2E2E2;border-radius:14px")}>
+                            <div style={S("flex:1;min-width:0")}>
+                              <div style={S("font-size:13px;font-weight:700;color:#111;line-height:1.4")}>{c.name}{c.auto ? <span style={S("font-size:10px;font-weight:700;color:#0B8F58;background:#E3F2EA;padding:2px 6px;border-radius:6px;margin-left:6px")}>자동</span> : <span style={S("font-size:10px;font-weight:700;color:#7A6A3F;background:#FAF3E0;padding:2px 6px;border-radius:6px;margin-left:6px")}>직접 첨부</span>}</div>
+                              <div style={S("font-size:11px;color:#888;margin-top:3px")}>{c.metaLabel}</div>
+                            </div>
+                            <span style={S("font-size:13.5px;font-weight:800;color:#111;white-space:nowrap")}>{c.amtLabel}</span>
+                          </div>
+                        </React.Fragment>
+                      )) : (
+                        <div style={S("border:1px dashed #D4D8D6;border-radius:14px;padding:22px 18px;text-align:center")}>
+                          <div style={S("font-size:13px;font-weight:700;color:#111")}>모은 결제가 없어요</div>
+                          <div style={S("font-size:11.5px;color:#888;margin-top:5px;line-height:1.55")}>카드를 연동하면 학원 결제를 자동으로 모아둬요</div>
+                        </div>
+                      )}
+                    </div>
+                    <div style={S("display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:#F7FBF9;border:1px solid #CFE9DB;border-radius:14px")}>
+                      <span style={S("font-size:12.5px;font-weight:700;color:#555")}>모인 금액</span>
+                      <b style={S("font-size:16px;font-weight:800;color:#111")}>{vm.wonFmt(vm.claimEngine.thisCost)}</b>
+                    </div>
+                    <div style={S("font-size:14px;font-weight:700;color:#111;margin-top:6px")}>연간 한도 사용 현황</div>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:16px 18px")}>
+                      <div style={S("display:flex;height:10px;border-radius:20px;overflow:hidden;background:#E9E9E9")}>
+                        <div style={S(`width:${vm.claimLimit ? (vm.claimEngine.prevPaid / vm.claimLimit * 100) : 0}%;background:#0B8F58`)}></div>
+                      </div>
+                      <div style={S("display:flex;gap:12px;margin-top:9px;flex-wrap:wrap")}>
+                        {(vm.claimEngine.prevPaid > 0) && (<div style={S("display:flex;align-items:center;gap:5px;font-size:11px;color:#888")}><span style={S("width:8px;height:8px;border-radius:3px;background:#0B8F58")}></span>기지급 <b style={S("color:#111;font-weight:700")}>{vm.manFmt(vm.claimEngine.prevPaid)}</b></div>)}
+                        <div style={S("display:flex;align-items:center;gap:5px;font-size:11px;color:#888")}><span style={S("width:8px;height:8px;border-radius:3px;background:#E9E9E9")}></span>잔여 <b style={S("color:#111;font-weight:700")}>{vm.manFmt(vm.claimLimit - vm.claimEngine.prevPaid)}</b></div>
+                      </div>
+                    </div>
+                    <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:14px;font-weight:700;border-radius:14px;height:52px;display:flex;align-items:center;justify-content:center;margin-top:4px")} onClick={() => vm.goClaim('home')}>홈으로</div>
+                  </>)}
+                  {(vm.claimIs.expired) && (<>
+                    <div style={S("display:flex;align-items:center;gap:6px")} onClick={() => vm.goClaim('home')}>
+                      <span style={S("font-size:15px;color:#555")}>‹</span>
+                      <span style={S("font-size:12px;color:#555")}>보험현황</span>
+                    </div>
+                    <span style={S("display:inline-block;font-size:11px;font-weight:700;color:#6E766F;background:#F0F2F1;padding:5px 11px;border-radius:20px;align-self:flex-start")}>보장 종료</span>
+                    <h2 style={S("font-size:19px;font-weight:800;color:#111;margin-top:2px;line-height:1.35")}>보장 자격이<br/>{vm.claimYear}년 12월 31일에 종료됐어요</h2>
+                    <p style={S("font-size:13.5px;color:#555;line-height:1.65;margin-top:8px")}>청구 가능 기간이 끝나 남은 한도는 소멸했어요. 아래는 최종 정산 내역이에요.</p>
+                    <div style={S("font-size:14px;font-weight:700;color:#111;margin-top:6px")}>최종 정산</div>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:8px 16px 12px")}>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>총 인정 비용</span><b style={S("font-size:14px;font-weight:700;color:#111")}>12,000,000원</b></div>
+                      <div style={S("height:1px;background:#E2E2E2")}></div>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>1차 지급 (2027.06)</span><b style={S("font-size:14px;font-weight:700;color:#111")}>3,640,000원</b></div>
+                      <div style={S("height:1px;background:#E2E2E2")}></div>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;font-size:13px;color:#555")}><span>2차 지급 (2027.12)</span><b style={S("font-size:14px;font-weight:700;color:#111")}>4,760,000원</b></div>
+                      <div style={S("height:2px;background:#DADADA;margin:7px 0")}></div>
+                      <div style={S("display:flex;justify-content:space-between;align-items:baseline;padding:11px 0 4px")}><span style={S("font-size:13.5px;font-weight:700;color:#111")}>총 수령액</span><b style={S("font-size:23px;font-weight:800;color:#0B8F58;letter-spacing:-0.02em")}>8,400,000원</b></div>
+                      <div style={S("display:flex;justify-content:space-between;font-size:12px;color:#888;padding:5px 0")}><span>내가 낸 몫 (30%)</span><b style={S("font-size:12.5px;font-weight:700;color:#555")}>3,600,000원</b></div>
+                      <div style={S("display:flex;justify-content:space-between;font-size:12px;color:#888;padding:5px 0")}><span>청구 안 하고 소멸한 한도</span><b style={S("font-size:12.5px;font-weight:700;color:#555")}>6,600,000원</b></div>
+                    </div>
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:16px;padding:14px 16px")}>
+                      <div style={S("font-size:12.5px;color:#555;line-height:1.6")}>정산 내역이 사실과 다르다면 종료일로부터 <b style={S("color:#111")}>90일 이내</b>에 이의를 제기할 수 있어요.</div>
+                    </div>
+                    <div style={S("flex:none;display:flex;flex-direction:column;gap:8px;padding-top:4px")}>
+                      <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:14px;font-weight:700;border-radius:14px;height:48px;display:flex;align-items:center;justify-content:center")}>이의 신청하기</div>
+                      <div style={S("background:#fff;border:1px solid #E5E5E5;color:#555;font-size:14px;font-weight:700;border-radius:14px;height:48px;display:flex;align-items:center;justify-content:center")} onClick={() => vm.goClaim('home')}>홈으로</div>
+                    </div>
+                  </>)}
+                </>)}
                 </>)}
                 {(vm.homeIs.ins02) && (<>
                   <div style={S("display:flex;align-items:center;gap:6px")} onClick={vm.backIns01}>
@@ -1584,45 +2531,87 @@ class Component extends React.Component {
                       전월 대비 {vm.deltaLabel}
                     </div>
                   </div>
-                  <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;padding:18px")}>
-                    <div style={S("font-size:13.5px;font-weight:700;color:#111")}>보험료에 영향을 준 요소</div>
-                    {(vm.riskFactors || []).map((r, $index) => (
-                      <React.Fragment key={$index}>
-                        <div style={S("margin-top:12px")}>
-                          <div style={S("display:flex;justify-content:space-between;font-size:12px;color:#555")}>
-                            <span>
-                              {r.name}
-                            </span>
-                            <span style={S("font-weight:700;color:#111")}>
-                              {r.level}
-                            </span>
-                          </div>
-                          <div style={S("height:7px;border-radius:20px;background:#E9E9E9;margin-top:5px")}>
-                            <div style={S(`height:7px;border-radius:20px;background:#0B8F58;width:${r.pct}%`)}></div>
+                  <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;overflow:hidden;flex:none")}>
+                    <div style={S("position:relative;overflow:hidden;background:linear-gradient(135deg,#0B8F58,#16B37A);padding:22px 20px 20px;text-align:center;color:#fff")}>
+                      <svg width="130" height="130" viewBox="0 0 40 48" style={S("position:absolute;top:-20px;right:-18px;opacity:0.12")}>
+                        <path d="M4 2h32v40l-4-2.6-4 2.6-4-2.6-4 2.6-4-2.6-4 2.6-4-2.6-4 2.6z" fill="#fff"></path>
+                        <line x1="9" y1="11" x2="31" y2="11" stroke="#0B8F58" strokeWidth="1.6"></line>
+                        <line x1="9" y1="17" x2="31" y2="17" stroke="#0B8F58" strokeWidth="1.6"></line>
+                        <line x1="9" y1="23" x2="23" y2="23" stroke="#0B8F58" strokeWidth="1.6"></line>
+                      </svg>
+                      <div style={S("width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.55);display:flex;align-items:center;justify-content:center;margin:0 auto;position:relative")}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      </div>
+                      <div style={S("font-size:15px;font-weight:800;margin-top:10px;position:relative")}>월별 납입 영수증</div>
+                      <div style={S("font-size:9.5px;color:rgba(255,255,255,0.75);margin-top:4px;position:relative;letter-spacing:0.2px")}>No. {vm.paymentsReceiptNo}</div>
+                    </div>
+                    {(vm.payments && vm.payments.length > 0) ? (<>
+                      <div style={S("padding:16px 20px;border-bottom:1px dashed #D8E5DE;display:flex;justify-content:space-between;align-items:center")}>
+                        <div>
+                          <div style={S("font-size:9.5px;color:#999")}>총 납입 합계</div>
+                          <div style={S("font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;font-size:20px;font-weight:800;color:#111;margin-top:3px;letter-spacing:-0.3px")}>{vm.paymentsTotalLabel}</div>
+                        </div>
+                        <div style={S("display:flex;align-items:center;gap:6px")}>
+                          <span style={S("width:7px;height:7px;border-radius:50%;background:#0B8F58;flex:none;animation:pulse-ring 1.6s ease-out infinite")}></span>
+                          <span style={S("font-size:10.5px;color:#0B8F58;font-weight:700;white-space:nowrap")}>전액 정상 납입</span>
+                        </div>
+                      </div>
+                      {(vm.paymentYearChips && vm.paymentYearChips.length > 1) && (<>
+                        <div style={S("display:flex;gap:6px;padding:14px 20px 0")}>
+                          {vm.paymentYearChips.map((y, $index) => (
+                            <React.Fragment key={$index}>
+                              <span style={S(`font-size:11px;font-weight:700;padding:6px 13px;border-radius:20px;cursor:pointer;white-space:nowrap;${y.active ? 'background:#0B8F58;color:#fff' : 'background:#F2F2F2;color:#666'}`)} onClick={y.onClick}>{y.year}년</span>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      </>)}
+                      <div style={S("display:flex;padding:12px 20px 4px")}>
+                        <span style={S("flex:1;font-size:9px;color:#AAA;font-weight:700")}>납입 연월</span>
+                        <span style={S("flex:1;text-align:center;font-size:9px;color:#AAA;font-weight:700")}>결제 금액</span>
+                        <span style={S("flex:1;text-align:right;font-size:9px;color:#AAA;font-weight:700")}>처리 상태</span>
+                      </div>
+                      <div style={S("padding:0 20px 8px")}>
+                        {vm.paymentsVisible.map((p, $index) => (
+                          <React.Fragment key={$index}>
+                            <div className="receipt-row" style={S(`display:flex;align-items:center;padding:11px 0;margin:0 -20px;padding-left:20px;padding-right:20px;cursor:pointer;${$index > 0 ? 'border-top:1px dashed #EEE;' : ''}`)} onClick={() => vm.openPaymentDetail(p)}>
+                              <span style={S("flex:1;font-size:11.5px;color:#555")}>{p.date}</span>
+                              <span style={S("flex:1;text-align:center;font-size:12.5px;font-weight:800;color:#111")}>{p.amount}</span>
+                              <span style={S("flex:1;text-align:right")}>
+                                <span style={S("font-size:9.5px;font-weight:700;color:#0B8F58;background:rgba(11,143,88,0.1);padding:3px 9px;border-radius:20px;white-space:nowrap")}>{p.status}</span>
+                              </span>
+                            </div>
+                          </React.Fragment>
+                        ))}
+                      </div>
+                      {(vm.paymentsShowAll || vm.paymentsRemainCount > 0) && (<>
+                        <div style={S("padding:0 20px 16px")}>
+                          <div style={S("text-align:center;font-size:11px;font-weight:700;color:#0B8F58;background:rgba(11,143,88,0.08);border-radius:12px;padding:10px;cursor:pointer")} onClick={vm.togglePaymentsShowAll}>
+                            {vm.paymentsShowAll ? '접기 ‹' : `더보기 (${vm.paymentsRemainCount}건) ›`}
                           </div>
                         </div>
-                      </React.Fragment>
-                    ))}
-                    <div style={S("font-size:10px;color:#AAA;margin-top:12px")}>※ 실제 보험료는 계리 엔진이 계산하며, 이 화면은 영향 요소를 쉽게 풀어 보여줍니다.</div>
+                      </>)}
+                    </>) : (
+                      <div style={S("padding:18px")}>
+                        {this.renderEmptyState(
+                          <svg width="38" height="38" viewBox="0 0 44 44">
+                            <rect x="9" y="7" width="26" height="30" rx="4" fill="#fff" stroke="#0B8F58" strokeWidth="2.2"></rect>
+                            <line x1="15" y1="16" x2="29" y2="16" stroke="#CFE9DB" strokeWidth="2.4" strokeLinecap="round"></line>
+                            <line x1="15" y1="22" x2="29" y2="22" stroke="#CFE9DB" strokeWidth="2.4" strokeLinecap="round"></line>
+                            <line x1="15" y1="28" x2="23" y2="28" stroke="#CFE9DB" strokeWidth="2.4" strokeLinecap="round"></line>
+                          </svg>,
+                          '아직 결제 내역이 없어요',
+                          '첫 보험료가 결제되면 월별 결제 내역이 여기에 표시돼요.',
+                          { compact: true }
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;padding:18px")}>
-                    <div style={S("font-size:13.5px;font-weight:700;color:#111")}>월별 납입 내역</div>
-                    {(vm.payments || []).map((p, $index) => (
-                      <React.Fragment key={$index}>
-                        <div style={S("display:flex;justify-content:space-between;font-size:12.5px;padding:10px 0;border-bottom:1px solid #EEE")}>
-                          <span style={S("color:#555")}>
-                            {p.date}
-                          </span>
-                          <span style={S("font-weight:700;color:#111")}>
-                            {p.amount}
-                          </span>
-                          <span style={S("color:#0B8F58")}>
-                            {p.status}
-                          </span>
-                        </div>
-                      </React.Fragment>
-                    ))}
-                  </div>
+                  {!(vm.payments && vm.payments.length > 0) && (
+                    <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;padding:14px 16px;display:flex;align-items:center;gap:12px")}>
+                      <div style={S("width:38px;height:38px;border-radius:10px;background:#E3F2EA;display:flex;align-items:center;justify-content:center;flex:none;font-size:18px")}>💳</div>
+                      <div style={S("font-size:12.5px;color:#555;line-height:1.55")}>다음 결제 예정일은 <b style={S("color:#111")}>{vm.renewAt}</b>이에요. 결제 수단은 마이페이지에서 관리할 수 있어요.</div>
+                    </div>
+                  )}
                 </>)}
                 {/* AI 챗봇 화면은 아래 전용 채팅 오버레이(vm.homeIs.llm)로 렌더됩니다 */}
               </>)}
@@ -1638,17 +2627,6 @@ class Component extends React.Component {
                       <div style={S("font-size:10px;color:#888;margin-top:2px")}>{vm.studentSchool} · 목표 {vm.studentTarget}</div>
                     </div>
                   </div>
-                  <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center")}>
-                    <div>
-                      <div style={S("font-size:10.5px;line-height:1.4;color:#555")}>
-                        스탠다드 · 가입일 {vm.joinedAt}
-                      </div>
-                      <div style={S("font-size:10px;line-height:1.4;color:#888;margin-top:4px")}>
-                        다음 재평가일 {vm.renewAt}
-                      </div>
-                    </div>
-                    <span style={S("font-size:10px;color:#0B8F58;font-weight:700;white-space:nowrap")} onClick={vm.goHomeIns01}>보험현황 ›</span>
-                  </div>
                   <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:22px;padding:15px 16px")}>
                     <div style={S("font-size:11.5px;font-weight:700;color:#111;margin-bottom:6px")}>내 성적 관리</div>
                     <div style={S("display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #EEE")} onClick={vm.goStatusDetail}>
@@ -1661,7 +2639,7 @@ class Component extends React.Component {
                       </div>
                     </div>
                     <div style={S("display:flex;justify-content:space-between;align-items:center;padding:11px 0")} onClick={vm.goGradeHistory}>
-                      <span style={S("font-size:11.5px;color:#111;white-space:nowrap")}>내 성적 이력 전체 보기</span>
+                      <span style={S("font-size:11.5px;color:#111;white-space:nowrap")}>내 모의고사 성적 이력 보기</span>
                       <span style={S("color:#AAA;flex-shrink:0")}>›</span>
                     </div>
                   </div>
@@ -1687,8 +2665,8 @@ class Component extends React.Component {
                       <span style={S("color:#AAA;flex-shrink:0")}>›</span>
                     </div>
                   </div>
-                  <div style={S("background:#fff;border:1px solid #E5E5E5;color:#C0304A;font-size:11.5px;font-weight:700;border-radius:16px;height:44px;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center")} onClick={vm.logout}>로그아웃</div>
-                  <div style={S("text-align:center;font-size:8.5px;color:#AAA;line-height:1.5;margin-top:2px")}>고객센터 1588-2410 · 평일 9시~18시 · 주말·공휴일 11시~18시</div>
+                  <div style={S("background:#fff;border:1px solid #E5E5E5;color:#C0304A;font-size:11.5px;font-weight:500;border-radius:16px;height:32px;flex:none;width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center")} onClick={vm.logout}>로그아웃</div>
+                  <div style={S("text-align:center;font-size:8.5px;color:#AAA;line-height:1.5;margin-top:2px")}>고객센터 1588-2410 · 평일 9시~18시</div>
                 </>)}
                 {(vm.myIs.notifSettings) && (<>
                   <div style={S("display:flex;align-items:center;gap:6px")} onClick={vm.backMy}>
@@ -1811,53 +2789,84 @@ class Component extends React.Component {
                     <span style={S("font-size:15px;color:#555")}>‹</span>
                     <span style={S("font-size:11px;color:#555")}>뒤로</span>
                   </div>
-                  <div style={S("background:#fff;border:1px solid #E2E2E2;border-left:4px solid #0B8F58;border-radius:22px;padding:15px 16px")}>
+                  <div style={S("background:rgba(11,143,88,0.08);border:1px solid rgba(11,143,88,0.18);border-radius:22px;padding:15px 16px")}>
                     <div style={S("font-size:11.5px;font-weight:700;color:#111")}>최근 모의고사 성적</div>
                     <div style={S("font-size:10.5px;color:#333;margin-top:8px")}>
                       {vm.recentGradesText}
                     </div>
                   </div>
-                  <div style={S("font-size:11.5px;font-weight:700;color:#111")}>모의고사 히스토리</div>
-                  {(vm.examHistory || []).map((ex, $index) => (
+                  <div style={S("display:flex;align-items:center;justify-content:space-between;gap:8px")}>
+                    <span style={S("font-size:11.5px;font-weight:700;color:#111")}>모의고사 히스토리</span>
+                    {(vm.examHistory && vm.examHistory.length > 0) && (<>
+                      <div style={S("display:flex;gap:6px;flex:none")}>
+                        <span style={S("font-size:9.5px;font-weight:700;color:#0B8F58;background:rgba(11,143,88,0.1);border:1px solid rgba(11,143,88,0.3);border-radius:20px;padding:4px 9px;white-space:nowrap;cursor:pointer")} onClick={vm.toggleExamSort}>
+                          {vm.examSortDesc ? '최근순' : '과거순'}
+                        </span>
+                        <span style={S("font-size:9.5px;font-weight:700;color:#555;background:#F2F2F2;border:1px solid #E5E5E5;border-radius:20px;padding:4px 9px;white-space:nowrap;cursor:pointer")} onClick={vm.toggleAllExams}>
+                          {vm.examAllOpen ? '전체 접기' : '전체 펼치기'}
+                        </span>
+                      </div>
+                    </>)}
+                  </div>
+                  {(vm.examHistory && vm.examHistory.length > 0) ? (vm.examHistory.map((ex, $index) => {
+                    const open = !!vm.examOpen[ex.label];
+                    const pd = ex.percentileDiff;
+                    const pdColor = (pd == null || pd === 0) ? '#999' : (pd > 0 ? '#0B8F58' : '#C0304A');
+                    const pdText = pd == null ? '' : (pd === 0 ? '－' : (pd > 0 ? `▲${pd}` : `▼${-pd}`));
+                    return (
                     <React.Fragment key={$index}>
-                      <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:20px;padding:12px 14px")}>
-                        <div style={S("display:flex;justify-content:space-between;align-items:baseline")}>
-                          <span style={S("font-size:11px;font-weight:700;color:#111")}>
-                            {ex.label}
-                          </span>
-                          <span style={S("font-size:10px;color:#888")}>
-                            백분위 {ex.percentile}
-                          </span>
+                      <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:18px")}>
+                        <div style={S("display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer")} onClick={() => vm.toggleExamOpen(ex.label)}>
+                          <div style={S("flex:1;min-width:0")}>
+                            <div style={S("font-size:12px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>{ex.label}</div>
+                            <div style={S("font-size:9.5px;color:#999;margin-top:2px")}>{ex.date}</div>
+                          </div>
+                          <div style={S("text-align:right;flex:none;white-space:nowrap")}>
+                            <span style={S("font-size:12.5px;font-weight:800;color:#111")}>백분위 {ex.percentile}</span>
+                            {(pdText) && (<span style={S(`font-size:10.5px;font-weight:700;color:${pdColor};margin-left:5px`)}>{pdText}</span>)}
+                          </div>
+                          <span style={S(`font-size:12px;color:#AAA;flex:none;transition:transform .2s ease;transform:rotate(${open ? 90 : 0}deg)`)}>›</span>
                         </div>
-                        <div style={S("display:flex;justify-content:space-between;margin-top:8px;text-align:center")}>
-                          <div style={S("flex:1")}>
-                            <div style={S("font-size:9px;color:#888")}>국어</div>
-                            <div style={S("font-size:12px;font-weight:800;color:#0B8F58;margin-top:2px")}>
-                              {ex.kor}
-                            </div>
-                          </div>
-                          <div style={S("flex:1")}>
-                            <div style={S("font-size:9px;color:#888")}>수학</div>
-                            <div style={S("font-size:12px;font-weight:800;color:#3B82F6;margin-top:2px")}>
-                              {ex.math}
-                            </div>
-                          </div>
-                          <div style={S("flex:1")}>
-                            <div style={S("font-size:9px;color:#888")}>영어</div>
-                            <div style={S("font-size:12px;font-weight:800;color:#DB2777;margin-top:2px")}>
-                              {ex.eng}
-                            </div>
-                          </div>
-                          <div style={S("flex:1")}>
-                            <div style={S("font-size:9px;color:#888")}>탐구</div>
-                            <div style={S("font-size:12px;font-weight:800;color:#D97706;margin-top:2px")}>
-                              {ex.sci}
+                        <div style={S(`display:grid;grid-template-rows:${open ? '1fr' : '0fr'};opacity:${open ? 1 : 0};transition:grid-template-rows .3s ease, opacity .25s ease`)}>
+                          <div style={S("overflow:hidden;min-height:0")}>
+                            <div style={S("display:flex;gap:8px;padding:0 14px 14px;flex-wrap:wrap")}>
+                              {ex.subjects.map((sub, si) => {
+                                const gd = sub.gradeDiff;
+                                const up = gd != null && gd < 0;
+                                const down = gd != null && gd > 0;
+                                const bg = up ? '#E4F5EC' : (down ? '#FCE9EC' : '#EDEDED');
+                                const ink = up ? '#0B7A4A' : (down ? '#C0304A' : '#666');
+                                const gradeArrow = up ? ' ▲' : (down ? ' ▼' : '');
+                                return (
+                                  <React.Fragment key={si}>
+                                    <div style={S(`flex:1;min-width:74px;background:${bg};border-radius:14px;padding:10px;text-align:center`)}>
+                                      <div style={S("font-size:9.5px;color:#888;font-weight:700")}>{sub.name}</div>
+                                      <div style={S(`font-size:15px;font-weight:800;color:${ink};margin-top:4px`)}>{sub.score}<span style={S("font-size:10px;font-weight:700")}>점</span></div>
+                                      <div style={S(`font-size:11px;font-weight:800;color:${ink};margin-top:3px`)}>{sub.grade}등급{gradeArrow}</div>
+                                    </div>
+                                  </React.Fragment>
+                                );
+                              })}
                             </div>
                           </div>
                         </div>
                       </div>
                     </React.Fragment>
-                  ))}
+                    );
+                  })) : this.renderEmptyState(
+                    <svg width="64" height="64" viewBox="0 0 64 64">
+                      <rect x="14" y="8" width="36" height="48" rx="6" fill="#fff" stroke="#0B8F58" strokeWidth="2.4"></rect>
+                      <rect x="20" y="15" width="18" height="3.6" rx="1.8" fill="#CFE9DB"></rect>
+                      <rect x="20" y="22" width="11" height="3" rx="1.5" fill="#E3F2EA"></rect>
+                      <line x1="19" y1="48" x2="45" y2="48" stroke="#E3F2EA" strokeWidth="2" strokeLinecap="round"></line>
+                      <rect x="21" y="41" width="4.6" height="7" rx="1.5" fill="#CFE9DB"></rect>
+                      <rect x="27.7" y="37" width="4.6" height="11" rx="1.5" fill="#CFE9DB"></rect>
+                      <rect x="34.4" y="39" width="4.6" height="9" rx="1.5" fill="#CFE9DB"></rect>
+                      <rect x="41.1" y="33" width="4.6" height="15" rx="1.5" fill="#0B8F58"></rect>
+                    </svg>,
+                    '아직 등록된 성적이 없어요',
+                    '모의고사를 본 후 자동으로 업데이트돼요'
+                  )}
                 </>)}
                 {(vm.myIs.scan) && (<>
                   <div style={S("display:flex;align-items:center;gap:6px")} onClick={vm.backMy}>
@@ -1985,15 +2994,15 @@ class Component extends React.Component {
                   {(vm.llmMessages || []).map((m, $index) => (
                     <React.Fragment key={$index}>
                       {(m.role === 'user') ? (
-                        <div style={S("align-self:flex-end;max-width:80%;background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;border-radius:22px 16px 4px 16px;padding:10px 13px;font-size:11.5px;line-height:1.55;white-space:pre-line;word-break:keep-all")}>
+                        <div style={S("align-self:flex-end;max-width:80%;background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;border-radius:22px 16px 4px 16px;padding:10px 13px;font-size:14px;line-height:1.6;white-space:pre-line;word-break:keep-all;text-align:justify")}>
                           {m.text}
                         </div>
                       ) : (
-                        <div style={S("align-self:flex-start;max-width:88%;display:flex;gap:7px;align-items:flex-start")}>
+                        <div style={S("align-self:flex-start;max-width:88%;display:flex;gap:7px;align-items:flex-start;animation:riseIn 0.4s ease-out")}>
                           <div style={S("width:30px;height:30px;border-radius:50%;background:#E4F0EA;flex:none;display:flex;align-items:center;justify-content:center;margin-top:2px;overflow:hidden")}>
                             <img src={IMG_F7F53234} alt="노재수" style={S("width:24px;height:24px;object-fit:contain")} />
                           </div>
-                          <div style={S("background:#fff;border:1px solid #E6E6E6;border-radius:4px 16px 16px 16px;padding:11px 13px;font-size:11.5px;color:#333;line-height:1.7;word-break:keep-all")}>
+                          <div style={S("background:#fff;border:1px solid #E6E6E6;border-radius:4px 16px 16px 16px;padding:11px 13px;font-size:14px;color:#333;line-height:1.75;word-break:keep-all;text-align:justify")}>
                             {m.greeting ? (
                               <div style={S("white-space:pre-line;word-break:keep-all")}>
                                 {m.text.split('No')[0]}
@@ -2018,25 +3027,25 @@ class Component extends React.Component {
                     </React.Fragment>
                   ))}
                   {(vm.llmLoading) && (<>
-                    <div style={S("align-self:flex-start;max-width:88%;display:flex;gap:7px;align-items:flex-start")}>
-                      <div style={S("width:30px;height:30px;border-radius:50%;background:#E4F0EA;flex:none;display:flex;align-items:center;justify-content:center;margin-top:2px;overflow:hidden")}>
-                        <img src={IMG_F7F53234} alt="노재수" style={S("width:24px;height:24px;object-fit:contain")} />
-                      </div>
-                      <div style={S("background:#fff;border:1px solid #E6E6E6;border-radius:4px 16px 16px 16px;padding:13px 16px;display:flex;gap:5px;align-items:center")}>
-                        <span style={S("width:7px;height:7px;border-radius:50%;background:#0B8F58;display:inline-block;animation:typingDot 1.2s infinite;animation-delay:0s")}></span>
-                        <span style={S("width:7px;height:7px;border-radius:50%;background:#0B8F58;display:inline-block;animation:typingDot 1.2s infinite;animation-delay:0.2s")}></span>
-                        <span style={S("width:7px;height:7px;border-radius:50%;background:#0B8F58;display:inline-block;animation:typingDot 1.2s infinite;animation-delay:0.4s")}></span>
+                    <div style={S("align-self:flex-start;width:100%;position:relative;height:56px;overflow:hidden")}>
+                      {this.chatLoadingFootprints.map((p, i) => (
+                        <img key={i} src={IMG_PAW} alt="" style={S(`position:absolute;left:${p}%;bottom:10px;width:11px;height:11px;object-fit:contain;opacity:0;animation:su-fp-${i + 1} 1.6s linear infinite`)} />
+                      ))}
+                      <div style={S("position:absolute;bottom:0;width:30px;height:30px;animation:su-walk-x-chat 1.6s linear infinite, su-char-fade 1.6s linear infinite")}>
+                        <img src={IMG_F7F53234} alt="노재수" style={S("width:100%;height:100%;object-fit:contain;animation:su-hop 0.25s ease-in-out infinite")} />
                       </div>
                     </div>
                   </>)}
                 </div>
-                <div style={S("flex:none;padding:10px 12px;border-top:1px solid #E6E6E6;background:#fff;display:flex;gap:8px;align-items:center")}>
-                  <input
+                <div style={S("flex:none;padding:10px 12px;border-top:1px solid #E6E6E6;background:#fff;display:flex;gap:8px;align-items:flex-end")}>
+                  <textarea
+                    ref={this.chatInputRef}
                     value={vm.llmInput}
-                    onChange={vm.onLlmInput}
-                    onKeyDown={e => { if (e.key === 'Enter') vm.submitLlm(); }}
+                    onChange={e => { vm.onLlmInput(e); this.autosizeChatInput(); }}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); vm.submitLlm(); } }}
                     placeholder="궁금한 점을 입력해 보세요"
-                    style={S("flex:1;min-width:0;border:1px solid #E0E0E0;border-radius:26px;padding:11px 16px;font-size:11.5px;color:#111;outline:none;background:#F7F7F7;font-family:inherit")}
+                    rows={1}
+                    style={S("flex:1;min-width:0;overflow:hidden;resize:none;border:1px solid #E0E0E0;border-radius:18px;padding:11px 16px;font-size:11.5px;color:#111;outline:none;background:#F7F7F7;font-family:inherit;line-height:1.5")}
                   />
                   <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none")} onClick={vm.submitLlm}>
                     <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2058,7 +3067,7 @@ class Component extends React.Component {
                     <circle cx="15" cy="14.5" r="1.4" fill="#fff" stroke="none"></circle>
                     <line x1="9" y1="18" x2="15" y2="18"></line>
                   </svg>
-                  <span style={S("font-size:12px;font-weight:700;line-height:1.35;word-break:keep-all")}>보험료 산정 근거와 약관을 설명해드릴게요!</span>
+                  <span style={S("font-size:13px;font-weight:500;line-height:1.35;word-break:keep-all")}>보험료 산정 근거와 약관을 설명해드릴게요!</span>
                 </div>
               </div>
             </>)}
@@ -2168,6 +3177,49 @@ class Component extends React.Component {
                 </div>
               </div>
             </>)}
+            {(vm.paymentDetailView) && (<>
+              <div style={S("position:absolute;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:25")} onClick={vm.closePaymentDetail}>
+                <div style={S("background:#fff;border-radius:24px;padding:22px 20px;width:85%;max-height:80%;overflow-y:auto")} onClick={vm.stopClick}>
+                  <div style={S("display:flex;align-items:center;justify-content:space-between")}>
+                    <div style={S("display:flex;align-items:center;gap:9px")}>
+                      <div style={S("width:32px;height:32px;border-radius:10px;background:rgba(11,143,88,0.1);display:flex;align-items:center;justify-content:center;flex:none")}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B8F58" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"></rect><line x1="9" y1="8" x2="15" y2="8"></line><line x1="9" y1="12" x2="15" y2="12"></line><line x1="9" y1="16" x2="12" y2="16"></line></svg>
+                      </div>
+                      <span style={S("font-size:14.5px;font-weight:800;color:#111")}>납입 상세 정보</span>
+                    </div>
+                    <span style={S("font-size:18px;color:#999;cursor:pointer")} onClick={vm.closePaymentDetail}>✕</span>
+                  </div>
+                  <div style={S("border-top:1px solid #F0F0F0;margin-top:14px")}></div>
+                  <div style={S("background:#FAFAFA;border-radius:18px;padding:20px 16px;margin-top:16px;text-align:center")}>
+                    <span style={S("font-size:10.5px;font-weight:700;color:#0B8F58;background:rgba(11,143,88,0.1);padding:4px 11px;border-radius:20px")}>{vm.paymentDetailView.date}</span>
+                    <div style={S("font-size:25px;font-weight:900;color:#111;margin-top:12px")}>{vm.paymentDetailView.amount}</div>
+                    <div style={S("display:flex;align-items:center;justify-content:center;gap:5px;margin-top:8px")}>
+                      <span style={S("width:16px;height:16px;border-radius:50%;background:#0B8F58;display:flex;align-items:center;justify-content:center;flex:none")}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      </span>
+                      <span style={S("font-size:12px;font-weight:700;color:#0B8F58")}>정상 완납</span>
+                    </div>
+                  </div>
+                  <div style={S("display:flex;flex-direction:column;margin-top:6px")}>
+                    {[
+                      { label: '승인번호', value: vm.paymentDetailView.approvalNo },
+                      { label: '결제 일시', value: vm.paymentDetailView.paidAt },
+                      { label: '결제 수단', value: vm.paymentDetailView.method },
+                      { label: '공급가액', value: vm.paymentDetailView.supplyAmountLabel },
+                      { label: '부가가치세 (10%)', value: vm.paymentDetailView.vatLabel },
+                    ].map((r, $index) => (
+                      <React.Fragment key={$index}>
+                        <div style={S(`display:flex;justify-content:space-between;align-items:center;padding:12px 0;${$index > 0 ? 'border-top:1px solid #F0F0F0;' : ''}`)}>
+                          <span style={S("font-size:11.5px;color:#888")}>{r.label}</span>
+                          <span style={S("font-size:11.5px;font-weight:700;color:#111")}>{r.value}</span>
+                        </div>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                  <div style={S("background:linear-gradient(135deg,#0B8F58,#16B37A);color:#fff;font-size:13.5px;font-weight:700;border-radius:14px;height:48px;display:flex;align-items:center;justify-content:center;margin-top:12px")} onClick={vm.closePaymentDetail}>확인</div>
+                </div>
+              </div>
+            </>)}
             {(vm.convLoading) && (<>
               <div style={S("position:absolute;inset:0;background:linear-gradient(160deg,#EAF7EC,#F6FBF0);z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px")}>
                 <div style={S("width:44px;height:44px;border:4px solid rgba(11,143,88,0.18);border-top-color:#0B8F58;border-radius:50%;animation:spin 0.9s linear infinite")}></div>
@@ -2219,7 +3271,7 @@ class Component extends React.Component {
                   <span style={S("font-size:13px;font-weight:700;color:#111")}>알림</span>
                 </div>
                 <div style={S("flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:10px")}>
-                  {(vm.notifications || []).map((n, $index) => (
+                  {(vm.notifications && vm.notifications.length > 0) ? (vm.notifications.map((n, $index) => (
                     <React.Fragment key={$index}>
                       <div style={S("background:#fff;border:1px solid #E2E2E2;border-radius:20px;padding:13px 14px")}>
                         <div style={S("display:flex;justify-content:space-between;align-items:baseline")}>
@@ -2235,20 +3287,33 @@ class Component extends React.Component {
                         </div>
                       </div>
                     </React.Fragment>
-                  ))}
+                  ))) : this.renderEmptyState(
+                    <svg width="58" height="58" viewBox="0 0 58 58">
+                      <path d="M17 25a12 12 0 0 1 24 0c0 9 4 11 4 11H13s4-2 4-11" fill="#fff" stroke="#0B8F58" strokeWidth="2.4" strokeLinejoin="round"></path>
+                      <path d="M24 40a5 5 0 0 0 10 0" fill="none" stroke="#0B8F58" strokeWidth="2.4" strokeLinecap="round"></path>
+                      <circle cx="42" cy="18" r="6.5" fill="#CFE9DB"></circle>
+                      <path d="M39.5 18l2 2 3.5-3.6" fill="none" stroke="#0B8F58" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                    </svg>,
+                    '새로운 알림이 없어요',
+                    '보험료 재산정, 성적 등록, 청구 진행 상황이 생기면 여기서 가장 먼저 알려드릴게요.',
+                    { hint: <>💡 알림 종류는 <b style={S("color:#111")}>알림 설정</b>에서 바꿀 수 있어요</> }
+                  )}
                 </div>
               </div>
             </>)}
             <div style={S("height:66px;flex:none;border-top:1px solid #EEE;display:flex")}>
-              <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px")} onClick={vm.homeTab.onClick}>
-                <div style={S(vm.homeTab.circleStyle)}>
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke={vm.homeTab.iconColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="4,11 12,4 20,11"></polyline>
-                    <path d="M6 10v9h12v-9"></path>
-                    <path d="M10 19v-6h4v6"></path>
+              <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px")} onClick={vm.aiTab.onClick}>
+                <div style={S(vm.aiTab.circleStyle)}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke={vm.aiTab.iconColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="9" width="14" height="11" rx="3"></rect>
+                    <line x1="12" y1="5" x2="12" y2="9"></line>
+                    <circle cx="12" cy="4" r="1.3" fill={vm.aiTab.iconColor} stroke="none"></circle>
+                    <circle cx="9" cy="14.5" r="1.4" fill={vm.aiTab.iconColor} stroke="none"></circle>
+                    <circle cx="15" cy="14.5" r="1.4" fill={vm.aiTab.iconColor} stroke="none"></circle>
+                    <line x1="9" y1="18" x2="15" y2="18"></line>
                   </svg>
                 </div>
-                <span style={S(`font-size:8.5px;font-weight:${vm.homeTab.labelWeight};color:${vm.homeTab.labelColor}`)}>홈</span>
+                <span style={S(`font-size:8.5px;font-weight:${vm.aiTab.labelWeight};color:${vm.aiTab.labelColor}`)}>AI</span>
               </div>
               <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px")} onClick={vm.gradesTab.onClick}>
                 <div style={S(vm.gradesTab.circleStyle)}>
@@ -2258,6 +3323,16 @@ class Component extends React.Component {
                   </svg>
                 </div>
                 <span style={S(`font-size:8.5px;font-weight:${vm.gradesTab.labelWeight};color:${vm.gradesTab.labelColor}`)}>성적분석</span>
+              </div>
+              <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px")} onClick={vm.homeTab.onClick}>
+                <div style={S(vm.homeTab.circleStyle)}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke={vm.homeTab.iconColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="4,11 12,4 20,11"></polyline>
+                    <path d="M6 10v9h12v-9"></path>
+                    <path d="M10 19v-6h4v6"></path>
+                  </svg>
+                </div>
+                <span style={S(`font-size:8.5px;font-weight:${vm.homeTab.labelWeight};color:${vm.homeTab.labelColor}`)}>홈</span>
               </div>
               <div style={S("flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px")} onClick={vm.converterTab.onClick}>
                 <div style={S(vm.converterTab.circleStyle)}>
@@ -2421,7 +3496,7 @@ class Component extends React.Component {
                         </div>
                         <div style={S("font-size:10px;font-weight:600;color:#333;margin-top:9px;margin-bottom:5px")}>거주 지역</div>
                         <div style={S("display:flex;gap:6px;flex-wrap:wrap")}>
-                          {['서울 학군지','서울 비학군지','수도권','지방'].map((o,oi)=>(<div key={oi} onClick={()=>vm.setApply({region:o})} style={S(`font-size:10px;font-weight:600;padding:7px 11px;border-radius:8px;cursor:pointer;border:1.5px solid ${vm.apply.region===o?'#0B7A4A':'#DDD'};background:${vm.apply.region===o?'#0B7A4A':'#fff'};color:${vm.apply.region===o?'#fff':'#555'}`)}>{o}</div>))}
+                          {['서울 학군지','서울 비학군지','수도권','지방'].map((o,oi)=>(<div key={oi} onClick={()=>vm.setApply({region:o})} style={S(`font-size:11px;font-weight:500;padding:7px 11px;border-radius:8px;cursor:pointer;border:1.5px solid ${vm.apply.region===o?'#0B7A4A':'#DDD'};background:${vm.apply.region===o?'#0B7A4A':'#fff'};color:${vm.apply.region===o?'#fff':'#555'}`)}>{o}</div>))}
                         </div>
                       </div>
 
@@ -2593,7 +3668,7 @@ class Component extends React.Component {
               <img src={IMG_F7F53234} alt="" style={S("width:74px;height:74px;object-fit:contain")} />
               <div style={S("font-size:20px;font-weight:800;color:#fff;text-align:center;line-height:1.4;letter-spacing:-0.3px")}>재수없는 우리 아이!<br/>부담없는 우리집!</div>
               <div style={S("width:40px;height:40px;border:4px solid rgba(255,255,255,0.28);border-top-color:#fff;border-radius:50%;animation:spin 0.9s linear infinite;margin-top:4px")}></div>
-              <div style={S("font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.9);text-align:center;min-height:18px")}>{vm.loadStage || '준비하고 있어요…'}</div>
+              <div style={S("font-size:11.5px;font-weight:400;color:rgba(255,255,255,0.9);text-align:center;min-height:18px")}>{vm.loadStage || '준비하고 있어요…'}</div>
             </div>
           </>)}
         </div>
