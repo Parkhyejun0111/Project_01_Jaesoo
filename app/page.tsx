@@ -228,49 +228,54 @@ function HomeMain({
 }) {
   return (
     <div className="screen page-with-nav">
-      <section className="home-hero">
-        <TopBar onNotification={onNotification} />
-        <Clover className="hero-clover one" />
-        <Clover className="hero-clover two" />
-        <div className="hello-row">
-          <span className="avatar">김</span>
-          <p>
-            <strong>김지민 학생 학부모님,</strong>
-            <br />
-            오늘도 든든하게 챙겨드릴게요.
-          </p>
+      <section className="poster-home-hero">
+        <img src="/og.png" alt="재수없수, 보험보다 보호자에 가까운 안심 케어" />
+        <div className="poster-top-controls">
+          <span className="poster-profile">
+            <span className="avatar">김</span>
+            <span>
+              <strong>김지민 학부모님</strong>
+              <small>오늘도 든든하게 챙겨드릴게요</small>
+            </span>
+          </span>
+          <button className="icon-button" onClick={onNotification} aria-label="알림 열기">
+            <Bell size={20} />
+            <span className="notification-dot" />
+          </button>
         </div>
-        <div className="ai-intro">
-          <Mascot size="sm" />
-          <div>
-            <p className="ai-title">
-              AI 도우미 <em>노재수</em> 입니다
-            </p>
-            <h1>보험료 산정과 약관에 관해 AI에게 물어보세요</h1>
-          </div>
+      </section>
+
+      <section className="home-command-card">
+        <div className="command-heading">
+          <span className="command-mascot">
+            <Sparkles size={18} />
+          </span>
+          <span>
+            <small>AI 도우미 노재수</small>
+            <strong>무엇을 도와드릴까요?</strong>
+          </span>
         </div>
-        <div className="mint-divider" />
-        <div className="hero-actions" aria-label="AI 추천 질문">
+        <button className="ask-box" onClick={() => go("chat")}>
+          <span>보험료·보장·약관을 편하게 물어보세요</span>
+          <Send size={19} />
+        </button>
+        <div className="poster-actions" aria-label="빠른 메뉴">
           <HeroAction
             icon={<Calculator size={18} />}
-            label="보험료 계산"
+            label="비용 계산"
             onClick={() => goTab("converter")}
           />
           <HeroAction
             icon={<ShieldCheck size={18} />}
-            label="약관 설명"
-            onClick={() => go("chat")}
+            label="보장 관리"
+            onClick={openClaim}
           />
           <HeroAction
             icon={<BarChart3 size={18} />}
-            label="보장 기준"
-            onClick={() => go("chat")}
+            label="입시 관리"
+            onClick={() => goTab("grades")}
           />
         </div>
-        <button className="ask-box" onClick={() => go("chat")}>
-          <span>궁금한 점을 입력해보세요</span>
-          <Send size={19} />
-        </button>
       </section>
 
       <section className="home-content">
@@ -1255,7 +1260,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (tab: Tab) => void }) {
 }
 
 export default function AppPage() {
-  const [stage, setStage] = useState<Stage>("splash");
+  const [stage, setStage] = useState<Stage>("app");
   const [tab, setTab] = useState<Tab>("home");
   const [homeScreen, setHomeScreen] = useState<HomeScreen>("main");
   const [converterScreen, setConverterScreen] = useState<ConverterScreen>("intro");
