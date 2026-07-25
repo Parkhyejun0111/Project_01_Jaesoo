@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/*
+ * Pretendard — 자체 호스팅.
+ * --font-ui 가 Pretendard 를 첫 순위로 지정하지만 @font-face 가 없으면 보는 사람
+ * PC 에 설치돼 있을 때만 적용되고, 없으면 조용히 다음 폴백으로 떨어져 화면이
+ * 사람마다 달라 보인다. 가변폰트 하나(woff2, 2MB)로 전 굵기를 커버한다.
+ */
+@font-face {
+  font-family: Pretendard;
+  src: url("/fonts/PretendardVariable.woff2") format("woff2-variations");
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+}
+
+
 :root {
   color-scheme: light;
 
