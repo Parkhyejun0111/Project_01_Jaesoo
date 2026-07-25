@@ -1,28 +1,20 @@
-# Vercel은 frontend/ 만 빌드합니다. 아래 항목은 업로드 대상에서 제외해
-# 배포 번들 크기와 빌드 시간을 줄입니다.
+# 배포 번들에서 제외 — Vercel Python 함수는 250MB(압축 해제) 제한이 있다.
 
-# Python 백엔드 (RAG 챗봇) — Vercel에 배포되지 않음
-*.py
-pyproject.toml
-uv.lock
-.python-version
-agent_/
-__pycache__/
 .venv/
+__pycache__/
+*.pyc
+tests/
+uploads/
+.data/
+*.sqlite
+*.db
 
-# 약관 PDF 원본 (수백 KB~MB, 프론트엔드 빌드에 불필요)
-*.pdf
+# 로컬 전용 도구·문서
+mywork1.py
+langgraph.json
+run-backend.ps1
+requirements-rag.txt
+requirements-test.txt
+uv.lock
 
-# 생성된 벡터 DB
-chroma_jaesoo/
-chroma_jaesoo_graph/
-my_chroma_hanwha_local/
-
-# 로컬 빌드 산출물 — Vercel이 직접 빌드합니다
-frontend/dist/
-frontend/node_modules/
-
-# 기타
-.claude/
-outputs/
-README.md
+# ※ policy/ 는 반드시 포함해야 한다 — 약관 RAG 가 인덱싱하는 원문이다.

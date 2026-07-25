@@ -14,5 +14,8 @@
     "build:web": "npm run build --workspace web",
     "build:app": "npm run build --workspace app",
     "sync:policy": "node scripts/sync-policy.mjs"
+  },
+  "devDependencies": {
+    "vercel": "^57.0.0"
   }
 }
