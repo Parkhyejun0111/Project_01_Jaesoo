@@ -1,0 +1,11 @@
+# 경량 RAG 백엔드(main.py + rag_light.py) 로컬 실행용 의존성.
+# 원본 terms_reader_agent.py(무거운 Gemini+chromadb+torch)와 달리 가볍다.
+#   설치:  pip install -r requirements-rag.txt
+fastapi>=0.115.0
+uvicorn>=0.34.0
+anthropic>=0.40
+langsmith>=0.10.5
+openai>=1.40
+pypdf>=5.0
+python-dotenv>=1.0
+psycopg[binary]>=3.2

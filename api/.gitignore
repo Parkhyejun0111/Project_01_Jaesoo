@@ -1,0 +1,33 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets
+.env
+
+# Generated vector DB (rebuilt from PDFs on first run)
+my_chroma_hanwha_local/
+chroma_jaesoo/
+chroma_jaesoo_graph/
+
+# Generated outputs
+outputs/
+uploads/
+.data/
+
+# Editor/agent local settings
+.claude/
+
+# Node / Vite (frontend)
+node_modules
+*.log
+dist-ssr
+*.local
+.DS_Store

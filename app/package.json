@@ -1,0 +1,35 @@
+{
+  "name": "jaesoo-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "재수없수 — 보호자용 모바일 앱 (성적 분석 · 보험료 · 돈워리 계산기 · 학원비 청구)",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "predev": "node ../scripts/sync-policy.mjs",
+    "dev": "next dev --port 3000",
+    "prebuild": "node ../scripts/sync-policy.mjs && node ../scripts/check-assets.mjs ../app/public",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "eslint . --ignore-pattern .next"
+  },
+  "dependencies": {
+    "@jaesoo/api-client": "*",
+    "lucide-react": "^1.26.0",
+    "next": "16.2.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.2.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.6",
+    "tailwindcss": "4.2.1",
+    "typescript": "5.9.3"
+  }
+}

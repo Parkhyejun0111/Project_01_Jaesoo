@@ -1,0 +1,7 @@
+{
+    "dependencies": ["."],
+    "graphs": {
+        "token_cost_graph": "./mywork1.py:graph"
+    },
+    "env": ".env"
+}

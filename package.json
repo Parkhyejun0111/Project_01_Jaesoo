@@ -1,0 +1,18 @@
+{
+  "name": "jaesoo-insurance",
+  "private": true,
+  "version": "0.1.0",
+  "description": "재수없수 — 인강 임베디드 교육보험 (웹 + 앱 + FastAPI 백엔드)",
+  "workspaces": [
+    "packages/*",
+    "web",
+    "app"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace web",
+    "dev:app": "npm run dev --workspace app",
+    "build:web": "npm run build --workspace web",
+    "build:app": "npm run build --workspace app",
+    "sync:policy": "node scripts/sync-policy.mjs"
+  }
+}
