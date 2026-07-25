@@ -13,28 +13,34 @@
 const DEFAULT_BASE = "http://localhost:8000";
 const DEFAULT_TIMEOUT = 15_000;
 
-function readEnv(key) {
-  // Vite: import.meta.env / Next·Node: process.env
+/**
+ * 빌드 시점 환경변수 읽기.
+ *
+ * ★ `process.env.NEXT_PUBLIC_API_URL` / `import.meta.env.VITE_API_URL` 을
+ *   **표현식 그대로** 써야 한다. 번들러는 정확히 그 형태만 값으로 치환한다.
+ *   변수에 담아(`const e = process.env; e.NEXT_PUBLIC_API_URL`) 접근하거나
+ *   동적 키(`process.env[key]`)를 쓰면 치환되지 않아 브라우저에서 빈 값이 되고,
+ *   조용히 기본값(localhost:8000)으로 떨어져 배포 후 API 호출이 전부 실패한다.
+ */
+function viteApiUrl() {
   try {
-    if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) {
-      return import.meta.env[key];
-    }
+    return import.meta.env.VITE_API_URL;
   } catch {
-    /* import.meta 를 지원하지 않는 번들러 */
+    return undefined; // import.meta 를 지원하지 않는 런타임
   }
-  if (typeof process !== "undefined" && process.env && process.env[key]) {
-    return process.env[key];
+}
+
+function nextApiUrl() {
+  try {
+    return process.env.NEXT_PUBLIC_API_URL;
+  } catch {
+    return undefined; // process 가 없는 런타임
   }
-  return undefined;
 }
 
 export function resolveBase(explicit) {
-  return (
-    explicit ||
-    readEnv("VITE_API_URL") ||
-    readEnv("NEXT_PUBLIC_API_URL") ||
-    DEFAULT_BASE
-  ).replace(/\/+$/, "");
+  const base = explicit || viteApiUrl() || nextApiUrl() || DEFAULT_BASE;
+  return String(base).replace(/\/+$/, "");
 }
 
 /** 백엔드 부재·타임아웃·HTTP 오류를 구분해 담는 결과 객체. */

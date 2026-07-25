@@ -27,3 +27,6 @@ api/.data/
 .idea/
 *.log
 .wrangler/
+
+# Vercel 링크·OIDC 토큰
+.vercel/
