@@ -33,6 +33,19 @@
 
 `app/public/jaesoo_character.png` 는 원본입니다.
 
+## 찾아볼 만한 곳
+
+`~/Desktop/아카이브/` 루트에 로고 후보가 있습니다. 지금은 iCloud 미다운로드
+상태(`SF_DATALESS`)라 쓸 수 없지만, 내려받아지면 교체 후보입니다.
+
+| 파일 | 크기 | 비고 |
+|---|---|---|
+| `app_logo.png` | 1,242,908 B | `jaesoo_logo.png`·`logo-final-dark.png` 와 **크기 일치** |
+| `nofaesoo_3D.png` | 2,213,964 B | 마스코트 3D |
+| `nojaesoo.png` | 886,945 B | 마스코트 |
+
+Finder 에서 해당 파일을 우클릭 → "지금 다운로드" 한 뒤 아래 방법으로 교체하세요.
+
 ## 교체 방법
 
 ```bash
