@@ -10,7 +10,7 @@ from typing import Any, Callable, Iterator
 from .config import ReceiptSettings
 
 SQLITE_SCHEMA = """
-CREATE TABLE IF NOT EXISTS registered_cards (
+CREATE TABLE IF NOT EXISTS jaesoo_registered_cards (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     card_company TEXT NOT NULL,
@@ -22,13 +22,13 @@ CREATE TABLE IF NOT EXISTS registered_cards (
     updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_registered_cards_user_active
-    ON registered_cards(user_id, is_active);
+    ON jaesoo_registered_cards(user_id, is_active);
 
-CREATE TABLE IF NOT EXISTS claims (
+CREATE TABLE IF NOT EXISTS jaesoo_claims (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     student_id TEXT NOT NULL,
-    registered_card_id INTEGER NOT NULL REFERENCES registered_cards(id),
+    registered_card_id INTEGER NOT NULL REFERENCES jaesoo_registered_cards(id),
     status TEXT NOT NULL,
     verification_result TEXT,
     anomaly_reasons TEXT NOT NULL DEFAULT '[]',
@@ -36,9 +36,9 @@ CREATE TABLE IF NOT EXISTS claims (
     updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS receipt_documents (
+CREATE TABLE IF NOT EXISTS jaesoo_receipt_documents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    claim_id INTEGER NOT NULL REFERENCES claims(id),
+    claim_id INTEGER NOT NULL REFERENCES jaesoo_claims(id),
     original_filename TEXT NOT NULL,
     stored_filename TEXT NOT NULL,
     content_type TEXT NOT NULL,
@@ -48,13 +48,13 @@ CREATE TABLE IF NOT EXISTS receipt_documents (
     uploaded_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_documents_claim
-    ON receipt_documents(claim_id);
+    ON jaesoo_receipt_documents(claim_id);
 CREATE INDEX IF NOT EXISTS idx_receipt_documents_hash
-    ON receipt_documents(file_hash);
+    ON jaesoo_receipt_documents(file_hash);
 
-CREATE TABLE IF NOT EXISTS receipt_ocr_results (
+CREATE TABLE IF NOT EXISTS jaesoo_receipt_ocr_results (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    claim_id INTEGER NOT NULL UNIQUE REFERENCES claims(id),
+    claim_id INTEGER NOT NULL UNIQUE REFERENCES jaesoo_claims(id),
     card_last4 TEXT,
     payment_amount INTEGER,
     payment_date TEXT,
@@ -66,11 +66,11 @@ CREATE TABLE IF NOT EXISTS receipt_ocr_results (
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_ocr_approval
-    ON receipt_ocr_results(approval_number);
+    ON jaesoo_receipt_ocr_results(approval_number);
 
-CREATE TABLE IF NOT EXISTS verification_results (
+CREATE TABLE IF NOT EXISTS jaesoo_verification_results (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    claim_id INTEGER NOT NULL UNIQUE REFERENCES claims(id),
+    claim_id INTEGER NOT NULL UNIQUE REFERENCES jaesoo_claims(id),
     card_last4_match INTEGER NOT NULL,
     payment_amount_valid INTEGER NOT NULL,
     payment_date_valid INTEGER NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS verification_results (
 """
 
 POSTGRES_SCHEMA = """
-CREATE TABLE IF NOT EXISTS registered_cards (
+CREATE TABLE IF NOT EXISTS jaesoo_registered_cards (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL,
     card_company TEXT NOT NULL,
@@ -98,13 +98,13 @@ CREATE TABLE IF NOT EXISTS registered_cards (
     updated_at TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_registered_cards_user_active
-    ON registered_cards(user_id, is_active);
+    ON jaesoo_registered_cards(user_id, is_active);
 
-CREATE TABLE IF NOT EXISTS claims (
+CREATE TABLE IF NOT EXISTS jaesoo_claims (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL,
     student_id TEXT NOT NULL,
-    registered_card_id BIGINT NOT NULL REFERENCES registered_cards(id),
+    registered_card_id BIGINT NOT NULL REFERENCES jaesoo_registered_cards(id),
     status TEXT NOT NULL,
     verification_result TEXT,
     anomaly_reasons TEXT NOT NULL DEFAULT '[]',
@@ -112,9 +112,9 @@ CREATE TABLE IF NOT EXISTS claims (
     updated_at TIMESTAMPTZ NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS receipt_documents (
+CREATE TABLE IF NOT EXISTS jaesoo_receipt_documents (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    claim_id BIGINT NOT NULL REFERENCES claims(id),
+    claim_id BIGINT NOT NULL REFERENCES jaesoo_claims(id),
     original_filename TEXT NOT NULL,
     stored_filename TEXT NOT NULL,
     content_type TEXT NOT NULL,
@@ -124,13 +124,13 @@ CREATE TABLE IF NOT EXISTS receipt_documents (
     uploaded_at TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_documents_claim
-    ON receipt_documents(claim_id);
+    ON jaesoo_receipt_documents(claim_id);
 CREATE INDEX IF NOT EXISTS idx_receipt_documents_hash
-    ON receipt_documents(file_hash);
+    ON jaesoo_receipt_documents(file_hash);
 
-CREATE TABLE IF NOT EXISTS receipt_ocr_results (
+CREATE TABLE IF NOT EXISTS jaesoo_receipt_ocr_results (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    claim_id BIGINT NOT NULL UNIQUE REFERENCES claims(id),
+    claim_id BIGINT NOT NULL UNIQUE REFERENCES jaesoo_claims(id),
     card_last4 VARCHAR(4),
     payment_amount BIGINT,
     payment_date DATE,
@@ -142,11 +142,11 @@ CREATE TABLE IF NOT EXISTS receipt_ocr_results (
     created_at TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_receipt_ocr_approval
-    ON receipt_ocr_results(approval_number);
+    ON jaesoo_receipt_ocr_results(approval_number);
 
-CREATE TABLE IF NOT EXISTS verification_results (
+CREATE TABLE IF NOT EXISTS jaesoo_verification_results (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    claim_id BIGINT NOT NULL UNIQUE REFERENCES claims(id),
+    claim_id BIGINT NOT NULL UNIQUE REFERENCES jaesoo_claims(id),
     card_last4_match BOOLEAN NOT NULL,
     payment_amount_valid BOOLEAN NOT NULL,
     payment_date_valid BOOLEAN NOT NULL,

@@ -190,7 +190,7 @@ def student_scores(student_id: str):
             "rounds": engine.ROUNDS,
             "judged_subjects": sorted(engine.subject_weights()),
             "subject_weights": {s: round(w, 4) for s, w in engine.subject_weights().items()},
-            "scale": "grade",   # 등급 1~9, 낮을수록 우수 → 차트 Y축 반전 필요
+            "scale": "percentile",   # 백분위 0~100, 높을수록 우수
         }
     except Exception as e:  # noqa: BLE001
         return {"scores": {}, "error": str(e)}
@@ -222,8 +222,13 @@ def student_premium_breakdown(student_id: str):
 
 
 @app.get("/api/student/{student_id}/eligibility")
-def student_eligibility(student_id: str, actual_grade: float | None = None):
-    """보장 대상 판정 (약관 별표3). actual_grade 없으면 '판정 전' 상태."""
+def student_eligibility(student_id: str, actual_percentile: float | None = None,
+                        actual_grade: float | None = None):
+    """보장 대상 판정 (약관 별표3).
+
+    실제 수능 성적은 백분위로 받는다. 계리 판정(σ·임계값)은 등급 단위라
+    engine 이 내부에서 환산한다.
+    """
     import db_supabase as db
     import engine
 
@@ -232,7 +237,9 @@ def student_eligibility(student_id: str, actual_grade: float | None = None):
         if not student:
             return {"error": "not_found"}
         scores = db.get_scores(student_id)
-        return engine.eligibility(scores, student.get("enrollment"), actual_grade)
+        return engine.eligibility(scores, student.get("enrollment"),
+                                  actual_percentile=actual_percentile,
+                                  actual_grade=actual_grade)
     except Exception as e:  # noqa: BLE001
         return {"error": str(e)}
 
@@ -426,7 +433,7 @@ def _student_context(student_id: str) -> str:
         bd = p["breakdown"]
         weak_str = ", ".join(w["subject"] for w in a["weak_subjects"][:2])
         band = a["band"]
-        mu = band["predicted_grade"]
+        mu = band["predicted_percentile"]
         late_note = (
             f"\n- 가입이 늦어(잔여 납입 {p['remaining_months']}개월) 늦은가입 할증이 붙었습니다: "
             f"연 {bd['late_surcharge']:,}원\n"
@@ -437,10 +444,10 @@ def _student_context(student_id: str) -> str:
             f"- 이름: {s['name']} ({s.get('school','')}, 목표 {s.get('target_univ','')})\n"
             f"- 가입 상품(티어): {p['tier']}  → 보장금 경증 {p['cover_mild']:,}원 / 중증 {p['cover_severe']:,}원\n"
             f"- 월 보험료: {p['monthly_premium']:,}원 (잔여 납입 {p['remaining_months']}개월)\n"
-            + (f"- 예상 수능 등급(본인 기준선): {mu}등급 — 등급은 낮을수록 우수합니다\n" if mu else "")
-            + (f"- 보장 기준선: 경증 {band['mild_threshold_grade']}등급 미만 / "
-               f"중증 {band['severe_threshold_grade']}등급 미만으로 떨어질 때\n"
-               if band.get("mild_threshold_grade") else "")
+            + (f"- 예상 수능 백분위(본인 기준선): {mu}\n" if mu else "")
+            + (f"- 보장 기준선: 경증 {band['mild_threshold_percentile']} 백분위 미만 / "
+               f"중증 {band['severe_threshold_percentile']} 백분위 미만으로 떨어질 때\n"
+               if band.get("mild_threshold_percentile") else "")
             + f"- 성적 기복이 큰 과목: {weak_str}\n"
             + f"- 급락 판정 대상 과목: {', '.join(a['judged_subjects'])}\n"
             + late_note

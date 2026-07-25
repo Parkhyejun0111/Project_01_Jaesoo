@@ -72,6 +72,10 @@ export interface Eligibility {
   result?: "none" | "mild" | "severe";
   severity?: string;
   eligible?: boolean;
+  predicted_percentile?: number;
+  actual_percentile?: number;
+  mild_threshold_percentile?: number;
+  severe_threshold_percentile?: number;
   predicted_grade?: number;
   actual_grade?: number;
   z?: number;
@@ -94,8 +98,10 @@ export interface Eligibility {
 export interface ScoreRow {
   seq: number;
   label: string;
-  grade: number | null;
+  /** 서비스 기준 단위 */
   percentile: number | null;
+  /** 계리 판정용 환산값 (참고) */
+  grade: number | null;
 }
 
 export interface ScoresResponse {
@@ -103,7 +109,7 @@ export interface ScoresResponse {
   rounds: string[];
   judged_subjects: string[];
   subject_weights: Record<string, number>;
-  scale: "grade";
+  scale: "percentile";
 }
 
 export interface ChatSource {
@@ -238,7 +244,7 @@ export declare const api: ApiClient;
 export declare function resolveBase(explicit?: string): string;
 export declare function won(n: number | null | undefined): string;
 export declare function manwon(n: number | null | undefined): string;
-export declare const GRADE_SCALE: { min: number; max: number; betterIsLower: true };
+export declare const SCORE_SCALE: { min: number; max: number; betterIsHigher: true; unit: "percentile" };
 export declare const SEVERITY_LABEL: Record<"none" | "mild" | "severe", string>;
 export declare const CLAIM_VARIANT: Record<string, string>;
 export declare const CLAIM_STATUS_VARIANT: Record<string, string>;

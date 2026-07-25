@@ -1,12 +1,12 @@
 "use client";
 
-import { GRADE_SCALE } from "@jaesoo/api-client";
+import { SCORE_SCALE } from "@jaesoo/api-client";
 
 /**
  * 화면 표시 헬퍼.
  *
- * ★ 성적은 **등급 1~9 이고 낮을수록 우수**하다 (약관 별표3). 백분위 시절 코드를
- *   그대로 두면 차트가 위아래로 뒤집혀 보이므로, 좌표 변환을 여기 한 곳에 둔다.
+ * ★ 성적 단위는 **백분위 0~100 이고 높을수록 우수**하다. 차트 좌표 변환을
+ *   여기 한 곳에 모아 두어, 화면마다 축 방향이 어긋나지 않게 한다.
  */
 
 export const 만원 = (won: number | null | undefined) =>
@@ -19,8 +19,8 @@ export const 원 = (won: number | null | undefined) =>
     ? `${Math.round(won).toLocaleString("ko-KR")}원`
     : "—";
 
-export const 등급 = (g: number | null | undefined) =>
-  typeof g === "number" && Number.isFinite(g) ? `${g.toFixed(2)}등급` : "—";
+export const 백분위 = (p: number | null | undefined) =>
+  typeof p === "number" && Number.isFinite(p) ? `${p.toFixed(1)}` : "—";
 
 export const 퍼센트 = (ratio: number | null | undefined, digits = 1) =>
   typeof ratio === "number" && Number.isFinite(ratio)
@@ -36,13 +36,13 @@ export const SUBJECT_COLOR: Record<string, string> = {
 };
 
 /**
- * 등급 → 차트 Y 좌표(0=위, height=아래).
- * 1등급이 맨 위에 오도록 반전한다.
+ * 백분위 → 차트 Y 좌표(0=위, height=아래).
+ * 백분위가 높을수록 위에 오도록 뒤집는다 (100 → 위, 0 → 아래).
  */
-export function gradeToY(grade: number, height: number, pad = 6): number {
-  const { min, max } = GRADE_SCALE;
-  const clamped = Math.min(Math.max(grade, min), max);
-  const ratio = (clamped - min) / (max - min); // 1등급 → 0, 9등급 → 1
+export function percentileToY(percentile: number, height: number, pad = 6): number {
+  const { min, max } = SCORE_SCALE;
+  const clamped = Math.min(Math.max(percentile, min), max);
+  const ratio = (max - clamped) / (max - min); // 100 → 0(위), 0 → 1(아래)
   return pad + ratio * (height - pad * 2);
 }
 

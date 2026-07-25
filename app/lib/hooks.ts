@@ -94,20 +94,31 @@ export function useStudents() {
 export type StudentProfile = {
   student: Record<string, unknown> & { name?: string; school?: string; target_univ?: string };
   analysis: {
-    subjects: Record<string, { series: number[]; mean: number; volatility: number; trend: number; latest: number; judged: boolean }>;
+    // 성적 값은 모두 백분위(0~100, 높을수록 우수)다.
+    subjects: Record<
+      string,
+      { series: number[]; mean: number; volatility: number; trend: number; latest: number; judged: boolean; unit: "percentile" }
+    >;
     weak_subjects: Array<{ subject: string; volatility: number; trend: number; risk_score: number }>;
     rounds: Record<string, number | null>;
+    rounds_grade: Record<string, number | null>;
     round_order: string[];
     observed_rounds: number;
     renewable: boolean;
+    unit: "percentile";
     band: {
+      predicted_percentile: number | null;
+      mild_threshold_percentile: number | null;
+      severe_threshold_percentile: number | null;
+      // 계리 판정 근거 — σ·임계값은 약관상 등급 단위다
       predicted_grade: number | null;
+      mild_threshold_grade: number | null;
+      severe_threshold_grade: number | null;
       sigma: number;
+      sigma_unit: "grade";
       sigma_provisional: boolean;
       z_mild: number;
       z_severe: number;
-      mild_threshold_grade: number | null;
-      severe_threshold_grade: number | null;
     };
     judged_subjects: string[];
     subject_weights: Record<string, number>;

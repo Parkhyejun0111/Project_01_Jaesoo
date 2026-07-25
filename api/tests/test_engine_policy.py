@@ -289,7 +289,7 @@ def test_결측과목이_있어도_스케일이_유지된다():
 
 
 def test_sigma가_잠정값임을_응답이_표시한다():
-    scores = _fake_scores(3.0)
+    scores = _fake_scores()
     assert E.analyze(scores)["band"]["sigma_provisional"] is True
 
 
@@ -400,9 +400,11 @@ def test_성적은_스코어카드에_들어가지_않는다():
 # ══════════════════════════════════════════════════════════════════════════
 # 개인화 파이프라인
 # ══════════════════════════════════════════════════════════════════════════
-def _fake_scores(grade: float = 3.0, subjects=("국어", "수학", "영어", "탐구")) -> dict:
+def _fake_scores(percentile: float = 84.0, subjects=("국어", "수학", "영어", "탐구")) -> dict:
+    """서비스 단위는 백분위다. 84%ile ≈ 3등급."""
     return {
-        s: [{"seq": i + 1, "label": r, "grade": grade} for i, r in enumerate(E.ROUNDS)]
+        s: [{"seq": i + 1, "label": r, "percentile": percentile}
+            for i, r in enumerate(E.ROUNDS)]
         for s in subjects
     }
 
@@ -461,7 +463,7 @@ def test_eligibility_판정전():
 
 
 def test_eligibility_회차부족():
-    scores = {s: [{"seq": 1, "label": "고1_3월", "grade": 3.0}] for s in ("국어", "수학")}
+    scores = {s: [{"seq": 1, "label": "고1_3월", "percentile": 84.0}] for s in ("국어", "수학")}
     r = E.eligibility(scores, {"tier": "스탠다드"})
     assert r["status"] == "insufficient_data"
     assert r["required_rounds"] == 5
@@ -473,7 +475,8 @@ def test_eligibility_회차부족():
     (2.25, "severe"), (3.0, "severe"),
 ])
 def test_eligibility_심각도_판정(delta_sigma, expected):
-    scores = _fake_scores(3.0)
+    """임계는 등급 단위(σ)로 정의돼 있다 — 등급으로 직접 넣어 경계를 검증한다."""
+    scores = _fake_scores()
     mu = E.analyze(scores)["band"]["predicted_grade"]
     actual = mu + delta_sigma * E.SIGMA_BAND      # 등급이 커질수록 나쁨
     r = E.eligibility(scores, {"tier": "스탠다드"}, actual_grade=actual)
@@ -482,12 +485,52 @@ def test_eligibility_심각도_판정(delta_sigma, expected):
     assert r["eligible"] is (expected != "none")
 
 
+def test_eligibility_백분위_입력():
+    """서비스는 백분위로 판정을 요청한다 — 등급으로 환산돼 같은 결과가 나와야 한다."""
+    scores = _fake_scores()
+    band = E.analyze(scores)["band"]
+    mu_g = band["predicted_grade"]
+    for delta, expected in [(0.0, "none"), (2.0, "mild"), (2.5, "severe")]:
+        grade = mu_g + delta * E.SIGMA_BAND
+        pct = E.grade_to_percentile(grade)
+        by_pct = E.eligibility(scores, {"tier": "스탠다드"}, actual_percentile=pct)
+        by_grade = E.eligibility(scores, {"tier": "스탠다드"}, actual_grade=grade)
+        assert by_pct["result"] == by_grade["result"] == expected
+        assert by_pct["unit"] == "percentile"
+        assert by_pct["actual_percentile"] == pytest.approx(pct, abs=0.1)
+
+
+def test_백분위_등급_왕복():
+    for g in [1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 9.0]:
+        assert E.percentile_to_grade(E.grade_to_percentile(g)) == pytest.approx(g, abs=1e-3)
+
+
+def test_백분위가_높을수록_좋은_등급():
+    grades = [E.percentile_to_grade(p) for p in [10, 30, 50, 70, 90, 99]]
+    assert grades == sorted(grades, reverse=True)   # 백분위↑ → 등급↓(우수)
+    assert E.percentile_to_grade(100) == 1.0
+    assert E.percentile_to_grade(0) == 9.0
+
+
+def test_분석_출력이_백분위_단위():
+    a = E.analyze(_fake_scores(84.0))
+    assert a["unit"] == "percentile"
+    assert a["subjects"]["국어"]["unit"] == "percentile"
+    assert a["subjects"]["국어"]["series"][0] == pytest.approx(84.0, abs=0.1)
+    b = a["band"]
+    assert b["predicted_percentile"] is not None
+    assert b["sigma_unit"] == "grade"      # σ 는 등급 단위로 남는다 (별표3)
+    # 하단은 예측보다 낮은 백분위여야 한다
+    assert b["mild_threshold_percentile"] < b["predicted_percentile"]
+    assert b["severe_threshold_percentile"] < b["mild_threshold_percentile"]
+
+
 def test_eligibility_보장한도가_심각도에_따라_차등():
-    scores = _fake_scores(3.0)
+    scores = _fake_scores()
     mu = E.analyze(scores)["band"]["predicted_grade"]
-    none_ = E.eligibility(scores, {"tier": "플러스"}, mu)
-    mild = E.eligibility(scores, {"tier": "플러스"}, mu + 2.0 * E.SIGMA_BAND)
-    severe = E.eligibility(scores, {"tier": "플러스"}, mu + 2.5 * E.SIGMA_BAND)
+    none_ = E.eligibility(scores, {"tier": "플러스"}, actual_grade=mu)
+    mild = E.eligibility(scores, {"tier": "플러스"}, actual_grade=mu + 2.0 * E.SIGMA_BAND)
+    severe = E.eligibility(scores, {"tier": "플러스"}, actual_grade=mu + 2.5 * E.SIGMA_BAND)
     assert none_["coverage_limit"] == 0
     assert mild["coverage_limit"] == 7_014_000
     assert severe["coverage_limit"] == 14_028_000

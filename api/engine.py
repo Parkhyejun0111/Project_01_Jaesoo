@@ -52,6 +52,53 @@ OLS_COEF = {
 
 MIN_OBSERVED_ROUNDS = 5   # 9회차 중 5회 미달 → 갱신 유보·직전 요율 유지 (제23조)
 
+# ── 백분위 ↔ 등급 환산 ─────────────────────────────────────────────────────
+# 서비스가 다루는 성적 단위는 **백분위**(0~100, 높을수록 우수)다. 반면 약관
+# 별표3·4·7 의 밴드 회귀계수·σ(0.7020)·임계값은 전부 **등급**(1~9, 낮을수록 우수)
+# 단위로 정의돼 있다. 백분위를 등급 자리에 그대로 넣으면 σ 가 무의미해져
+# 게시 보험료표(별표2·별표4)가 깨진다.
+#
+# 그래서 입출력은 백분위로 하되, 밴드 계산 직전에만 등급으로 환산한다.
+# 기준점은 수능 등급 구분 누적비율(1등급 상위 4% … 9등급)의 구간 대표 백분위이며,
+# 구간 사이는 선형보간해 연속값을 만든다(회귀가 연속 예측을 내므로).
+GRADE_PERCENTILE = {1: 98.0, 2: 93.0, 3: 84.0, 4: 70.0, 5: 50.0,
+                    6: 30.0, 7: 16.0, 8: 7.0, 9: 2.0}
+GRADE_MIN, GRADE_MAX = 1.0, 9.0
+PERCENTILE_MIN, PERCENTILE_MAX = 0.0, 100.0
+
+
+def grade_to_percentile(grade: float) -> float:
+    """등급(1~9) → 백분위. 구간 사이는 선형보간."""
+    g = min(max(float(grade), GRADE_MIN), GRADE_MAX)
+    lo = int(g)
+    hi = min(lo + 1, 9)
+    frac = g - lo
+    return round(GRADE_PERCENTILE[lo] + (GRADE_PERCENTILE[hi] - GRADE_PERCENTILE[lo]) * frac, 2)
+
+
+def percentile_to_grade(percentile: float) -> float:
+    """백분위(0~100) → 등급. grade_to_percentile 의 역함수(선형보간)."""
+    p = min(max(float(percentile), PERCENTILE_MIN), PERCENTILE_MAX)
+    if p >= GRADE_PERCENTILE[1]:
+        return GRADE_MIN
+    if p <= GRADE_PERCENTILE[9]:
+        return GRADE_MAX
+    for g in range(1, 9):
+        hi_p, lo_p = GRADE_PERCENTILE[g], GRADE_PERCENTILE[g + 1]
+        if lo_p <= p <= hi_p:
+            span = hi_p - lo_p
+            return round(g + (hi_p - p) / span, 4) if span else float(g)
+    return GRADE_MAX
+
+
+def _as_grade(row: dict) -> float | None:
+    """성적 행에서 등급을 얻는다. 백분위가 1차 소스이고, 등급이 직접 들어오면 그대로 쓴다."""
+    if row.get("percentile") is not None:
+        return percentile_to_grade(row["percentile"])
+    if row.get("grade") is not None:
+        return float(row["grade"])
+    return None
+
 # ── 과목 반영비중 ──────────────────────────────────────────────────────────
 # 약관 별표3/별표6 은 국·수·영 3과목 기준(0.341 / 0.366 / 0.293, 정시 반영비율
 # 재정규화)이며, 별표6 ※ 는 "탐구는 조합별 σ 확정 전까지 판정 제외, 자체 자료
@@ -355,26 +402,28 @@ def analyze(scores: dict) -> dict:
     judged = set(subject_weights().keys())
 
     for subject, rows in (scores or {}).items():
-        series: list[float] = []
+        series: list[float] = []          # 화면·통계용 — 백분위
         for row in sorted(rows, key=lambda r: r.get("seq", 0)):
-            grade = row.get("grade")
+            grade = _as_grade(row)
             if grade is None:
                 continue
-            grade = float(grade)
-            series.append(grade)
+            pct = row.get("percentile")
+            series.append(float(pct) if pct is not None else grade_to_percentile(grade))
             label = row.get("label")
             if label in OLS_COEF and subject in judged:
+                # 밴드 회귀는 등급 단위로만 성립한다 (별표7 계수·σ 가 등급 기준)
                 by_round.setdefault(label, {})[subject] = grade
         if series:
             mean = sum(series) / len(series)
             var = (sum((x - mean) ** 2 for x in series) / len(series)) if len(series) > 1 else 0.0
             subject_stats[subject] = {
-                "series": [round(x, 2) for x in series],
-                "mean": round(mean, 2),
-                "volatility": round(math.sqrt(var), 2),
-                "trend": round(_slope(series), 3),
-                "latest": round(series[-1], 2),
+                "series": [round(x, 1) for x in series],
+                "mean": round(mean, 1),
+                "volatility": round(math.sqrt(var), 1),
+                "trend": round(_slope(series), 2),
+                "latest": round(series[-1], 1),
                 "judged": subject in judged,
+                "unit": "percentile",
             }
 
     composites = {r: composite_grade(g) for r, g in by_round.items()}
@@ -386,10 +435,11 @@ def analyze(scores: dict) -> dict:
     else:
         mild_grade, severe_grade = threshold_grades(mu_hat)
 
-    # 기복이 큰 과목 = 변동성이 크고 추세가 나쁜(등급이 올라가는) 순
+    # 기복이 큰 과목 = 변동성이 크고 추세가 나쁜 순.
+    # 백분위는 '오를수록 좋음' 이므로 추세가 음수일 때 위험하다 (등급과 부호 반대).
     weak = sorted(
         ({"subject": s, "volatility": v["volatility"], "trend": v["trend"],
-          "risk_score": round(v["volatility"] + v["trend"] * 3, 2)}
+          "risk_score": round(v["volatility"] - v["trend"] * 3, 2)}
          for s, v in subject_stats.items()),
         key=lambda x: -x["risk_score"],
     )
@@ -397,19 +447,28 @@ def analyze(scores: dict) -> dict:
     return {
         "subjects": subject_stats,
         "weak_subjects": weak,
-        "rounds": {r: (round(c, 3) if c is not None else None)
+        # 회차 종합 성적 — 화면용 백분위 (내부 밴드 계산은 등급으로 한다)
+        "rounds": {r: (grade_to_percentile(c) if c is not None else None)
                    for r, c in composites.items()},
+        "rounds_grade": {r: (round(c, 3) if c is not None else None)
+                         for r, c in composites.items()},
+        "unit": "percentile",
         "round_order": ROUNDS,
         "observed_rounds": observed,
         "renewable": mu_hat is not None,
         "band": {
+            # 화면이 쓰는 단위는 백분위. 등급 값은 계리 근거 확인용으로 함께 준다.
+            "predicted_percentile": grade_to_percentile(mu_hat) if mu_hat is not None else None,
+            "mild_threshold_percentile": grade_to_percentile(mild_grade) if mild_grade is not None else None,
+            "severe_threshold_percentile": grade_to_percentile(severe_grade) if severe_grade is not None else None,
             "predicted_grade": round(mu_hat, 3) if mu_hat is not None else None,
+            "mild_threshold_grade": round(mild_grade, 3) if mild_grade is not None else None,
+            "severe_threshold_grade": round(severe_grade, 3) if severe_grade is not None else None,
             "sigma": SIGMA_BAND,
+            "sigma_unit": "grade",
             "sigma_provisional": INQUIRY_SIGMA_PROVISIONAL and INCLUDE_INQUIRY,
             "z_mild": Z_MILD,
             "z_severe": Z_SEVERE,
-            "mild_threshold_grade": round(mild_grade, 3) if mild_grade is not None else None,
-            "severe_threshold_grade": round(severe_grade, 3) if severe_grade is not None else None,
         },
         "judged_subjects": sorted(judged),
         "subject_weights": {s: round(w, 4) for s, w in subject_weights().items()},
@@ -756,8 +815,16 @@ def profile(scores: dict, enrollment: dict | None) -> dict:
 
 
 def eligibility(scores: dict, enrollment: dict | None,
+                actual_percentile: float | None = None,
                 actual_grade: float | None = None) -> dict:
-    """보장 대상 판정 (별표3). actual_grade 없으면 '판정 전' 상태를 돌려준다."""
+    """보장 대상 판정 (별표3).
+
+    실제 수능 성적은 **백분위**로 받는다(서비스 단위). 계리 판정은 등급으로
+    환산해 수행한다 — σ·임계값이 등급 단위로 정의돼 있기 때문이다.
+    actual_grade 로 등급을 직접 줄 수도 있다(내부·검증용).
+    """
+    if actual_grade is None and actual_percentile is not None:
+        actual_grade = percentile_to_grade(actual_percentile)
     analysis = analyze(scores)
     band = analysis["band"]
     mu_hat = band["predicted_grade"]
@@ -770,9 +837,11 @@ def eligibility(scores: dict, enrollment: dict | None,
         "judged_subjects": analysis["judged_subjects"],
         "subject_weights": analysis["subject_weights"],
         "sigma": SIGMA_BAND,
+        "sigma_unit": "grade",
         "sigma_provisional": band["sigma_provisional"],
         "mild_threshold_z": Z_MILD,
         "severe_threshold_z": Z_SEVERE,
+        "unit": "percentile",
     }
 
     if mu_hat is None:
@@ -783,10 +852,13 @@ def eligibility(scores: dict, enrollment: dict | None,
 
     if actual_grade is None:
         return {**common, "status": "pending",
+                "predicted_percentile": band["predicted_percentile"],
+                "mild_threshold_percentile": band["mild_threshold_percentile"],
+                "severe_threshold_percentile": band["severe_threshold_percentile"],
                 "predicted_grade": mu_hat,
                 "mild_threshold_grade": band["mild_threshold_grade"],
                 "severe_threshold_grade": band["severe_threshold_grade"],
-                "message": "수능 등급 확정 후 판정됩니다."}
+                "message": "수능 성적 확정 후 판정됩니다."}
 
     z = deviation_z(float(actual_grade), mu_hat)
     sev = severity_of(z)
@@ -795,8 +867,14 @@ def eligibility(scores: dict, enrollment: dict | None,
             "result": {"정상": "none", "경증": "mild", "중증": "severe"}[sev],
             "severity": sev,
             "eligible": sev != "정상",
+            "predicted_percentile": band["predicted_percentile"],
+            "actual_percentile": (round(float(actual_percentile), 1)
+                                  if actual_percentile is not None
+                                  else grade_to_percentile(actual_grade)),
+            "mild_threshold_percentile": band["mild_threshold_percentile"],
+            "severe_threshold_percentile": band["severe_threshold_percentile"],
             "predicted_grade": mu_hat,
-            "actual_grade": round(float(actual_grade), 2),
+            "actual_grade": round(float(actual_grade), 3),
             "z": round(z, 3),
             "mild_threshold_grade": band["mild_threshold_grade"],
             "severe_threshold_grade": band["severe_threshold_grade"],

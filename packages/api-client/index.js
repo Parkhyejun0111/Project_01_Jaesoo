@@ -264,8 +264,11 @@ export const manwon = (n) =>
     ? Math.round(n / 10_000).toLocaleString("ko-KR") + "만원"
     : "—";
 
-/** 등급은 낮을수록 우수하다 — 차트 Y축을 반전해야 한다는 신호를 한 곳에 둔다. */
-export const GRADE_SCALE = { min: 1, max: 9, betterIsLower: true };
+/**
+ * 서비스가 다루는 성적 단위는 **백분위**(0~100, 높을수록 우수)다.
+ * 약관 별표3 의 밴드 판정만 등급 단위로 이뤄지고, 그 환산은 백엔드가 처리한다.
+ */
+export const SCORE_SCALE = { min: 0, max: 100, betterIsHigher: true, unit: "percentile" };
 
 /** 심각도 코드 ↔ 화면 라벨 (백엔드 engine.eligibility 의 result 와 1:1). */
 export const SEVERITY_LABEL = { none: "비대상", mild: "경증", severe: "중증" };

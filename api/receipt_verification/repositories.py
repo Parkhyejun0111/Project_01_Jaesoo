@@ -19,12 +19,12 @@ class CardRepository:
     def create(self, values: dict[str, Any]) -> dict[str, Any]:
         with self.database.transaction() as session:
             session.execute(
-                "UPDATE registered_cards SET is_active = ?, updated_at = ? "
+                "UPDATE jaesoo_registered_cards SET is_active = ?, updated_at = ? "
                 "WHERE user_id = ? AND is_active = ?",
                 (False, values["updated_at"], values["user_id"], True),
             )
             card_id = session.insert(
-                "INSERT INTO registered_cards "
+                "INSERT INTO jaesoo_registered_cards "
                 "(user_id, card_company, card_last4, card_holder_name, "
                 "relationship_to_student, is_active, created_at, updated_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -40,19 +40,19 @@ class CardRepository:
                 ),
             )
             row = session.fetch_one(
-                "SELECT * FROM registered_cards WHERE id = ?", (card_id,)
+                "SELECT * FROM jaesoo_registered_cards WHERE id = ?", (card_id,)
             )
             assert row is not None
             return row
 
     def get(self, card_id: int) -> dict[str, Any] | None:
         return self.database.fetch_one(
-            "SELECT * FROM registered_cards WHERE id = ?", (card_id,)
+            "SELECT * FROM jaesoo_registered_cards WHERE id = ?", (card_id,)
         )
 
     def get_active_for_user(self, user_id: int) -> dict[str, Any] | None:
         return self.database.fetch_one(
-            "SELECT * FROM registered_cards "
+            "SELECT * FROM jaesoo_registered_cards "
             "WHERE user_id = ? AND is_active = ? ORDER BY updated_at DESC LIMIT 1",
             (user_id, True),
         )
@@ -70,13 +70,13 @@ class CardRepository:
         changes = {key: value for key, value in changes.items() if key in allowed}
         with self.database.transaction() as session:
             current = session.fetch_one(
-                "SELECT * FROM registered_cards WHERE id = ?", (card_id,)
+                "SELECT * FROM jaesoo_registered_cards WHERE id = ?", (card_id,)
             )
             if current is None:
                 return None
             if changes.get("is_active") is True:
                 session.execute(
-                    "UPDATE registered_cards SET is_active = ?, updated_at = ? "
+                    "UPDATE jaesoo_registered_cards SET is_active = ?, updated_at = ? "
                     "WHERE user_id = ? AND id <> ? AND is_active = ?",
                     (False, updated_at, current["user_id"], card_id, True),
                 )
@@ -84,12 +84,12 @@ class CardRepository:
                 assignments = ", ".join(f"{key} = ?" for key in changes)
                 params = (*changes.values(), updated_at, card_id)
                 session.execute(
-                    f"UPDATE registered_cards SET {assignments}, updated_at = ? "
+                    f"UPDATE jaesoo_registered_cards SET {assignments}, updated_at = ? "
                     "WHERE id = ?",
                     params,
                 )
             return session.fetch_one(
-                "SELECT * FROM registered_cards WHERE id = ?", (card_id,)
+                "SELECT * FROM jaesoo_registered_cards WHERE id = ?", (card_id,)
             )
 
 
@@ -99,7 +99,7 @@ class ClaimRepository:
 
     def create(self, values: dict[str, Any]) -> dict[str, Any]:
         claim_id = self.database.insert(
-            "INSERT INTO claims "
+            "INSERT INTO jaesoo_claims "
             "(user_id, student_id, registered_card_id, status, "
             "verification_result, anomaly_reasons, created_at, updated_at) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -120,7 +120,7 @@ class ClaimRepository:
 
     def get(self, claim_id: int) -> dict[str, Any] | None:
         return _with_json_lists(
-            self.database.fetch_one("SELECT * FROM claims WHERE id = ?", (claim_id,))
+            self.database.fetch_one("SELECT * FROM jaesoo_claims WHERE id = ?", (claim_id,))
         )
 
     def list_for(
@@ -132,7 +132,7 @@ class ClaimRepository:
     ) -> list[dict[str, Any]]:
         """청구 목록 (최신순). 앱은 student_id 를, 내부 도구는 user_id 를 쓴다.
 
-        claims 는 user_id(가입자, 정수)와 student_id(학생, 문자열)를 함께 가진다.
+        jaesoo_claims 는 user_id(가입자, 정수)와 student_id(학생, 문자열)를 함께 가진다.
         앱이 아는 식별자는 student_id 이므로 그쪽을 기본 조회 키로 둔다.
         """
         clauses, params = [], []
@@ -146,7 +146,7 @@ class ClaimRepository:
             return []
         params.append(limit)
         rows = self.database.fetch_all(
-            f"SELECT * FROM claims WHERE {' AND '.join(clauses)} "
+            f"SELECT * FROM jaesoo_claims WHERE {' AND '.join(clauses)} "
             "ORDER BY created_at DESC LIMIT ?",
             tuple(params),
         )
@@ -165,7 +165,7 @@ class ClaimRepository:
         if current is None:
             return None
         self.database.execute(
-            "UPDATE claims SET status = ?, verification_result = ?, "
+            "UPDATE jaesoo_claims SET status = ?, verification_result = ?, "
             "anomaly_reasons = ?, updated_at = ? WHERE id = ?",
             (
                 status,
@@ -195,7 +195,7 @@ class DocumentRepository:
 
     def create(self, values: dict[str, Any]) -> dict[str, Any]:
         document_id = self.database.insert(
-            "INSERT INTO receipt_documents "
+            "INSERT INTO jaesoo_receipt_documents "
             "(claim_id, original_filename, stored_filename, content_type, "
             "file_size, file_hash, document_type, uploaded_at) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -211,14 +211,14 @@ class DocumentRepository:
             ),
         )
         row = self.database.fetch_one(
-            "SELECT * FROM receipt_documents WHERE id = ?", (document_id,)
+            "SELECT * FROM jaesoo_receipt_documents WHERE id = ?", (document_id,)
         )
         assert row is not None
         return row
 
     def list_for_claim(self, claim_id: int) -> list[dict[str, Any]]:
         return self.database.fetch_all(
-            "SELECT * FROM receipt_documents WHERE claim_id = ? "
+            "SELECT * FROM jaesoo_receipt_documents WHERE claim_id = ? "
             "ORDER BY uploaded_at, id",
             (claim_id,),
         )
@@ -227,7 +227,7 @@ class DocumentRepository:
         self, claim_id: int, file_hash: str
     ) -> bool:
         row = self.database.fetch_one(
-            "SELECT id FROM receipt_documents "
+            "SELECT id FROM jaesoo_receipt_documents "
             "WHERE file_hash = ? AND claim_id <> ? "
             "AND document_type = 'ACADEMY_RECEIPT' LIMIT 1",
             (file_hash, claim_id),
@@ -241,7 +241,7 @@ class OCRRepository:
 
     def upsert(self, values: dict[str, Any]) -> dict[str, Any]:
         self.database.execute(
-            "INSERT INTO receipt_ocr_results "
+            "INSERT INTO jaesoo_receipt_ocr_results "
             "(claim_id, card_last4, payment_amount, payment_date, approval_number, "
             "merchant_name, business_number, raw_text, confidence_score, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
@@ -274,7 +274,7 @@ class OCRRepository:
 
     def get_for_claim(self, claim_id: int) -> dict[str, Any] | None:
         return self.database.fetch_one(
-            "SELECT * FROM receipt_ocr_results WHERE claim_id = ?", (claim_id,)
+            "SELECT * FROM jaesoo_receipt_ocr_results WHERE claim_id = ?", (claim_id,)
         )
 
     def approval_exists_elsewhere(
@@ -283,7 +283,7 @@ class OCRRepository:
         if not approval_number:
             return False
         row = self.database.fetch_one(
-            "SELECT id FROM receipt_ocr_results "
+            "SELECT id FROM jaesoo_receipt_ocr_results "
             "WHERE approval_number = ? AND claim_id <> ? LIMIT 1",
             (approval_number, claim_id),
         )
@@ -297,7 +297,7 @@ class VerificationRepository:
     def upsert(self, values: dict[str, Any]) -> dict[str, Any]:
         reasons = json.dumps(values["anomaly_reasons"], ensure_ascii=False)
         self.database.execute(
-            "INSERT INTO verification_results "
+            "INSERT INTO jaesoo_verification_results "
             "(claim_id, card_last4_match, payment_amount_valid, payment_date_valid, "
             "approval_number_valid, merchant_name_valid, business_number_valid, "
             "duplicate_transaction_detected, ocr_confidence_valid, final_result, "
@@ -337,6 +337,6 @@ class VerificationRepository:
     def get_for_claim(self, claim_id: int) -> dict[str, Any] | None:
         return _with_json_lists(
             self.database.fetch_one(
-                "SELECT * FROM verification_results WHERE claim_id = ?", (claim_id,)
+                "SELECT * FROM jaesoo_verification_results WHERE claim_id = ?", (claim_id,)
             )
         )

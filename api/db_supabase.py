@@ -1,9 +1,14 @@
 """Supabase Postgres 연결 + 스키마 + 조회 (개인화 대시보드용)
 
-테이블
-  · students     — 학생 식별(이름/학교/목표대학/계열/인강사이트)
-  · enrollments  — (table01) 임베디드 가입 시 받은 설문/약관동의 데이터
-  · exam_scores  — (table02) 인강사이트에서 제공받은 과목별 모의고사 백분위 종단데이터
+테이블 (전부 `jaesoo_` 접두사)
+  · jaesoo_students     — 학생 식별(이름/학교/목표대학/계열/인강사이트)
+  · jaesoo_enrollments  — 임베디드 가입 시 받은 설문/약관동의 데이터
+  · jaesoo_exam_scores  — 과목별 모의고사 백분위 종단데이터
+  · jaesoo_renewals     — 갱신 이력 (별표1 · 제25조)
+
+★ 접두사를 쓰는 이유: 이 Supabase 프로젝트를 다른 앱과 공유한다. 접두사가 없으면
+  같은 이름의 남의 테이블(jaesoo_students/claims 등)과 충돌해, create-if-not-exists 가
+  조용히 건너뛰고 런타임에 컬럼이 없어 깨진다.
 
 백엔드는 신뢰 영역이므로 anon 키/RLS 대신 DB 비밀번호로 Postgres 에 직접 접속한다.
 (Supabase Transaction Pooler, 포트 6543)
@@ -47,7 +52,7 @@ def connect():
 
 
 SCHEMA = """
-create table if not exists students (
+create table if not exists jaesoo_students (
   student_id  text primary key,
   name        text not null,
   school      text,
@@ -58,9 +63,9 @@ create table if not exists students (
   created_at  timestamptz default now()
 );
 
-create table if not exists enrollments (        -- table01: 가입 설문/약관
+create table if not exists jaesoo_enrollments (        -- table01: 가입 설문/약관
   id            bigint generated always as identity primary key,
-  student_id    text references students(student_id),
+  student_id    text references jaesoo_students(student_id),
   tier          text,          -- 라이트/스탠다드/플러스/프리미엄
   -- ── 요율 3지표 (약관 별표4 · 청약서 요율 반영 3문항) ──
   region                   text,   -- 특별시/대도시/중소도시/읍면지역 (지역규모)
@@ -81,9 +86,9 @@ create table if not exists enrollments (        -- table01: 가입 설문/약관
   created_at    timestamptz default now()
 );
 
-create table if not exists exam_scores (        -- table02: 성적 종단
+create table if not exists jaesoo_exam_scores (        -- table02: 성적 종단
   id          bigint generated always as identity primary key,
-  student_id  text references students(student_id),
+  student_id  text references jaesoo_students(student_id),
   seq         int,             -- 회차(1~9)
   exam_label  text,            -- '고1_3월' … '고3_9월모평' (engine.ROUNDS 와 동일)
   subject     text,            -- 국어/수학/영어/탐구
@@ -91,11 +96,11 @@ create table if not exists exam_scores (        -- table02: 성적 종단
   percentile  numeric,         -- 백분위 (표시 참고용, 판정에는 쓰지 않음)
   created_at  timestamptz default now()
 );
-create index if not exists idx_scores_student on exam_scores(student_id, subject, seq);
+create index if not exists idx_jaesoo_scores_student on jaesoo_exam_scores(student_id, subject, seq);
 
-create table if not exists renewals (          -- table03: 갱신 이력 (별표1 · 제25조)
+create table if not exists jaesoo_renewals (          -- table03: 갱신 이력 (별표1 · 제25조)
   id            bigint generated always as identity primary key,
-  student_id    text references students(student_id),
+  student_id    text references jaesoo_students(student_id),
   step          text,          -- 1차/2차/3차
   renewed_at    text,          -- 고2 3월 / 고3 3월 / 고3 9월
   previous_premium int,
@@ -104,20 +109,20 @@ create table if not exists renewals (          -- table03: 갱신 이력 (별표
   carried_forward  numeric default 0,   -- 초과분 이월 비율
   created_at    timestamptz default now()
 );
-create index if not exists idx_renewals_student on renewals(student_id, created_at);
+create index if not exists idx_jaesoo_renewals_student on jaesoo_renewals(student_id, created_at);
 """
 
 # 기존 배포본을 새 스키마로 올리는 증분 마이그레이션.
 # create table if not exists 만으로는 이미 존재하는 테이블에 컬럼이 추가되지 않는다.
 MIGRATIONS = """
-alter table exam_scores  add column if not exists grade numeric;
-alter table exam_scores  alter column percentile drop not null;
-alter table enrollments  add column if not exists academy_density_index int;
-alter table enrollments  add column if not exists household_income_manwon int;
-alter table enrollments  add column if not exists monthly_edu_cost_manwon int;
-alter table enrollments  add column if not exists enrolled_at_remaining_months int default 33;
-alter table enrollments  add column if not exists declared_subjects text[];
-alter table enrollments  add column if not exists surrender_type text default '표준형';
+alter table jaesoo_exam_scores  add column if not exists grade numeric;
+alter table jaesoo_exam_scores  alter column percentile drop not null;
+alter table jaesoo_enrollments  add column if not exists academy_density_index int;
+alter table jaesoo_enrollments  add column if not exists household_income_manwon int;
+alter table jaesoo_enrollments  add column if not exists monthly_edu_cost_manwon int;
+alter table jaesoo_enrollments  add column if not exists enrolled_at_remaining_months int default 33;
+alter table jaesoo_enrollments  add column if not exists declared_subjects text[];
+alter table jaesoo_enrollments  add column if not exists surrender_type text default '표준형';
 """
 
 
@@ -133,7 +138,7 @@ def list_students() -> list[dict]:
     with _connect() as conn, conn.cursor() as cur:
         cur.execute(
             "select s.student_id, s.name, s.school, s.grade_year, s.target_univ, s.track, s.source_site, "
-            "e.tier from students s left join enrollments e on e.student_id = s.student_id order by s.name"
+            "e.tier from jaesoo_students s left join jaesoo_enrollments e on e.student_id = s.student_id order by s.name"
         )
         cols = [d.name for d in cur.description]
         return [dict(zip(cols, r)) for r in cur.fetchall()]
@@ -141,14 +146,14 @@ def list_students() -> list[dict]:
 
 def get_student(student_id: str) -> dict | None:
     with _connect() as conn, conn.cursor() as cur:
-        cur.execute("select * from students where student_id = %s", (student_id,))
+        cur.execute("select * from jaesoo_students where student_id = %s", (student_id,))
         row = cur.fetchone()
         if not row:
             return None
         cols = [d.name for d in cur.description]
         student = dict(zip(cols, row))
         cur.execute(
-            "select * from enrollments where student_id = %s order by created_at desc limit 1",
+            "select * from jaesoo_enrollments where student_id = %s order by created_at desc limit 1",
             (student_id,),
         )
         erow = cur.fetchone()
@@ -165,7 +170,7 @@ def get_scores(student_id: str) -> dict:
     """
     with _connect() as conn, conn.cursor() as cur:
         cur.execute(
-            "select subject, seq, exam_label, grade, percentile from exam_scores "
+            "select subject, seq, exam_label, grade, percentile from jaesoo_exam_scores "
             "where student_id = %s order by subject, seq",
             (student_id,),
         )
@@ -183,7 +188,7 @@ def get_scores(student_id: str) -> dict:
 def upsert_student(s: dict) -> None:
     with _connect() as conn, conn.cursor() as cur:
         cur.execute(
-            """insert into students (student_id, name, school, grade_year, track, target_univ, source_site)
+            """insert into jaesoo_students (student_id, name, school, grade_year, track, target_univ, source_site)
                values (%(student_id)s, %(name)s, %(school)s, %(grade_year)s, %(track)s, %(target_univ)s, %(source_site)s)
                on conflict (student_id) do update set
                  name=excluded.name, school=excluded.school, grade_year=excluded.grade_year,
@@ -207,7 +212,7 @@ def insert_enrollment(e: dict) -> int:
               "survey": json.dumps(e.get("survey") or {}, ensure_ascii=False)}
     with _connect() as conn, conn.cursor() as cur:
         cur.execute(
-            """insert into enrollments
+            """insert into jaesoo_enrollments
                (student_id, tier, region, academy_density_index,
                 household_income_manwon, monthly_edu_cost_manwon,
                 enrolled_at_remaining_months, declared_subjects, surrender_type,
@@ -228,7 +233,7 @@ def insert_scores(student_id: str, rows: list[dict]) -> None:
     """rows: [{seq, label, subject, grade, percentile?}, ...]"""
     with _connect() as conn, conn.cursor() as cur:
         cur.executemany(
-            "insert into exam_scores (student_id, seq, exam_label, subject, grade, percentile) "
+            "insert into jaesoo_exam_scores (student_id, seq, exam_label, subject, grade, percentile) "
             "values (%s, %s, %s, %s, %s, %s)",
             [(student_id, r["seq"], r["label"], r["subject"],
               r.get("grade"), r.get("percentile")) for r in rows],
@@ -240,7 +245,7 @@ def insert_renewal(r: dict) -> int:
     """갱신 이력 1건 (별표1 · 제25조)."""
     with _connect() as conn, conn.cursor() as cur:
         cur.execute(
-            """insert into renewals
+            """insert into jaesoo_renewals
                (student_id, step, renewed_at, previous_premium,
                 theoretical_premium, applied_premium, carried_forward)
                values (%(student_id)s, %(step)s, %(renewed_at)s, %(previous_premium)s,
@@ -257,7 +262,7 @@ def list_renewals(student_id: str) -> list[dict]:
     with _connect() as conn, conn.cursor() as cur:
         cur.execute(
             "select step, renewed_at, previous_premium, theoretical_premium, "
-            "applied_premium, carried_forward, created_at from renewals "
+            "applied_premium, carried_forward, created_at from jaesoo_renewals "
             "where student_id = %s order by created_at",
             (student_id,),
         )

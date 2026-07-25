@@ -6,13 +6,12 @@ import { useChat, useCostEstimate, useCostForms, useEligibility, useStudents } f
 import { useClaim } from "@/lib/claim";
 import {
   SUBJECT_COLOR,
-  gradeToY,
   indexToX,
+  percentileToY,
   policyLink,
-  roundLabel,
   shortRoundLabel,
-  등급,
   만원,
+  백분위,
   원,
   퍼센트,
 } from "@/lib/format";
@@ -939,11 +938,11 @@ function PercentileChart() {
 
   const rounds = analysis?.round_order ?? [];
   const observed = rounds
-    .map((r) => ({ label: r, grade: analysis?.rounds?.[r] ?? null }))
-    .filter((p): p is { label: string; grade: number } => typeof p.grade === "number");
+    .map((r) => ({ label: r, pct: analysis?.rounds?.[r] ?? null }))
+    .filter((p): p is { label: string; pct: number } => typeof p.pct === "number");
 
-  const predicted = analysis?.band?.predicted_grade ?? null;
-  const mildLine = analysis?.band?.mild_threshold_grade ?? null;
+  const predicted = analysis?.band?.predicted_percentile ?? null;
+  const mildLine = analysis?.band?.mild_threshold_percentile ?? null;
 
   if (profile.loading) {
     return <div className="percentile-chart chart-placeholder">성적을 불러오는 중이에요…</div>;
@@ -953,24 +952,24 @@ function PercentileChart() {
       <div className="percentile-chart chart-placeholder">
         아직 등록된 모의고사 성적이 부족해요.
         <br />
-        성적을 등록하면 예상 등급을 보여드릴게요.
+        성적을 등록하면 예상 백분위를 보여드릴게요.
       </div>
     );
   }
 
   const count = observed.length + (predicted != null ? 1 : 0);
   const x = (i: number) => left + (count > 1 ? (i * plotW) / (count - 1) : 0);
-  const y = (g: number) => top + gradeToY(g, plotH, 0);
+  const y = (p: number) => top + percentileToY(p, plotH, 0);
 
   const observedPath = observed
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${x(i)} ${y(p.grade)}`)
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${x(i)} ${y(p.pct)}`)
     .join(" ");
   const lastIdx = observed.length - 1;
   const observedArea = `${observedPath} L ${x(lastIdx)} ${height - bottom} L ${left} ${height - bottom} Z`;
 
   return (
     <div className="percentile-chart">
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="회차별 종합등급 추이와 예상 수능 등급">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="회차별 종합 백분위 추이와 예상 수능 백분위">
         <defs>
           <linearGradient id="percentileArea" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#0CB474" stopOpacity=".25" />
@@ -978,11 +977,11 @@ function PercentileChart() {
           </linearGradient>
         </defs>
 
-        {/* 눈금 — 1등급이 맨 위 */}
-        {[1, 3, 5, 7, 9].map((g) => (
-          <g key={g}>
-            <line x1={left} x2={width - right} y1={y(g)} y2={y(g)} className="grid-line" />
-            <text x={4} y={y(g) + 4} className="axis-label">{g}</text>
+        {/* 눈금 — 백분위가 높을수록 위 */}
+        {[20, 40, 60, 80, 100].map((p) => (
+          <g key={p}>
+            <line x1={left} x2={width - right} y1={y(p)} y2={y(p)} className="grid-line" />
+            <text x={4} y={y(p) + 4} className="axis-label">{p}</text>
           </g>
         ))}
 
@@ -993,30 +992,30 @@ function PercentileChart() {
         {predicted != null && (
           <>
             <line
-              x1={x(lastIdx)} y1={y(observed[lastIdx].grade)}
+              x1={x(lastIdx)} y1={y(observed[lastIdx].pct)}
               x2={x(count - 1)} y2={y(predicted)}
               className="prediction-line"
             />
             <circle cx={x(count - 1)} cy={y(predicted)} r="4" fill="#fff" stroke="#0CB474" strokeWidth="2.4" strokeDasharray="2 2" />
             <text x={width - right} y={y(predicted) - 11} textAnchor="end" className="score-end-label">
-              예상 {predicted.toFixed(2)}
+              예상 {predicted.toFixed(1)}
             </text>
           </>
         )}
 
         {observed.map((p, i) => (
           <g key={`${p.label}-${i}`}>
-            <circle cx={x(i)} cy={y(p.grade)} r="6.2" fill="#9CE6C9" opacity=".55" />
-            <circle cx={x(i)} cy={y(p.grade)} r="3.2" fill="#fff" stroke="#0CB474" strokeWidth="2.2" />
+            <circle cx={x(i)} cy={y(p.pct)} r="6.2" fill="#9CE6C9" opacity=".55" />
+            <circle cx={x(i)} cy={y(p.pct)} r="3.2" fill="#fff" stroke="#0CB474" strokeWidth="2.2" />
           </g>
         ))}
 
-        {/* 보장 기준선 — 이보다 아래(등급이 큰 쪽)로 떨어지면 경증 보장 대상 */}
-        {mildLine != null && mildLine <= 9 && (
+        {/* 보장 기준선 — 이보다 아래로 떨어지면 경증 보장 대상 */}
+        {mildLine != null && mildLine >= 0 && (
           <>
             <line x1={width - right - 120} x2={width - right} y1={y(mildLine)} y2={y(mildLine)} className="threshold-line" />
             <text x={width - right} y={y(mildLine) - 6} textAnchor="end" className="threshold-label">
-              보장 기준선 {mildLine.toFixed(2)}등급
+              보장 기준선 {mildLine.toFixed(1)}
             </text>
           </>
         )}
@@ -1058,25 +1057,25 @@ function Chart({ selected }: { selected: "전체" | Subject }) {
 
   const maxLen = Math.max(...visible.map((s) => subjectData[s].series.length), 1);
   const x = (i: number) => indexToX(i, maxLen, width - right + left, left);
-  const y = (g: number) => top + gradeToY(g, plotH, 0);
+  const y = (p: number) => top + percentileToY(p, plotH, 0);
 
   return (
     <div className="subject-chart">
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="과목별 등급 추이">
-        {[1, 3, 5, 7, 9].map((g) => (
-          <g key={g}>
-            <line x1={left} x2={width - right} y1={y(g)} y2={y(g)} className="grid-line" />
-            <text x={4} y={y(g) + 4} className="axis-label">{g}</text>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="과목별 백분위 추이">
+        {[20, 40, 60, 80, 100].map((p) => (
+          <g key={p}>
+            <line x1={left} x2={width - right} y1={y(p)} y2={y(p)} className="grid-line" />
+            <text x={4} y={y(p) + 4} className="axis-label">{p}</text>
           </g>
         ))}
         {visible.map((subject) => {
           const series = subjectData[subject].series;
-          const d = series.map((g, i) => `${i === 0 ? "M" : "L"} ${x(i)} ${y(g)}`).join(" ");
+          const d = series.map((v, i) => `${i === 0 ? "M" : "L"} ${x(i)} ${y(v)}`).join(" ");
           return (
             <g key={subject}>
               <path d={d} fill="none" stroke={SUBJECT_COLOR[subject] ?? "#0CB474"} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-              {series.map((g, i) => (
-                <circle key={i} cx={x(i)} cy={y(g)} r="2.8" fill="#fff" stroke={SUBJECT_COLOR[subject] ?? "#0CB474"} strokeWidth="2" />
+              {series.map((v, i) => (
+                <circle key={i} cx={x(i)} cy={y(v)} r="2.8" fill="#fff" stroke={SUBJECT_COLOR[subject] ?? "#0CB474"} strokeWidth="2" />
               ))}
             </g>
           );
@@ -1097,7 +1096,7 @@ function Chart({ selected }: { selected: "전체" | Subject }) {
           </span>
         ))}
       </div>
-      <p className="chart-note">등급은 낮을수록 좋아요 · 판정 대상 {(analysis?.judged_subjects ?? []).join("·")}</p>
+      <p className="chart-note">백분위는 높을수록 좋아요 · 판정 대상 {(analysis?.judged_subjects ?? []).join("·")}</p>
     </div>
   );
 }
@@ -1272,8 +1271,8 @@ function WeakSubjects() {
   const subjectStats = analysis?.subjects ?? {};
   const weak = analysis?.weak_subjects ?? [];
 
-  // 변동성(등급 σ)을 0~100 안정성 점수로 — 1.5등급 이상 흔들리면 0점
-  const VOL_CEILING = 1.5;
+  // 변동성(백분위 σ)을 0~100 안정성 점수로 — 15%p 이상 흔들리면 0점
+  const VOL_CEILING = 15;
   const stability = (vol: number) =>
     Math.max(0, Math.min(100, Math.round((1 - Math.min(vol / VOL_CEILING, 1)) * 100)));
   const bandLabel = (score: number) => (score >= 70 ? "안정" : score >= 45 ? "보통" : "보완");
@@ -1335,7 +1334,7 @@ function WeakSubjects() {
           </div>
         ))}
         <p className="card-note">
-          등급 변동 폭(σ)을 100점 기준으로 환산한 값이에요. 급락 판정과는 별개의 참고 지표입니다.
+          백분위 변동 폭(σ)을 100점 기준으로 환산한 값이에요. 급락 판정과는 별개의 참고 지표입니다.
         </p>
       </section>
     </>
@@ -2926,6 +2925,7 @@ function ClaimEligibilityDetail({
 
   // 데모 시나리오: 예상 등급에서 지정한 σ 만큼 떨어진 상황을 가정해 서버에 물어본다
   const sigmaOffset = result === "severe" ? 2.4 : result === "mild" ? 2.0 : 1.0;
+  // σ 는 등급 단위라 등급으로 시나리오를 만든 뒤 백엔드가 백분위로 환산해 돌려준다
   const simulatedGrade =
     band?.predicted_grade != null ? band.predicted_grade + sigmaOffset * band.sigma : undefined;
   const { data, loading } = useEligibility(studentId, simulatedGrade);
@@ -2967,17 +2967,17 @@ function ClaimEligibilityDetail({
       <h1>보장 자격 상세</h1>
       <div className="claim-note">
         판정은 예상 성적(밴드)과 실제 수능 성적의 차이를 표준편차 단위로 계산해 나옵니다.
-        등급은 낮을수록 좋아요.
+        백분위는 높을수록 좋아요.
       </div>
 
       <section className="white-card claim-kv-card">
         <div className="claim-kv-row">
           <span className="k">예상 성적(밴드 중심)</span>
-          <span className="v">{등급(data.predicted_grade)}</span>
+          <span className="v">{백분위(data.predicted_percentile)} 백분위</span>
         </div>
         <div className="claim-kv-row">
           <span className="k">실제 수능 성적</span>
-          <span className="v">{등급(data.actual_grade)}</span>
+          <span className="v">{백분위(data.actual_percentile)} 백분위</span>
         </div>
         <div className="claim-kv-row">
           <span className="k">하락폭</span>
@@ -3000,13 +3000,13 @@ function ClaimEligibilityDetail({
         <div className="claim-kv-row">
           <span className="k">경증</span>
           <span className="v">
-            {등급(data.mild_threshold_grade)} 이하 ({data.mild_threshold_z}σ)
+            {백분위(data.mild_threshold_percentile)} 백분위 미만 ({data.mild_threshold_z}σ)
           </span>
         </div>
         <div className="claim-kv-row">
           <span className="k">중증</span>
           <span className="v">
-            {등급(data.severe_threshold_grade)} 이하 ({data.severe_threshold_z}σ)
+            {백분위(data.severe_threshold_percentile)} 백분위 미만 ({data.severe_threshold_z}σ)
           </span>
         </div>
         <p className="card-note">판정 대상 과목: {data.judged_subjects.join(" · ")}</p>
