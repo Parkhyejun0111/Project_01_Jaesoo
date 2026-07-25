@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  ArrowUp,
   ArrowUpRight,
   BadgeCheck,
   BarChart3,
@@ -12,6 +13,7 @@ import {
   CalendarDays,
   ChartNoAxesCombined,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CircleCheck,
@@ -19,6 +21,7 @@ import {
   CreditCard,
   FileChartColumn,
   FileText,
+  Flag,
   GraduationCap,
   Home,
   Info,
@@ -28,14 +31,16 @@ import {
   MapPin,
   MessageCircle,
   RefreshCcw,
-  Send,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
+  Sun,
+  Dumbbell,
+  Siren,
+  TriangleAlert,
   TrendingUp,
   UserRound,
   WalletCards,
-  X,
 } from "lucide-react";
 
 type Stage = "splash" | "login" | "loading" | "app";
@@ -53,6 +58,10 @@ type ClaimScreen =
   | "done"
   | "status";
 type ConverterScreen = "intro" | "input" | "cost" | "loading" | "result";
+type GradeScreen = "intro" | "loading" | "result";
+type CanvasTone = "cream" | "gray" | "gray-white" | "white" | "cream-white";
+
+const EXAM_END_AT = Date.parse("2026-11-19T17:45:00+09:00");
 
 const subjects = {
   국어: { color: "#F5604E", values: [55, 58, 61, 60, 64, 66, 70, 73] },
@@ -171,10 +180,12 @@ function Loading({ onDone }: { onDone: () => void }) {
 
 function TopBar({
   onNotification,
+  hasUnread = false,
   back,
   backLabel,
 }: {
   onNotification?: () => void;
+  hasUnread?: boolean;
   back?: () => void;
   backLabel?: string;
 }) {
@@ -182,7 +193,7 @@ function TopBar({
     <header className="top-bar">
       {back ? (
         <button className="back-button" onClick={back}>
-          <ChevronLeft size={19} />
+          <ChevronLeft size={17} />
           {backLabel ?? "이전 화면"}
         </button>
       ) : (
@@ -191,9 +202,21 @@ function TopBar({
       {onNotification && (
         <button className="icon-button" onClick={onNotification} aria-label="알림 열기">
           <Bell size={21} />
-          <span className="notification-dot" />
+          {hasUnread && <span className="notification-dot" />}
         </button>
       )}
+    </header>
+  );
+}
+
+function BrandTabHeader({ onNotification, hasUnread = false }: { onNotification: () => void; hasUnread?: boolean }) {
+  return (
+    <header className="brand-tab-header">
+      <img src="/logo-final-dark.png" alt="재수없수" />
+      <button className="icon-button" onClick={onNotification} aria-label="알림 열기">
+        <Bell size={20} />
+        {hasUnread && <span className="notification-dot" />}
+      </button>
     </header>
   );
 }
@@ -215,125 +238,145 @@ function HeroAction({
   );
 }
 
+function CanvasToneToggle({ tone, onToggle }: { tone: CanvasTone; onToggle: () => void }) {
+  const toneLabel = tone === "cream" ? "크림" : tone === "gray" ? "회색" : tone === "gray-white" ? "회색&화이트" : tone === "white" ? "화이트" : "크림&화이트";
+  const nextToneLabel = tone === "cream" ? "회색" : tone === "gray" ? "회색&화이트" : tone === "gray-white" ? "화이트" : tone === "white" ? "크림&화이트" : "크림";
+
+  return (
+    <button
+      className="canvas-tone-toggle"
+      type="button"
+      onClick={onToggle}
+      aria-pressed={tone !== "cream"}
+      aria-label={`${nextToneLabel} 테마로 전환`}
+    >
+      <Sun size={17} aria-hidden="true" />
+      <span>{toneLabel}</span>
+    </button>
+  );
+}
+
 function HomeMain({
   onNotification,
+  hasUnread,
   go,
   goTab,
-  openClaim,
+  askAi,
 }: {
   onNotification: () => void;
+  hasUnread: boolean;
   go: (screen: HomeScreen) => void;
   goTab: (tab: Tab) => void;
-  openClaim: () => void;
+  askAi: (question: string) => void;
 }) {
+  const [question, setQuestion] = useState("");
+
+  const submitQuestion = () => {
+    if (!question.trim()) return;
+    askAi(question.trim());
+  };
+
   return (
-    <div className="screen page-with-nav">
-      <section className="poster-home-hero">
-        <img src="/og.png" alt="재수없수, 보험보다 보호자에 가까운 안심 케어" />
-        <div className="poster-top-controls">
-          <span className="poster-profile">
-            <span className="avatar">김</span>
-            <span>
-              <strong>김지민 학부모님</strong>
-              <small>오늘도 든든하게 챙겨드릴게요</small>
-            </span>
+    <div className="screen page-with-nav home-screen">
+      <section className="home-main-hero">
+        <Clover className="home-clover one" />
+        <Clover className="home-clover two" />
+        <div className="home-hero-top">
+          <span className="avatar" aria-hidden="true">
+            김
           </span>
           <button className="icon-button" onClick={onNotification} aria-label="알림 열기">
             <Bell size={20} />
-            <span className="notification-dot" />
+            {hasUnread && <span className="notification-dot" />}
           </button>
         </div>
-      </section>
-
-      <section className="home-command-card">
-        <div className="command-heading">
-          <span className="command-mascot">
-            <Sparkles size={18} />
-          </span>
-          <span>
-            <small>AI 도우미 노재수</small>
-            <strong>무엇을 도와드릴까요?</strong>
-          </span>
+        <p className="home-greeting">안녕하세요, 김지민 학생 학부모님!</p>
+        <div className="home-ai-copy">
+          <Mascot size="lg" />
+          <p>
+            AI 도우미 <em>노재수</em> 입니다
+          </p>
+          <h1>보험료 산정과 약관에 관해 AI에게 물어보세요</h1>
         </div>
-        <button className="ask-box" onClick={() => go("chat")}>
-          <span>보험료·보장·약관을 편하게 물어보세요</span>
-          <Send size={19} />
-        </button>
-        <div className="poster-actions" aria-label="빠른 메뉴">
+        <div className="mint-divider home-menu-divider" />
+        <div className="hero-actions home-hero-actions" aria-label="AI 추천 메뉴">
           <HeroAction
             icon={<Calculator size={18} />}
-            label="비용 계산"
-            onClick={() => goTab("converter")}
+            label="보험료 계산"
+            onClick={() => askAi("보험료는 어떻게 계산된 거예요?")}
           />
           <HeroAction
             icon={<ShieldCheck size={18} />}
-            label="보장 관리"
-            onClick={openClaim}
+            label="약관 설명"
+            onClick={() => askAi("약관에 대해 설명해주세요.")}
           />
           <HeroAction
             icon={<BarChart3 size={18} />}
-            label="입시 관리"
-            onClick={() => goTab("grades")}
+            label="보장 기준"
+            onClick={() => askAi("보장을 받을 수 있는 기준이 뭐예요?")}
           />
         </div>
+        <form
+          className="home-question"
+          onSubmit={(event) => {
+            event.preventDefault();
+            submitQuestion();
+          }}
+        >
+          <input
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            placeholder="궁금한 점을 입력하세요"
+            aria-label="AI에게 질문하기"
+          />
+          <button type="submit" aria-label="질문 보내기" disabled={!question.trim()}>
+            <ArrowRight size={20} />
+          </button>
+        </form>
       </section>
 
       <section className="home-content">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">이번 달 우리 집</span>
-            <h2>안심 리포트</h2>
-          </div>
-          <span className="updated">
-            <RefreshCcw size={12} /> 오늘 업데이트
-          </span>
-        </div>
-
         <div className="metric-grid">
-          <button className="metric-card premium-card" onClick={() => go("premium")}>
+          <article className="metric-card premium-card">
             <span className="metric-icon mint">
               <WalletCards size={20} />
             </span>
             <span>현재 월 보험료</span>
             <strong>42,000원</strong>
-            <small>
-              상세 보기 <ChevronRight size={13} />
-            </small>
-          </button>
-          <button className="metric-card dday-card" onClick={openClaim}>
+            <small>7월 12일 납입 예정</small>
+          </article>
+          <article className="metric-card dday-card">
             <span className="metric-icon lime">
               <CalendarDays size={20} />
             </span>
-            <span>1차 청구 마감까지</span>
+            <span>보험료 재산정까지</span>
             <strong>D-17</strong>
-            <small>
-              일정 보기 <ChevronRight size={13} />
-            </small>
-          </button>
+            <small>8월 모의고사 반영</small>
+          </article>
         </div>
 
-        <button className="insight-card" onClick={() => goTab("grades")}>
-          <span className="insight-icon">
-            <TrendingUp size={22} />
-          </span>
-          <span>
-            <small>이번 달 성적 분석</small>
-            <strong>수학이 6점 올랐어요</strong>
-            <em>지금 흐름이면 백분위 70도 가능해요.</em>
-          </span>
-          <ArrowUpRight size={20} />
-        </button>
-
-        <button className="claim-banner" onClick={openClaim}>
-          <div>
-            <span className="eyebrow light">2026.11.19 평가 · 중증 · 한도 1,404만원</span>
-            <h3>1차 청구가 열렸어요</h3>
-            <p>6월 30일까지 제출할 수 있어요.</p>
-          </div>
-          <span className="round-arrow">
-            <ArrowRight size={20} />
-          </span>
-        </button>
+        <div className="home-feature-grid">
+          <button className="home-feature-card grades-feature" onClick={() => goTab("grades")}>
+            <span className="feature-arrow">
+              <ArrowRight size={17} />
+            </span>
+            <span className="feature-icon">
+              <ChartNoAxesCombined size={25} />
+            </span>
+            <small>성적분석</small>
+            <strong>성적의 추이와 안정성을 점검하세요</strong>
+          </button>
+          <button className="home-feature-card converter-feature" onClick={() => goTab("converter")}>
+            <span className="feature-arrow">
+              <ArrowRight size={17} />
+            </span>
+            <span className="feature-icon">
+              <Calculator size={25} />
+            </span>
+            <small>돈워리</small>
+            <strong>우리 집 재수 비용을 미리 계산해보세요</strong>
+          </button>
+        </div>
       </section>
     </div>
   );
@@ -409,30 +452,88 @@ function PremiumDetail({ screen, back, go }: { screen: HomeScreen; back: () => v
   );
 }
 
-function Chat({ back }: { back: () => void }) {
-  const [messages, setMessages] = useState([
-    { who: "ai", text: "안녕하세요! 보험료 계산, 약관, 보장 기준을 쉽게 설명해드릴게요." },
-  ]);
+function Chat({
+  back,
+  initialQuestion,
+}: {
+  back: () => void;
+  initialQuestion: string;
+}) {
+  type ChatMessage = { who: "ai" | "me"; text: string; target?: string; status?: "loading" | "typing" | "complete" };
+  const welcomeMessage = "안녕하세요! 저는 재수없수 AI 도우미 노재수예요.\n\n약관과 보험료 산정 근거를 실제 약관 문서에 근거해 설명해드릴게요. 아래 추천 질문을 누르거나, 궁금한 점을 직접 입력해 물어보세요.";
+  const [messages, setMessages] = useState<ChatMessage[]>(
+    initialQuestion
+      ? [
+          { who: "me", text: initialQuestion },
+          { who: "ai", text: "", target: "좋은 질문이에요. 현재 가입 정보와 성적 흐름을 바탕으로 이해하기 쉽게 설명해드릴게요.", status: "loading" },
+        ]
+      : [],
+  );
   const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const recommendedQuestions = [
+    "보험금은 언제, 어떻게 받나요?",
+    "보험료는 어떤 기준으로 산정되나요?",
+    "청약철회는 어떻게 하나요?",
+    "보장에서 제외되는 경우는 뭔가요?",
+  ];
 
-  const send = () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    const loadingIndex = messages.findIndex((message) => message.who === "ai" && message.status === "loading");
+    if (loadingIndex === -1) return;
+
+    const timer = window.setTimeout(() => {
+      setMessages((current) => current.map((message, index) => index === loadingIndex ? { ...message, status: "typing" } : message));
+    }, 1450);
+    return () => window.clearTimeout(timer);
+  }, [messages]);
+
+  useEffect(() => {
+    const messageArea = document.querySelector<HTMLElement>(".messages");
+    messageArea?.scrollTo({ top: messageArea.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    const typingIndex = messages.findIndex((message) => message.who === "ai" && message.status === "typing" && message.target && message.text.length < message.target.length);
+    if (typingIndex === -1) return;
+
+    const timer = window.setTimeout(() => {
+      setMessages((current) => current.map((message, index) => {
+        if (index !== typingIndex || !message.target) return message;
+        const nextText = message.target.slice(0, message.text.length + 1);
+        return { ...message, text: nextText, status: nextText.length === message.target.length ? "complete" : "typing" };
+      }));
+    }, 34);
+    return () => window.clearTimeout(timer);
+  }, [messages]);
+
+  const answerFor = (question: string) => {
+    if (question.includes("보험금")) return "보험금은 보장 요건을 충족한 뒤 청구가 열리면 신청할 수 있어요. 제출 서류와 심사 결과를 확인한 후 등록한 계좌로 지급됩니다.";
+    if (question.includes("청약철회")) return "청약철회는 가입 후 정해진 기간 안에 신청할 수 있어요. 마이 탭의 약관 및 정책에서 기준과 절차를 확인할 수 있습니다.";
+    if (question.includes("제외")) return "성적표 위조·변조, 허위 제출처럼 약관에서 정한 면책 사유에 해당하면 보장에서 제외될 수 있어요.";
+    return "좋은 질문이에요. 현재 가입 정보와 성적 흐름을 바탕으로 이해하기 쉽게 설명해드릴게요.";
+  };
+
+  const sendQuestion = (question: string) => {
+    const trimmedQuestion = question.trim();
+    if (!trimmedQuestion) return;
     setMessages((current) => [
       ...current,
-      { who: "me", text: input.trim() },
-      {
-        who: "ai",
-        text: "좋은 질문이에요. 현재 스탠다드 플랜은 모의고사 성적 흐름과 가입 조건을 함께 반영해 월 보험료를 계산해요.",
-      },
+      { who: "me", text: trimmedQuestion },
+      { who: "ai", text: "", target: answerFor(trimmedQuestion), status: "loading" },
     ]);
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "56px";
+  };
+
+  const send = () => {
+    sendQuestion(input);
   };
 
   return (
     <div className="screen chat-screen">
-      <TopBar back={back} backLabel="홈" />
-      <div className="chat-heading">
-        <Mascot size="sm" />
+      <div className="chat-heading chat-agentbar">
+        <button className="chat-back" onClick={back} aria-label="홈으로 돌아가기"><ChevronLeft size={17} /><span>홈으로</span></button>
         <div>
           <h1>AI 도우미 노재수</h1>
           <p>
@@ -440,18 +541,38 @@ function Chat({ back }: { back: () => void }) {
           </p>
         </div>
       </div>
-      <div className="quick-prompts">
-        {["보험료는 어떻게 계산해?", "약관을 쉽게 설명해줘", "보장 기준이 궁금해"].map((label) => (
-          <button key={label} onClick={() => setInput(label)}>
-            {label}
-          </button>
-        ))}
-      </div>
       <div className="messages">
-        {messages.map((message, index) => (
-          <div className={`message ${message.who}`} key={`${message.who}-${index}`}>
-            {message.text}
+        <div className="message-row ai">
+          <Mascot size="sm" />
+          <div className="message ai chat-welcome">{welcomeMessage}</div>
+        </div>
+        <section className="chat-recommendations" aria-label="추천 질문">
+          <span>추천 질문</span>
+          <div className="quick-prompts">
+            {recommendedQuestions.map((label) => (
+              <button key={label} onClick={() => sendQuestion(label)}>{label}</button>
+            ))}
           </div>
+        </section>
+        {messages.map((message, index) => (
+          message.who === "ai" && message.status === "loading" ? (
+            <div className="chat-loading-runner" key={`${message.who}-${index}`} aria-label="노재수가 답변을 준비하고 있어요">
+              <div className="runner-track" aria-hidden="true">
+                <span className="paw-print paw-one"><img src="/paw-loader.png" alt="" /></span>
+                <span className="paw-print paw-two"><img src="/paw-loader.png" alt="" /></span>
+                <span className="paw-print paw-three"><img src="/paw-loader.png" alt="" /></span>
+                <span className="paw-print paw-four"><img src="/paw-loader.png" alt="" /></span>
+                <div className="runner-mascot"><Mascot size="sm" /></div>
+              </div>
+            </div>
+          ) : (
+            <div className={`message-row ${message.who}`} key={`${message.who}-${index}`}>
+              {message.who === "ai" && <Mascot size="sm" />}
+              <div className={`message ${message.who} ${message.status === "typing" ? "typing" : ""} ${message.who === "ai" ? "answer-enter" : ""}`}>
+                {message.text || " "}
+              </div>
+            </div>
+          )
         ))}
       </div>
       <form
@@ -461,27 +582,123 @@ function Chat({ back }: { back: () => void }) {
           send();
         }}
       >
-        <input
+        <textarea
+          ref={inputRef}
+          rows={1}
           value={input}
-          onChange={(event) => setInput(event.target.value)}
+          onChange={(event) => {
+            setInput(event.target.value);
+            event.currentTarget.style.height = "auto";
+            event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 120)}px`;
+          }}
           placeholder="노재수에게 물어보세요"
           aria-label="AI 질문"
         />
         <button type="submit" aria-label="질문 보내기">
-          <Send size={18} />
+          <ArrowUp size={19} strokeWidth={2.2} />
         </button>
       </form>
     </div>
   );
 }
 
+function PercentileChart() {
+  const values = [52, 54, 60, 61, 58, 62, 63, 68, 65, 63];
+  const labels = ["11월", "11월", "2월", "6월", "9월", "12월", "3월", "6월", "9월", "수능"];
+  const width = 360;
+  const height = 218;
+  const left = 30;
+  const right = 15;
+  const top = 18;
+  const bottom = 30;
+  const yMin = 30;
+  const yMax = 80;
+
+  const point = (value: number, index: number) => {
+    const x = left + (index / (values.length - 1)) * (width - left - right);
+    const y = top + ((yMax - value) / (yMax - yMin)) * (height - top - bottom);
+    return [x, y];
+  };
+  const observedValues = values.slice(0, -1);
+  const observedPath = observedValues
+    .map((value, index) => {
+      const [x, y] = point(value, index);
+      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
+  const [predictionStartX, predictionStartY] = point(values[values.length - 2], values.length - 2);
+  const [predictionEndX, predictionEndY] = point(values[values.length - 1], values.length - 1);
+  const observedArea = `${observedPath} L ${predictionStartX} ${height - bottom} L ${left} ${height - bottom} Z`;
+  const predictionBand = `${predictionStartX},${predictionStartY - 3} ${predictionEndX},${predictionEndY - 12} ${predictionEndX},${predictionEndY + 12} ${predictionStartX},${predictionStartY + 3}`;
+  const [, thresholdY] = point(48, 0);
+  const thresholdStartX = width - right - 88;
+
+  return (
+    <div className="percentile-chart">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="수능 예상 백분위 추이 그래프">
+        <defs>
+          <linearGradient id="percentileArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#0CB474" stopOpacity=".25" />
+            <stop offset="100%" stopColor="#0CB474" stopOpacity=".02" />
+          </linearGradient>
+        </defs>
+        {[30, 40, 50, 60, 70, 80].map((value) => {
+          const [, y] = point(value, 0);
+          return (
+            <g key={value}>
+              <line x1={left} x2={width - right} y1={y} y2={y} className="grid-line" />
+              <text x={4} y={y + 4} className="axis-label">
+                {value}
+              </text>
+            </g>
+          );
+        })}
+        <path d={observedArea} fill="url(#percentileArea)" />
+        <polygon points={predictionBand} fill="#9CE6C9" opacity=".38" />
+        <path d={observedPath} fill="none" stroke="#0CB474" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round" />
+        <line
+          x1={predictionStartX}
+          y1={predictionStartY}
+          x2={predictionEndX}
+          y2={predictionEndY}
+          className="prediction-line"
+        />
+        {values.map((value, index) => {
+          const [x, y] = point(value, index);
+          return (
+            <g key={`${value}-${index}`}>
+              <circle cx={x} cy={y} r="6.2" fill="#9CE6C9" opacity=".55" />
+              <circle cx={x} cy={y} r="3.2" fill="#fff" stroke="#0CB474" strokeWidth="2.2" />
+            </g>
+          );
+        })}
+        <line x1={thresholdStartX} x2={width - right} y1={thresholdY} y2={thresholdY} className="threshold-line" />
+        <text x={width - right} y={thresholdY - 6} textAnchor="end" className="threshold-label">
+          보장 기준선 48점
+        </text>
+        <text x={width - right} y={point(values[values.length - 1], values.length - 1)[1] - 11} textAnchor="end" className="score-end-label">
+          63
+        </text>
+        {labels.map((label, index) => {
+          const [x] = point(values[index], index);
+          return (
+            <text key={`${label}-${index}`} x={x} y={height - 9} textAnchor="middle" className="x-label">
+              {label}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 function Chart({ selected }: { selected: "전체" | Subject }) {
   const width = 360;
-  const height = 176;
+  const height = 224;
   const left = 30;
   const right = 10;
   const top = 16;
-  const bottom = 30;
+  const bottom = 28;
   const yMin = 45;
   const yMax = 80;
   const visible = selected === "전체" ? (Object.keys(subjects) as Subject[]) : [selected];
@@ -501,6 +718,7 @@ function Chart({ selected }: { selected: "전체" | Subject }) {
       .join(" ");
 
   const areaPath = selected === "전체" ? "" : `${pathFor(subjects[selected].values)} L ${width - right} ${height - bottom} L ${left} ${height - bottom} Z`;
+  const markerRadius = selected === "전체" ? 2.1 : 3.4;
 
   return (
     <div className="chart-wrap">
@@ -529,15 +747,15 @@ function Chart({ selected }: { selected: "전체" | Subject }) {
             {subjects[subject].values.map((value, index) => {
               const [x, y] = point(value, index);
               return (
-                <circle key={`${subject}-${index}`} cx={x} cy={y} r="3.4" fill="#fff" stroke={subjects[subject].color} strokeWidth="2.3" />
+                <circle key={`${subject}-${index}`} cx={x} cy={y} r={markerRadius} fill="#fff" stroke={subjects[subject].color} strokeWidth={selected === "전체" ? "1.7" : "2.3"} />
               );
             })}
           </g>
         ))}
         {examLabels.map((label, index) => {
-          const [x] = point(50, index);
+          const [x] = point(subjects.국어.values[index], index);
           return (
-            <text key={label + index} x={x} y={height - 8} textAnchor="middle" className="x-label">
+            <text key={`${label}-${index}`} x={x} y={height - 8} textAnchor="middle" className="x-label subject-x-label">
               {label}
             </text>
           );
@@ -547,20 +765,99 @@ function Chart({ selected }: { selected: "전체" | Subject }) {
   );
 }
 
-function Grades() {
+function GradeIntro({
+  onNotification,
+  hasUnread,
+  onStart,
+}: {
+  onNotification: () => void;
+  hasUnread: boolean;
+  onStart: () => void;
+}) {
+  return (
+    <div className="screen page-with-nav grades-intro">
+      <BrandTabHeader onNotification={onNotification} hasUnread={hasUnread} />
+      <main>
+        <span className="eyebrow">성적분석</span>
+        <h1>
+          아이의 성적 흐름을
+          <br />
+          <strong>한눈에 살펴보세요</strong>
+        </h1>
+        <div className="grade-analysis-illustration">
+          <img src="/grade-analysis.png" alt="성적 그래프와 돋보기를 살펴보는 일러스트" />
+        </div>
+        <p>
+          모의고사 성적을 바탕으로 과목별 추이와
+          <br />
+          지금 보완하면 좋은 부분을 정리해 드려요.
+        </p>
+        <button className="primary-button" onClick={onStart}>
+          성적분석 시작하기 <ArrowRight size={18} />
+        </button>
+      </main>
+    </div>
+  );
+}
+
+function GradeLoading({ onDone }: { onDone: () => void }) {
+  useEffect(() => {
+    const timer = window.setTimeout(onDone, 1700);
+    return () => window.clearTimeout(timer);
+  }, [onDone]);
+
+  return (
+    <div className="screen grade-analysis-loading" aria-live="polite">
+      <div className="grade-analysis-loading-art" aria-hidden="true">
+        <img src="/grade-analysis.png" alt="" />
+        <span>
+          <LoaderCircle className="spinner dark" size={36} />
+        </span>
+      </div>
+      <h1>
+        최근 성적을 분석하고 있어요
+        <br />
+        잠시만 기다려 주세요
+      </h1>
+      <p>과목별 추이와 보완 포인트를 꼼꼼히 확인하는 중이에요.</p>
+    </div>
+  );
+}
+
+function GradeFlow({
+  screen,
+  setScreen,
+  onNotification,
+  hasUnread,
+}: {
+  screen: GradeScreen;
+  setScreen: (screen: GradeScreen) => void;
+  onNotification: () => void;
+  hasUnread: boolean;
+}) {
+  if (screen === "intro") {
+    return <GradeIntro onNotification={onNotification} hasUnread={hasUnread} onStart={() => setScreen("loading")} />;
+  }
+
+  if (screen === "loading") {
+    return <GradeLoading onDone={() => setScreen("result")} />;
+  }
+
+  return <Grades onNotification={onNotification} hasUnread={hasUnread} />;
+}
+
+function Grades({ onNotification, hasUnread }: { onNotification: () => void; hasUnread: boolean }) {
   const [segment, setSegment] = useState<"trend" | "weak">("trend");
   const [selected, setSelected] = useState<"전체" | Subject>("전체");
 
   return (
-    <div className="screen page-with-nav">
-      <section className="page-header green-header">
-        <div>
-          <span className="eyebrow light">성적 리포트</span>
-          <h1>지민이의 성장 흐름</h1>
-        </div>
-        <span className="percentile-pill">
-          <TrendingUp size={15} /> 상위 37%
-        </span>
+    <div className="screen page-with-nav grades-screen">
+      <section className="grades-brand-header">
+        <img src="/logo-final-white.png" alt="재수없수" />
+        <button className="icon-button" onClick={onNotification} aria-label="알림 열기">
+          <Bell size={20} />
+          {hasUnread && <span className="notification-dot" />}
+        </button>
       </section>
       <main className="grades-content">
         <div className="segment-control" role="tablist" aria-label="성적 분석 보기">
@@ -574,60 +871,53 @@ function Grades() {
 
         {segment === "trend" ? (
           <>
-            <section className="score-card white-card">
-              <div className="card-heading">
-                <div>
+            <div className="score-card-stack">
+              <section className="score-card white-card">
+                <div className="score-heading-row">
                   <span className="eyebrow">수능 예상 점수</span>
                   <h2>
                     백분위 <strong>63</strong>
+                    <small>예상 범위 56~70</small>
                   </h2>
+                  <p>
+                    모의고사 9회 평균 백분위 63, <strong>전국 상위 37%</strong>입니다.
+                  </p>
                 </div>
-                <span className="status-badge">
-                  <TrendingUp size={13} /> 오르는 중
-                </span>
-              </div>
-              <div className="mini-trend">
-                <span>9번의 모의고사 흐름으로 계산했어요</span>
-                <strong>+7</strong>
-              </div>
-            </section>
+                <PercentileChart />
+              </section>
+              <section className="score-explainer">
+                빨간 선(48점)은 평소보다 15점 이상 떨어진 &apos;불운&apos;을 판단하는 기준선입니다.
+                점수가 이 선 아래로 내려가 재수하게 되면 보험에서 비용을 보장합니다.
+              </section>
+            </div>
 
-            <section className="white-card subject-card">
-              <div className="card-heading">
-                <div>
+            <div className="subject-card-stack">
+              <section className="white-card subject-card">
+                <div className="subject-title-row">
                   <span className="eyebrow">과목별 성적 추이</span>
-                  <h2>평균 2.15등급</h2>
+                  <strong>평균 2.15등급</strong>
                 </div>
-                <Info size={18} />
-              </div>
-              <div className="subject-filters" aria-label="그래프 과목 필터">
-                {(["전체", ...Object.keys(subjects)] as ("전체" | Subject)[]).map((subject) => (
-                  <button
-                    key={subject}
-                    className={selected === subject ? "active" : ""}
-                    onClick={() => setSelected(subject)}
-                    style={subject !== "전체" && selected === subject ? { borderColor: subjects[subject].color, color: subjects[subject].color } : undefined}
-                  >
-                    {subject !== "전체" && <i style={{ background: subjects[subject].color }} />}
-                    {subject}
-                  </button>
-                ))}
-              </div>
-              <Chart selected={selected} />
-              <p className="chart-note">
-                {selected === "전체"
-                  ? "전체 선택 시 네 과목의 흐름을 겹쳐 비교해요."
-                  : `${selected}만 선택해 라인 아래의 변화 영역을 함께 보여드려요.`}
-              </p>
-            </section>
-
-            <section className="coach-card">
-              <Sparkles size={20} />
-              <div>
-                <strong>노재수의 한마디</strong>
-                <p>수학 상승세가 좋아요. 영어는 주 2회 오답 복습으로 안정성을 챙겨봐요.</p>
-              </div>
-            </section>
+                <div className="subject-filters" aria-label="그래프 과목 필터">
+                  {(["전체", ...Object.keys(subjects)] as ("전체" | Subject)[]).map((subject) => (
+                    <button
+                      key={subject}
+                      className={selected === subject ? "active" : ""}
+                      onClick={() => setSelected(subject)}
+                    >
+                      {subject}
+                    </button>
+                  ))}
+                </div>
+                <Chart selected={selected} />
+              </section>
+              <section className="grade-effect-card">
+                <strong>고3 성적이 내려간 것처럼 보여도 걱정마세요.</strong>
+                <p>
+                  고3 성적하락은 실력 저하가 아닌 재수생 유입 때문이며, 위 예상 점수는 이를 감안하여
+                  계산되었습니다.
+                </p>
+              </section>
+            </div>
           </>
         ) : (
           <WeakSubjects />
@@ -638,11 +928,21 @@ function Grades() {
 }
 
 function WeakSubjects() {
+  const [prioritySlide, setPrioritySlide] = useState(0);
+  const prioritySliderRef = useRef<HTMLDivElement>(null);
+  const showPrioritySlide = (index: number) => {
+    const slider = prioritySliderRef.current;
+    setPrioritySlide(index);
+    slider?.scrollTo({
+      left: index * Math.max(0, slider.clientWidth - 22),
+      behavior: "smooth",
+    });
+  };
   const rows = [
-    ["국어", 56, "#238F67", "보통"],
-    ["수학", 52, "#4169D7", "보통"],
-    ["영어", 48, "#D14982", "보완"],
-    ["탐구", 65, "#C8781F", "높음"],
+    ["국어", 56, "#F5604E", "보통"],
+    ["수학", 52, "#13BCAD", "보통"],
+    ["영어", 48, "#3B5998", "보완"],
+    ["탐구", 65, "#FFC83B", "높음"],
   ];
   return (
     <>
@@ -651,13 +951,16 @@ function WeakSubjects() {
           <span className="eyebrow">안정성 점수</span>
           <span className="warning-badge">보통</span>
         </div>
-        <h2>
-          55 <small>/ 100</small>
-        </h2>
-        <div className="stability-track">
-          <span style={{ width: "55%" }} />
+        <div className="stability-summary">
+          <div className="stability-donut" role="img" aria-label="안정성 점수 55">
+            <span>
+              <strong>55</strong>
+            </span>
+          </div>
+          <p>
+            영어 과목의 등락이 가장 커요. 기준선보다 안정도가 낮아 집중 보완을 추천해요.
+          </p>
         </div>
-        <p>영어 과목의 등락이 가장 커요. 기준선보다 안정도가 낮아 집중 보완을 추천해요.</p>
       </section>
       <section className="white-card subject-stability">
         <div className="card-heading">
@@ -669,7 +972,7 @@ function WeakSubjects() {
         {rows.map(([name, score, color, label]) => (
           <div className="stability-row" key={String(name)}>
             <strong>{name}</strong>
-            <div className="bar">
+            <div className="report-bar">
               <span style={{ width: `${score}%`, background: color }} />
             </div>
             <b style={{ color }}>{score}</b>
@@ -680,30 +983,152 @@ function WeakSubjects() {
       <section className="white-card position-card">
         <span className="eyebrow">과목 포지션 한눈에 보기</span>
         <h2>영어 안정성을 먼저 챙겨요</h2>
-        <div className="quadrant">
-          <span className="quadrant-label q1">💪 강점</span>
-          <span className="quadrant-label q2">🚩 보완</span>
+        <div className="position-matrix">
+          <span className="matrix-label steady">
+            <Flag size={14} /> 차근차근
+          </span>
+          <span className="matrix-label strong">
+            <Dumbbell size={14} /> 강점
+          </span>
+          <span className="matrix-label first">
+            <Siren size={14} /> 먼저 챙김
+          </span>
+          <span className="matrix-label variable">
+            <TriangleAlert size={14} /> 당일 변수
+          </span>
           <i className="q-dot math">수학</i>
           <i className="q-dot korean">국어</i>
           <i className="q-dot english">영어</i>
           <i className="q-dot inquiry">탐구</i>
+          <span className="matrix-axis axis-y">안정성 높음</span>
+          <span className="matrix-axis axis-x">점수 높음</span>
+        </div>
+      </section>
+      <section className="focus-priority-section" aria-labelledby="focus-priority-title">
+        <span className="eyebrow">추천 학습 방향</span>
+        <h2 id="focus-priority-title">집중 보완 우선순위</h2>
+        <div
+          className="focus-priority-slider"
+          ref={prioritySliderRef}
+          onScroll={(event) => {
+            const { scrollLeft, clientWidth } = event.currentTarget;
+            setPrioritySlide(scrollLeft > Math.max(24, (clientWidth - 22) / 2) ? 1 : 0);
+          }}
+          aria-label="집중 보완 우선순위 카드. 옆으로 밀어 다음 카드를 확인하세요."
+        >
+          <div
+            className="focus-priority-track"
+            aria-live="polite"
+          >
+            <article className="focus-priority-card primary" aria-hidden={prioritySlide !== 0}>
+              <div className="focus-priority-copy">
+                <strong>1순위 <span>영어</span></strong>
+                <p>
+                  수능 당일 변수를 줄이기 위해 점수 향상보다 성적 기복을 잡는 데 집중해보아요.
+                </p>
+              </div>
+              <span className="focus-priority-icon" aria-hidden="true">
+                <BookOpenCheck size={29} />
+              </span>
+            </article>
+            <article className="focus-priority-card secondary" aria-hidden={prioritySlide !== 1}>
+              <div className="focus-priority-copy">
+                <strong>2순위 <span>수학</span></strong>
+                <p>
+                  아직 점수 향상 여지가 있어요. 기본기를 차근차근 쌓아가요.
+                </p>
+              </div>
+              <span className="focus-priority-icon" aria-hidden="true">
+                <TrendingUp size={29} />
+              </span>
+            </article>
+          </div>
+        </div>
+        <div className="focus-priority-controls" aria-label="집중 보완 우선순위 카드 선택">
+          <button
+            type="button"
+            onClick={() => showPrioritySlide(prioritySlide === 0 ? 1 : 0)}
+            aria-label="이전 우선순위 보기"
+          >
+            <ChevronLeft size={19} />
+          </button>
+          <div className="focus-priority-dots" aria-label={`${prioritySlide + 1} / 2`}>
+            <button
+              type="button"
+              className={prioritySlide === 0 ? "active" : ""}
+              onClick={() => showPrioritySlide(0)}
+              aria-label="1순위 영어 보기"
+              aria-current={prioritySlide === 0 ? "true" : undefined}
+            />
+            <button
+              type="button"
+              className={prioritySlide === 1 ? "active" : ""}
+              onClick={() => showPrioritySlide(1)}
+              aria-label="2순위 수학 보기"
+              aria-current={prioritySlide === 1 ? "true" : undefined}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => showPrioritySlide(prioritySlide === 0 ? 1 : 0)}
+            aria-label="다음 우선순위 보기"
+          >
+            <ChevronRight size={19} />
+          </button>
         </div>
       </section>
     </>
   );
 }
 
-function Converter({ screen, setScreen }: { screen: ConverterScreen; setScreen: (screen: ConverterScreen) => void }) {
+function Converter({
+  screen,
+  setScreen,
+  onNotification,
+  hasUnread,
+}: {
+  screen: ConverterScreen;
+  setScreen: (screen: ConverterScreen) => void;
+  onNotification: () => void;
+  hasUnread: boolean;
+}) {
+  const [converterChoices, setConverterChoices] = useState({
+    savings: "150~250만원",
+    children: "2명",
+    retirement: "3~5억원",
+    income: "600~800만원",
+    academy: "재수종합학원",
+    region: "수도권",
+  });
+  const [showEquivalentFormulas, setShowEquivalentFormulas] = useState(true);
+  const comparisonAmount = 2292;
+
+  const coveredAmount = Math.min(1400, comparisonAmount);
+  const finalAmount = Math.max(comparisonAmount - coveredAmount, 0);
+  const coveragePercent = comparisonAmount > 0 ? Math.round((coveredAmount / comparisonAmount) * 100) : 0;
+  const formattedComparison = comparisonAmount.toLocaleString("ko-KR");
+  const formattedWon = (comparisonAmount * 10000).toLocaleString("ko-KR");
+  const formattedCoveredWon = (coveredAmount * 10000).toLocaleString("ko-KR");
+  const formattedFinalWon = (finalAmount * 10000).toLocaleString("ko-KR");
+  const savingsMonths = (comparisonAmount / 191).toFixed(1);
+  const tuitionTerms = (comparisonAmount / 347).toFixed(1);
+  const retirementPercent = ((comparisonAmount / 38200) * 100).toFixed(1);
+  const incomeMonths = (comparisonAmount / 636).toFixed(1);
+
+  const updateConverterChoice = (key: keyof typeof converterChoices, value: string) => {
+    setConverterChoices((current) => ({ ...current, [key]: value }));
+  };
+
   useEffect(() => {
     if (screen !== "loading") return;
-    const timer = window.setTimeout(() => setScreen("result"), 1500);
+    const timer = window.setTimeout(() => setScreen("result"), 1700);
     return () => window.clearTimeout(timer);
   }, [screen, setScreen]);
 
   if (screen === "intro") {
     return (
       <div className="screen page-with-nav converter-intro">
-        <TopBar />
+        <BrandTabHeader onNotification={onNotification} hasUnread={hasUnread} />
         <main>
           <span className="eyebrow">돈워리 계산기</span>
           <h1>
@@ -737,76 +1162,247 @@ function Converter({ screen, setScreen }: { screen: ConverterScreen; setScreen: 
   if (screen === "loading") {
     return (
       <div className="screen converter-loading">
-        <Mascot size="lg" />
-        <LoaderCircle className="spinner dark" size={42} />
-        <h1>우리 집 맞춤 재수 비용을 계산 중이에요</h1>
-        <p>학원비, 생활비, 보험료를 꼼꼼히 확인하고 있어요.</p>
+        <div className="converter-loading-mark" aria-hidden="true">
+          <LoaderCircle className="spinner dark" size={48} />
+        </div>
+        <h1>
+          우리 집 기준으로
+          <br />
+          환산하고 있어요…
+        </h1>
+        <p>저축·등록금·노후 계획 단위로 바꾸는 중</p>
       </div>
     );
   }
 
   if (screen === "result") {
     return (
-      <div className="screen page-with-nav">
-        <TopBar back={() => setScreen("input")} backLabel="입력 수정" />
-        <main className="sub-page result-page">
-          <span className="eyebrow">우리 집 예상 재수 비용</span>
-          <h1>1년 동안 필요한 금액이에요</h1>
-          <section className="result-total">
-            <span>총 예상 비용</span>
-            <strong>2,184만원</strong>
-            <p>월평균 182만원</p>
+      <div className="screen page-with-nav converter-flow-screen">
+        <TopBar back={() => setScreen("cost")} backLabel="뒤로가기" onNotification={onNotification} hasUnread={hasUnread} />
+        <main className="converter-detail converter-result-page">
+          <section className="converter-result-total">
+            <span>1년 동안 발생하는 재수 비용은 얼마일까요?</span>
+            <strong>{formattedComparison}만원</strong>
+            <small>{converterChoices.academy} · {converterChoices.region} 시세 반영</small>
           </section>
-          <section className="white-card">
-            <h2>비용 구성</h2>
-            {[
-              ["학원·강의", "1,080만원", "49%"],
-              ["교재·모의고사", "264만원", "12%"],
-              ["생활비", "720만원", "33%"],
-              ["안심 보험료", "50만원", "2%"],
-            ].map(([label, value, percent]) => (
-              <div className="cost-row" key={label}>
-                <span>{label}</span>
-                <div className="cost-bar">
-                  <i style={{ width: percent }} />
-                </div>
-                <strong>{value}</strong>
+
+          <section className="converter-statement" aria-labelledby="statement-title">
+            <header>
+              <div>
+                <small>OFFICIAL STATEMENT</small>
+                <h1 id="statement-title">재수 비용 정산 내역서</h1>
               </div>
-            ))}
+              <span className="statement-stamp"><Check size={15} /> {coveragePercent}% 지원 확정</span>
+            </header>
+            <div className="statement-line">
+              <span>1년 표준 재수 비용</span>
+              <strong>{formattedWon} 원</strong>
+            </div>
+            <div className="statement-deduction">
+              <span>차감 보장 지원금</span>
+              <strong>- {formattedCoveredWon} 원</strong>
+            </div>
+            <div className="statement-tear" aria-hidden="true" />
+            <div className="statement-final">
+              <div>
+                <span>최종 본인 부담금</span>
+                <strong>{formattedFinalWon} 원</strong>
+              </div>
+              <b>총 {coveredAmount.toLocaleString("ko-KR")}만원 경감</b>
+            </div>
+            <dl className="statement-meta">
+              <div><dt>지원 방식</dt><dd>현물 40% + 현금 60%</dd></div>
+              <div><dt>월 한도</dt><dd>최대 140만원</dd></div>
+            </dl>
           </section>
-          <button className="primary-button" onClick={() => setScreen("input")}>
-            조건 다시 입력하기
+
+          <div className="converter-result-heading">
+            <div>
+              <h2><mark>{formattedComparison}만원</mark>, 우리 집엔 얼마나 클까요?</h2>
+              <p>연간 재수 비용을 우리 집 가계 단위로 바꿨어요.</p>
+            </div>
+          </div>
+
+          <section className="converter-formula-control" aria-label="수식 표시 설정">
+            <button
+              type="button"
+              className={`formula-toggle ${showEquivalentFormulas ? "on" : ""}`}
+              onClick={() => setShowEquivalentFormulas((current) => !current)}
+              aria-pressed={showEquivalentFormulas}
+            >
+              <span><i /></span>
+              수식 표시
+            </button>
+          </section>
+
+          <div
+            id="converter-equivalent-cards"
+            className={`converter-equivalents ${showEquivalentFormulas ? "show-formulas" : "hide-formulas"}`}
+          >
+            <article className="saving">
+              <div className="equivalent-summary">
+                <span><WalletCards size={22} /></span>
+                <div><small>저축 기준</small><strong>우리 집 월 저축액</strong></div>
+                <b>{savingsMonths}<small>개월분</small></b>
+              </div>
+              <div className="equivalent-detail">
+                <p>이만큼 저축해야 모을 수 있는 금액이에요.</p>
+              </div>
+              <div className="equivalent-formula" aria-hidden={!showEquivalentFormulas}>
+                <code>{formattedComparison}만원 ÷ 월 191만원</code><span>우리 집 월 저축액 기준</span>
+              </div>
+            </article>
+            <article className="tuition">
+              <div className="equivalent-summary">
+                <span><GraduationCap size={23} /></span>
+                <div><small>교육비 기준</small><strong>동생 대학 등록금</strong></div>
+                <b>{tuitionTerms}<small>학기분</small></b>
+              </div>
+              <div className="equivalent-detail">
+                <p>이만큼 대학교를 다닐 수 있는 학기예요.</p>
+              </div>
+              <div className="equivalent-formula" aria-hidden={!showEquivalentFormulas}>
+                <code>{formattedComparison}만원 ÷ 학기당 347만원</code><span>4년제 평균 등록금 기준</span>
+              </div>
+            </article>
+            <article className="retirement">
+              <div className="equivalent-summary">
+                <span><Flag size={22} /></span>
+                <div><small>자산 목표 기준</small><strong>노후 자금 목표 대비</strong></div>
+                <b>{retirementPercent}<small>%</small></b>
+              </div>
+              <div className="equivalent-detail">
+                <p>노후 목표액에서 차지하는 비중이에요.</p>
+              </div>
+              <div className="equivalent-formula" aria-hidden={!showEquivalentFormulas}>
+                <code>{formattedComparison}만원 ÷ 목표 38,200만원</code><span>은퇴 목표 3.82억 기준</span>
+              </div>
+            </article>
+            <article className="income">
+              <div className="equivalent-summary">
+                <span><CreditCard size={22} /></span>
+                <div><small>소득 기준</small><strong>우리 집 월 소득</strong></div>
+                <b>{incomeMonths}<small>개월치</small></b>
+              </div>
+              <div className="equivalent-detail">
+                <p>몇 달치 소득에 해당하는 금액이에요.</p>
+              </div>
+              <div className="equivalent-formula" aria-hidden={!showEquivalentFormulas}>
+                <code>{formattedComparison}만원 ÷ 월 636만원</code><span>가계 세후 소득 기준</span>
+              </div>
+            </article>
+          </div>
+          <button
+            type="button"
+            className="converter-restart"
+            onClick={() => {
+              setConverterChoices({
+                savings: "150~250만원",
+                children: "2명",
+                retirement: "3~5억원",
+                income: "600~800만원",
+                academy: "재수종합학원",
+                region: "수도권",
+              });
+              setShowEquivalentFormulas(true);
+              setScreen("input");
+            }}
+          >
+            <RefreshCcw size={17} /> 처음부터 다시 계산하기
           </button>
         </main>
       </div>
     );
   }
 
+  const isInput = screen === "input";
+
   return (
-    <div className="screen page-with-nav">
-      <TopBar back={() => setScreen(screen === "cost" ? "input" : "intro")} backLabel="돈워리" />
-      <main className="sub-page converter-form">
-        <span className="step-label">STEP {screen === "input" ? "1" : "2"} / 2</span>
-        <h1>{screen === "input" ? "우리 집 상황을 알려주세요" : "재수 형태를 선택해주세요"}</h1>
-        <div className="step-progress">
-          <span style={{ width: screen === "input" ? "50%" : "100%" }} />
-        </div>
-        {screen === "input" ? (
+    <div className="screen page-with-nav converter-flow-screen">
+      <TopBar
+        back={() => setScreen(isInput ? "intro" : "input")}
+        backLabel="뒤로가기"
+        onNotification={onNotification}
+        hasUnread={hasUnread}
+      />
+      <main className={`converter-detail converter-form ${isInput ? "input-step" : "cost-step"}`}>
+        {isInput ? (
           <>
-            <FormChoice title="월 평균 저축액" options={["50만원 이하", "50~100만원", "100만원 이상"]} />
-            <FormChoice title="자녀 수" options={["1명", "2명", "3명 이상"]} />
-            <FormChoice title="월 가처분 소득" options={["300만원 이하", "300~500만원", "500만원 이상"]} />
+            <header className="converter-step-heading">
+              <span>STEP 1 / 2</span>
+              <h1>우리 집 상황을 알려주세요</h1>
+              <div className="converter-step-progress"><i style={{ width: "50%" }} /></div>
+            </header>
+            <FormChoice
+              title="월 평균 저축액"
+              icon={<WalletCards size={18} />}
+              options={["선택안함", "50만원 미만", "50~100만원", "100~150만원", "150~250만원", "250만원 이상"]}
+              selected={converterChoices.savings}
+              onChange={(value) => updateConverterChoice("savings", value)}
+              columns={3}
+            />
+            <FormChoice
+              title="자녀 수"
+              icon={<UserRound size={18} />}
+              options={["선택안함", "1명", "2명", "3명 이상"]}
+              selected={converterChoices.children}
+              onChange={(value) => updateConverterChoice("children", value)}
+              columns={4}
+            />
+            <FormChoice
+              title="노후 자금 목표액"
+              icon={<Flag size={18} />}
+              options={["선택안함", "1억 미만", "1~3억원", "3~5억원", "5~7억원", "7억 이상"]}
+              selected={converterChoices.retirement}
+              onChange={(value) => updateConverterChoice("retirement", value)}
+              columns={3}
+            />
+            <FormChoice
+              title="월 가처분 소득"
+              icon={<Home size={18} />}
+              options={["선택안함", "300만원 미만", "300~450만원", "450~600만원", "600~800만원", "800만원 이상"]}
+              selected={converterChoices.income}
+              onChange={(value) => updateConverterChoice("income", value)}
+              columns={3}
+            />
             <button className="primary-button" onClick={() => setScreen("cost")}>
-              다음 <ArrowRight size={18} />
+              다음
             </button>
           </>
         ) : (
           <>
-            <FormChoice title="학습 형태" options={["재수종합학원", "독학재수학원", "온라인 강의"]} />
-            <FormChoice title="통학 방식" options={["대중교통", "기숙형", "도보·자전거"]} />
-            <FormChoice title="교재비 수준" options={["실속형", "표준형", "집중형"]} />
+            <header className="converter-cost-title">
+              <span>STEP 2 / 2</span>
+              <h1>재수에 드는 비용부터 정해요</h1>
+              <p>평균 통계로 시작하고, 우리 동네 시세에 맞게 조정하세요.</p>
+              <div className="converter-step-progress"><i style={{ width: "100%" }} /></div>
+            </header>
+            <FormChoice
+              title="재수 유형 선택"
+              icon={<GraduationCap size={18} />}
+              options={["독학재수(독서실·인강)", "단과 통학", "재수종합학원", "기숙학원"]}
+              selected={converterChoices.academy}
+              onChange={(value) => updateConverterChoice("academy", value)}
+              columns={2}
+            />
+            <RegionChoice
+              selected={converterChoices.region}
+              onChange={(value) => updateConverterChoice("region", value)}
+            />
+            <section className="converter-cost-summary">
+              <div>
+                <span>월 평균 비용</span>
+                <strong>191만원</strong>
+              </div>
+              <p>메이저 재종합반 5개사 평균(시대인재·강남대성 등)</p>
+              <hr />
+              <div className="total">
+                <span>12개월 누적 연간 총액</span>
+                <strong>2,292만원</strong>
+              </div>
+            </section>
             <button className="primary-button" onClick={() => setScreen("loading")}>
-              우리 집 기준으로 계산하기 <Calculator size={18} />
+              우리 집 기준으로 환산하기
             </button>
           </>
         )}
@@ -815,16 +1411,34 @@ function Converter({ screen, setScreen }: { screen: ConverterScreen; setScreen: 
   );
 }
 
-function FormChoice({ title, options }: { title: string; options: string[] }) {
-  const [choice, setChoice] = useState(options[1] ?? options[0]);
+function FormChoice({
+  title,
+  icon,
+  options,
+  selected,
+  onChange,
+  columns = 3,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  options: string[];
+  selected: string;
+  onChange: (value: string) => void;
+  columns?: 2 | 3 | 4;
+}) {
   return (
     <fieldset className="choice-field">
-      <legend>{title}</legend>
-      <div>
+      <legend><span aria-hidden="true">{icon}</span>{title}</legend>
+      <div className={`choice-grid columns-${columns}`}>
         {options.map((option) => (
-          <button type="button" className={choice === option ? "active" : ""} key={option} onClick={() => setChoice(option)}>
-            {choice === option && <Check size={15} />}
-            {option}
+          <button
+            type="button"
+            className={`${selected === option ? "active" : ""} ${option === "선택안함" ? "no-selection" : ""}`.trim()}
+            key={option}
+            onClick={() => onChange(option)}
+            aria-pressed={selected === option}
+          >
+            <span>{option}</span>
           </button>
         ))}
       </div>
@@ -832,76 +1446,777 @@ function FormChoice({ title, options }: { title: string; options: string[] }) {
   );
 }
 
-const myMenu = [
-  { label: "성적 등록 상태", icon: BadgeCheck, detail: "등록 완료" },
-  { label: "모의고사 성적 히스토리", icon: FileChartColumn },
-  { label: "보험료 납입 내역", icon: WalletCards },
-  { label: "결제 수단 관리", icon: CreditCard },
-  { label: "주소 관리", icon: MapPin },
-  { label: "알림 설정", icon: SlidersHorizontal },
-  { label: "약관 및 정책", icon: BookOpenCheck },
+function RegionChoice({
+  selected,
+  onChange,
+}: {
+  selected: string;
+  onChange: (value: string) => void;
+}) {
+  const regions = [
+    ["서울 학군지", "강남·목동·중계"],
+    ["서울 비학군지", "서울 그 외 지역"],
+    ["수도권", "경기·인천 (기준)"],
+    ["지방", "광역시·지방권"],
+  ];
+
+  return (
+    <fieldset className="choice-field region-choice">
+      <legend><span aria-hidden="true"><MapPin size={18} /></span>우리 동네 시세에 맞게 조정</legend>
+      <p>지역마다 학원 시세가 달라요. 우리 동네를 골라주세요.</p>
+      <div className="region-grid">
+        {regions.map(([name, detail]) => (
+          <button
+            type="button"
+            className={selected === name ? "active" : ""}
+            key={name}
+            onClick={() => onChange(name)}
+            aria-pressed={selected === name}
+          >
+            <span><strong>{name}</strong><small>{detail}</small></span>
+          </button>
+        ))}
+      </div>
+      <small className="region-baseline">수도권 시세 기준 (전국 평균과 동일)</small>
+    </fieldset>
+  );
+}
+
+type MyMenuItem = {
+  label: string;
+  detail?: string;
+  static?: boolean;
+};
+
+const myMenuGroups: { title: string; items: MyMenuItem[] }[] = [
+  {
+    title: "성적 관리",
+    items: [
+      { label: "성적 등록 상태", detail: "확인 필요", static: true },
+      { label: "모의고사 성적 히스토리" },
+    ],
+  },
+  {
+    title: "결제 관리",
+    items: [{ label: "보험료 결제" }, { label: "보험료 납입 내역" }, { label: "결제 수단 관리" }],
+  },
+  {
+    title: "기타",
+    items: [{ label: "알림 설정" }, { label: "약관 및 정책" }],
+  },
 ];
 
-function MyPage({ onLogout }: { onLogout: () => void }) {
+const gradeHistory = [
+  ["고3 9월", "2025.09.03", "67", "▼3"],
+  ["고3 6월", "2025.06.04", "70", "▲6"],
+  ["고3 3월", "2025.03.27", "64", "–"],
+  ["고2 12월", "2024.11.14", "64", "▲4"],
+  ["고2 9월", "2024.09.04", "60", "▼2"],
+  ["고2 6월", "2024.06.04", "62", "–"],
+  ["고2 3월", "2024.03.28", "62", "▲7"],
+  ["고1 12월", "2023.11.16", "55", "▲1"],
+  ["고1 9월", "2023.09.06", "54", "–"],
+];
+
+const gradeSubjectHistory = [
+  [["국어", "59점", "5등급 ▼", "danger"], ["수학", "76점", "4등급", ""], ["영어", "68점", "4등급", ""], ["탐구", "59점", "5등급", ""]],
+  [["국어", "60점", "4등급", ""], ["수학", "66점", "4등급", ""], ["영어", "64점", "4등급", ""], ["탐구", "53점", "5등급 ▼", "danger"]],
+  [["국어", "63점", "4등급 ▲", "positive"], ["수학", "69점", "4등급 ▲", "positive"], ["영어", "67점", "4등급 ▲", "positive"], ["탐구", "66점", "4등급 ▲", "positive"]],
+  [["국어", "61점", "4등급", ""], ["수학", "65점", "4등급", ""], ["영어", "66점", "4등급 ▲", "positive"], ["탐구", "63점", "4등급", ""]],
+  [["국어", "58점", "5등급 ▼", "danger"], ["수학", "63점", "4등급", ""], ["영어", "61점", "4등급", ""], ["탐구", "60점", "4등급", ""]],
+  [["국어", "60점", "4등급", ""], ["수학", "62점", "4등급", ""], ["영어", "63점", "4등급", ""], ["탐구", "62점", "4등급", ""]],
+  [["국어", "57점", "5등급", ""], ["수학", "61점", "4등급 ▲", "positive"], ["영어", "62점", "4등급 ▲", "positive"], ["탐구", "59점", "5등급", ""]],
+  [["국어", "54점", "5등급", ""], ["수학", "58점", "5등급", ""], ["영어", "56점", "5등급", ""], ["탐구", "55점", "5등급 ▲", "positive"]],
+  [["국어", "53점", "5등급", ""], ["수학", "56점", "5등급", ""], ["영어", "55점", "5등급", ""], ["탐구", "54점", "5등급", ""]],
+];
+
+const paymentHistory = [
+  ["2026년 7월", "45,000원"],
+  ["2026년 6월", "45,000원"],
+  ["2026년 5월", "48,000원"],
+  ["2026년 4월", "48,000원"],
+  ["2026년 3월", "46,500원"],
+  ["2026년 2월", "44,000원"],
+];
+
+type CardForm = {
+  number: string;
+  expiry: string;
+  cvc: string;
+  owner: string;
+};
+
+type PaymentScenario = "success" | "declined" | "limit" | "invalid" | "network" | "timeout" | "pending";
+type PaymentStatus = "checkout" | "processing" | "success" | "failed" | "pending";
+type MethodSaveStatus = "idle" | "saving" | "verifying" | "error";
+
+const paymentFailureCopy: Record<Exclude<PaymentScenario, "success" | "pending">, { title: string; description: string; action: string }> = {
+  declined: {
+    title: "카드 승인이 거절됐어요",
+    description: "카드사에서 결제를 승인하지 않았어요. 다른 결제수단을 선택하거나 카드사에 확인해 주세요.",
+    action: "다른 결제수단 선택",
+  },
+  limit: {
+    title: "카드 한도를 확인해 주세요",
+    description: "이용 한도 또는 잔액이 부족해 결제를 완료하지 못했어요.",
+    action: "다른 결제수단 선택",
+  },
+  invalid: {
+    title: "카드 정보를 확인해 주세요",
+    description: "등록된 카드 정보가 유효하지 않아요. 결제수단을 다시 등록해 주세요.",
+    action: "결제수단 확인",
+  },
+  network: {
+    title: "네트워크 연결이 불안정해요",
+    description: "결제 요청을 전송하지 못했어요. 연결 상태를 확인한 뒤 다시 시도해 주세요.",
+    action: "다시 시도",
+  },
+  timeout: {
+    title: "결제 처리 시간이 초과됐어요",
+    description: "승인 결과를 받지 못했어요. 중복 결제를 막기 위해 결제 내역을 먼저 확인해 주세요.",
+    action: "결제 상태 다시 확인",
+  },
+};
+
+function PaymentPageSkeleton() {
+  return (
+    <div className="payment-page-skeleton" role="status" aria-label="결제 정보를 불러오는 중">
+      <span className="skeleton-line short" />
+      <span className="skeleton-line title" />
+      <section><span /><strong /></section>
+      <section className="method"><span /><span /></section>
+      <p>결제 정보를 불러오고 있어요</p>
+    </div>
+  );
+}
+
+function PaymentMethodStatusPanel({
+  status,
+  onRetry,
+  onEdit,
+}: {
+  status: Exclude<MethodSaveStatus, "idle">;
+  onRetry: () => void;
+  onEdit: () => void;
+}) {
+  const isError = status === "error";
+  return (
+    <section className={`payment-method-status ${isError ? "error" : ""}`} role="status" aria-live="polite">
+      <span>{isError ? <TriangleAlert size={30} /> : <LoaderCircle className="spinner dark" size={34} />}</span>
+      <h2>{isError ? "카드를 등록하지 못했어요" : status === "saving" ? "카드 정보를 안전하게 저장하고 있어요" : "카드사 인증을 진행하고 있어요"}</h2>
+      <p>{isError ? "카드 정보 또는 네트워크 상태를 확인한 뒤 다시 시도해 주세요." : "잠시만 기다려 주세요. 화면을 닫지 않아도 돼요."}</p>
+      {isError && (
+        <div>
+          <button type="button" onClick={onEdit}>정보 수정</button>
+          <button type="button" onClick={onRetry}>다시 시도</button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PaymentMethodFields({
+  cardForm,
+  setCardForm,
+}: {
+  cardForm: CardForm;
+  setCardForm: (value: CardForm) => void;
+}) {
+  return (
+    <div className="payment-field-grid">
+      <label className="payment-field full">
+        <span>카드 번호</span>
+        <input
+          inputMode="numeric"
+          autoComplete="cc-number"
+          value={cardForm.number}
+          placeholder="0000 0000 0000 0000"
+          onChange={(event) => {
+            const digits = event.target.value.replace(/\D/g, "").slice(0, 16);
+            setCardForm({ ...cardForm, number: digits.replace(/(\d{4})(?=\d)/g, "$1 ") });
+          }}
+        />
+      </label>
+      <label className="payment-field">
+        <span>유효기간</span>
+        <input
+          inputMode="numeric"
+          autoComplete="cc-exp"
+          value={cardForm.expiry}
+          placeholder="MM/YY"
+          onChange={(event) => {
+            const digits = event.target.value.replace(/\D/g, "").slice(0, 4);
+            setCardForm({ ...cardForm, expiry: digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits });
+          }}
+        />
+      </label>
+      <label className="payment-field">
+        <span>CVC</span>
+        <input
+          inputMode="numeric"
+          autoComplete="cc-csc"
+          type="password"
+          value={cardForm.cvc}
+          placeholder="3자리"
+          onChange={(event) => setCardForm({ ...cardForm, cvc: event.target.value.replace(/\D/g, "").slice(0, 3) })}
+        />
+      </label>
+      <label className="payment-field full">
+        <span>카드 명의자</span>
+        <input
+          autoComplete="cc-name"
+          value={cardForm.owner}
+          placeholder="이름을 입력해 주세요"
+          onChange={(event) => setCardForm({ ...cardForm, owner: event.target.value.slice(0, 20) })}
+        />
+      </label>
+    </div>
+  );
+}
+
+function MyDetailPage({
+  detail,
+  close,
+  onNotification,
+  hasUnread,
+}: {
+  detail: string;
+  close: () => void;
+  onNotification: () => void;
+  hasUnread: boolean;
+}) {
+  const [notificationSettings, setNotificationSettings] = useState([true, true, true, false]);
+  const [gradeSort, setGradeSort] = useState<"recent" | "past">("recent");
+  const [expandedGrades, setExpandedGrades] = useState<string[]>([]);
+  const [visiblePaymentCount, setVisiblePaymentCount] = useState(6);
+  const [paymentMethodView, setPaymentMethodView] = useState<"list" | "add">("list");
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("checkout");
+  const [paymentScenario, setPaymentScenario] = useState<PaymentScenario>("success");
+  const [methodSaveStatus, setMethodSaveStatus] = useState<MethodSaveStatus>("idle");
+  const [methodRegistrationScenario, setMethodRegistrationScenario] = useState<"success" | "error">("success");
+  const [pendingCard, setPendingCard] = useState<CardForm | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState([
+    { id: "4821", name: "신한카드 (개인)", lastFour: "4821", default: true },
+  ]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("4821");
+  const [cardForm, setCardForm] = useState({ number: "", expiry: "", cvc: "", owner: "" });
+  const isPaymentDetail = ["보험료 결제", "보험료 납입 내역", "결제 수단 관리"].includes(detail);
+  const [paymentDataLoading, setPaymentDataLoading] = useState(isPaymentDetail);
+
+  useEffect(() => {
+    if (!isPaymentDetail) return;
+    setPaymentDataLoading(true);
+    const timer = window.setTimeout(() => setPaymentDataLoading(false), 850);
+    return () => window.clearTimeout(timer);
+  }, [detail, isPaymentDetail]);
+
+  useEffect(() => {
+    if (paymentStatus !== "processing") return;
+    const timer = window.setTimeout(() => {
+      if (paymentScenario === "success") setPaymentStatus("success");
+      else if (paymentScenario === "pending") setPaymentStatus("pending");
+      else setPaymentStatus("failed");
+    }, 1600);
+    return () => window.clearTimeout(timer);
+  }, [paymentScenario, paymentStatus]);
+
+  useEffect(() => {
+    if (methodSaveStatus === "saving") {
+      const timer = window.setTimeout(() => setMethodSaveStatus("verifying"), 700);
+      return () => window.clearTimeout(timer);
+    }
+    if (methodSaveStatus !== "verifying") return;
+    const timer = window.setTimeout(() => {
+      if (methodRegistrationScenario === "error" || !pendingCard) {
+        setMethodSaveStatus("error");
+        return;
+      }
+      const lastFour = pendingCard.number.replace(/\D/g, "").slice(-4);
+      const newMethod = { id: `${lastFour}-${paymentMethods.length}`, name: `${pendingCard.owner} 카드`, lastFour, default: false };
+      setPaymentMethods((current) => [...current, newMethod]);
+      setSelectedPaymentMethod(newMethod.id);
+      setCardForm({ number: "", expiry: "", cvc: "", owner: "" });
+      setPendingCard(null);
+      setMethodSaveStatus("idle");
+      setPaymentMethodView("list");
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [methodRegistrationScenario, methodSaveStatus, paymentMethods.length, pendingCard]);
+
+  const orderedGradeHistory = gradeHistory
+    .map((row, index) => ({ row, subjects: gradeSubjectHistory[index] }))
+    .sort((a, b) => gradeSort === "recent" ? b.row[1].localeCompare(a.row[1]) : a.row[1].localeCompare(b.row[1]));
+  const allGradesExpanded = expandedGrades.length === gradeHistory.length;
+
+  const toggleGrade = (date: string) => {
+    setExpandedGrades((current) => current.includes(date) ? current.filter((item) => item !== date) : [...current, date]);
+  };
+  const cardFormComplete =
+    cardForm.number.replace(/\D/g, "").length === 16 &&
+    cardForm.expiry.length === 5 &&
+    cardForm.cvc.length === 3 &&
+    cardForm.owner.trim().length > 1;
+  const startPaymentMethodSave = () => {
+    if (!cardFormComplete) return;
+    setPendingCard({ ...cardForm });
+    setMethodSaveStatus("saving");
+  };
+  const handleMyDetailBack = () => {
+    if (paymentStatus === "processing" || methodSaveStatus === "saving" || methodSaveStatus === "verifying") return;
+    if (detail === "결제 수단 관리" && paymentMethodView === "add") {
+      setMethodSaveStatus("idle");
+      setPaymentMethodView("list");
+      return;
+    }
+    if (detail === "보험료 결제" && paymentStatus !== "checkout") {
+      setPaymentStatus("checkout");
+      return;
+    }
+    close();
+  };
+
+  return (
+    <div className="screen page-with-nav mypage-screen my-detail-screen">
+      <BrandTabHeader onNotification={onNotification} hasUnread={hasUnread} />
+      <main className="my-detail-content">
+        <button
+          className="my-detail-back"
+          onClick={handleMyDetailBack}
+          disabled={paymentStatus === "processing" || methodSaveStatus === "saving" || methodSaveStatus === "verifying"}
+        >
+          <ChevronLeft size={17} /> 뒤로
+        </button>
+
+        {isPaymentDetail && paymentDataLoading && <PaymentPageSkeleton />}
+
+        {detail === "성적 등록 상태" && (
+          <>
+            <section className="my-status-summary">
+              <div><strong>현재 상태</strong><em>확인 필요</em></div>
+              <p>OCR로 인식한 성적 중 확인이 필요한 항목이 있어요. 결과를 확인해 주세요.</p>
+            </section>
+            <h1 className="my-detail-title">상태 히스토리</h1>
+            <div className="my-history-list">
+              {[
+                ["이의신청중", "국어 성적 이의신청이 접수되어 운영팀이 검수하고 있어요.", "2026.07.18"],
+                ["확인필요", "OCR 인식 신뢰도가 낮은 항목이 있어 확인이 필요했어요.", "2026.07.15"],
+                ["확정", "고3 3월 모의고사 성적이 확정되어 보험료 산정에 반영됐어요.", "2026.03.12"],
+                ["확정", "고2 9월 모의고사 성적이 확정됐어요.", "2025.09.05"],
+              ].map(([status, description, date]) => (
+                <article key={date}>
+                  <div><strong>{status}</strong><time>{date}</time></div>
+                  <p>{description}</p>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+
+        {detail === "모의고사 성적 히스토리" && (
+          <>
+            <section className="my-grade-status">
+              <strong>최근 모의고사 성적</strong>
+              <span>확인 대기 중</span>
+            </section>
+            <div className="my-detail-heading-row">
+              <h1>모의고사 히스토리</h1>
+              <div>
+                <button
+                  className="active"
+                  onClick={() => setGradeSort((current) => current === "recent" ? "past" : "recent")}
+                >
+                  {gradeSort === "recent" ? "최근순" : "과거순"}
+                </button>
+                <button onClick={() => setExpandedGrades(allGradesExpanded ? [] : gradeHistory.map((row) => row[1]))}>
+                  {allGradesExpanded ? "전체 접기" : "전체 펼치기"}
+                </button>
+              </div>
+            </div>
+            <div className="my-grade-history">
+              {orderedGradeHistory.map(({ row: [exam, date, percentile, change], subjects }) => {
+                const expanded = expandedGrades.includes(date);
+                return (
+                  <article className={expanded ? "expanded" : ""} key={date}>
+                    <div className="grade-history-summary">
+                      <span><strong>{exam}</strong><small>{date}</small></span>
+                      <b>백분위 {percentile} <em className={change.includes("▼") ? "down" : "up"}>{change}</em></b>
+                      <button
+                        className="grade-expand-button"
+                        onClick={() => toggleGrade(date)}
+                        aria-label={`${exam} ${expanded ? "접기" : "펼치기"}`}
+                        aria-expanded={expanded}
+                      >
+                        <ChevronDown size={15} />
+                      </button>
+                    </div>
+                    {expanded && (
+                      <div className="grade-subject-grid">
+                        {subjects.map(([subject, score, grade, tone]) => (
+                          <div className={tone} key={subject}>
+                            <span>{subject}</span><strong>{score}</strong><b>{grade}</b>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {detail === "보험료 납입 내역" && !paymentDataLoading && (
+          <>
+            <section className="my-premium-summary">
+              <span>이번 달 보험료</span>
+              <strong>45,000원</strong>
+              <em>전월 대비 -3,000원</em>
+            </section>
+            <section className="my-payment-card">
+              <div className="payment-receipt">
+                <CircleCheck size={30} />
+                <strong>월별 납입 영수증</strong>
+                <small>No. RCPT-20260302-017</small>
+              </div>
+              <div className="payment-total">
+                <span>총 납입 합계<strong>320,500원</strong></span>
+                <em>전액 정상 납입</em>
+              </div>
+              <div className="year-filter"><button className="active">2026년</button><button>2025년</button></div>
+              <div className="payment-table">
+                <div className="table-head"><span>납입 연월</span><span>결제 금액</span><span>처리 상태</span></div>
+                {paymentHistory.slice(0, visiblePaymentCount).map(([month, amount]) => (
+                  <div key={month}><span>{month}</span><strong>{amount}</strong><em>완료</em></div>
+                ))}
+              </div>
+              {paymentHistory.length > visiblePaymentCount && (
+                <button
+                  className="payment-more"
+                  onClick={() => setVisiblePaymentCount((current) => Math.min(current + 6, paymentHistory.length))}
+                >
+                  더보기 ({paymentHistory.length - visiblePaymentCount}건)
+                </button>
+              )}
+            </section>
+          </>
+        )}
+
+        {detail === "보험료 결제" && !paymentDataLoading && paymentStatus === "checkout" && (
+          <>
+            <div className="my-payment-heading">
+              <span>보험료 결제</span>
+              <h1>다음 보험료를 납부할게요</h1>
+              <p>결제 금액과 수단을 확인한 뒤 결제해 주세요.</p>
+            </div>
+            <section className="my-checkout-summary">
+              <div><span>2026년 8월 보험료</span><em>납부 예정일 8월 12일</em></div>
+              <strong>45,000원</strong>
+            </section>
+            <section className="my-checkout-methods">
+              <div className="my-section-heading">
+                <h2>결제 수단</h2>
+                <button onClick={() => setPaymentMethodView("add")}>결제수단 추가</button>
+              </div>
+              {paymentMethodView === "add" ? (
+                methodSaveStatus === "idle" ? (
+                  <form
+                    className="payment-method-form inline"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      startPaymentMethodSave();
+                    }}
+                  >
+                    <PaymentMethodFields cardForm={cardForm} setCardForm={setCardForm} />
+                    <details className="payment-simulator compact">
+                      <summary>카드 등록 상태 테스트</summary>
+                      <select value={methodRegistrationScenario} onChange={(event) => setMethodRegistrationScenario(event.target.value as "success" | "error")}>
+                        <option value="success">정상 등록</option>
+                        <option value="error">등록 실패</option>
+                      </select>
+                    </details>
+                    <div className="payment-form-actions">
+                      <button type="button" className="payment-cancel-button" onClick={() => setPaymentMethodView("list")}>취소</button>
+                      <button type="submit" className="payment-save-button" disabled={!cardFormComplete}>저장</button>
+                    </div>
+                  </form>
+                ) : (
+                  <PaymentMethodStatusPanel
+                    status={methodSaveStatus}
+                    onEdit={() => setMethodSaveStatus("idle")}
+                    onRetry={() => setMethodSaveStatus("saving")}
+                  />
+                )
+              ) : (
+                <div className="payment-method-options">
+                  {paymentMethods.map((method) => (
+                    <button
+                      type="button"
+                      className={selectedPaymentMethod === method.id ? "active" : ""}
+                      key={method.id}
+                      onClick={() => setSelectedPaymentMethod(method.id)}
+                      aria-pressed={selectedPaymentMethod === method.id}
+                    >
+                      <span className="payment-method-icon"><CreditCard size={19} /></span>
+                      <span><strong>{method.name}</strong><small>•••• {method.lastFour}</small></span>
+                      {method.default && <em>기본</em>}
+                      <i><Check size={14} /></i>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+            <div className="payment-security-note"><LockKeyhole size={15} /> 결제 정보는 암호화되어 안전하게 처리돼요.</div>
+            <details className="payment-simulator">
+              <summary>프로토타입 결제 상태 테스트</summary>
+              <label>
+                <span>결제 결과</span>
+                <select value={paymentScenario} onChange={(event) => setPaymentScenario(event.target.value as PaymentScenario)}>
+                  <option value="success">정상 승인</option>
+                  <option value="declined">카드 승인 거절</option>
+                  <option value="limit">한도·잔액 부족</option>
+                  <option value="invalid">카드 정보 오류</option>
+                  <option value="network">네트워크 오류</option>
+                  <option value="timeout">처리 시간 초과</option>
+                  <option value="pending">결제 결과 확인 지연</option>
+                </select>
+              </label>
+            </details>
+            <button
+              className="primary-button my-pay-button"
+              disabled={!selectedPaymentMethod || paymentMethodView === "add"}
+              onClick={() => setPaymentStatus("processing")}
+            >
+              45,000원 결제하기
+            </button>
+          </>
+        )}
+
+        {detail === "보험료 결제" && !paymentDataLoading && paymentStatus === "processing" && (
+          <section className="payment-processing-view" role="status" aria-live="polite">
+            <span><LoaderCircle className="spinner dark" size={43} /></span>
+            <h1>보험료를 결제하고 있어요</h1>
+            <p>카드사 승인을 기다리고 있어요. 중복 결제를 막기 위해 화면을 닫지 말아 주세요.</p>
+            <div><LockKeyhole size={14} /> 안전하게 암호화해 처리 중이에요</div>
+          </section>
+        )}
+
+        {detail === "보험료 결제" && !paymentDataLoading && paymentStatus === "success" && (
+          <section className="payment-complete-view">
+            <span className="payment-complete-icon"><CircleCheck size={38} /></span>
+            <h1>보험료 결제가 완료됐어요</h1>
+            <p>2026년 8월 보험료 45,000원이 정상적으로 납부됐습니다.</p>
+            <div>
+              <span>결제 수단<strong>{paymentMethods.find((method) => method.id === selectedPaymentMethod)?.name}</strong></span>
+              <span>승인 일시<strong>2026.07.25 14:32</strong></span>
+              <span>처리 상태<strong className="positive">결제 완료</strong></span>
+            </div>
+            <button className="primary-button" onClick={close}>마이로 돌아가기</button>
+          </section>
+        )}
+
+        {detail === "보험료 결제" && !paymentDataLoading && paymentStatus === "failed" && paymentScenario !== "success" && paymentScenario !== "pending" && (
+          <section className="payment-result-view error" role="alert">
+            <span><TriangleAlert size={36} /></span>
+            <h1>{paymentFailureCopy[paymentScenario].title}</h1>
+            <p>{paymentFailureCopy[paymentScenario].description}</p>
+            <div className="payment-result-actions">
+              <button
+                className="primary-button"
+                onClick={() => {
+                  if (paymentScenario === "network" || paymentScenario === "timeout") {
+                    setPaymentScenario("success");
+                    setPaymentStatus("processing");
+                  } else {
+                    setPaymentStatus("checkout");
+                  }
+                }}
+              >
+                {paymentFailureCopy[paymentScenario].action}
+              </button>
+              <button className="secondary-button" onClick={close}>마이로 돌아가기</button>
+            </div>
+          </section>
+        )}
+
+        {detail === "보험료 결제" && !paymentDataLoading && paymentStatus === "pending" && (
+          <section className="payment-result-view pending" role="status" aria-live="polite">
+            <span><Clock3 size={36} /></span>
+            <h1>결제 결과를 확인하고 있어요</h1>
+            <p>카드사 승인은 요청됐지만 최종 결과가 늦어지고 있어요. 중복 결제 없이 확인되는 대로 알려드릴게요.</p>
+            <div className="payment-pending-reference">
+              <span>결제 요청 번호<strong>PAY-20260725-0812</strong></span>
+              <span>현재 상태<strong>승인 확인 중</strong></span>
+            </div>
+            <div className="payment-result-actions">
+              <button
+                className="primary-button"
+                onClick={() => {
+                  setPaymentScenario("success");
+                  setPaymentStatus("processing");
+                }}
+              >
+                결제 상태 다시 확인
+              </button>
+              <button className="secondary-button" onClick={close}>나중에 확인하기</button>
+            </div>
+          </section>
+        )}
+
+        {detail === "결제 수단 관리" && !paymentDataLoading && paymentMethodView === "list" && (
+          <>
+            <h1 className="my-detail-title">결제 수단 관리</h1>
+            <div className="my-payment-method-list">
+              {paymentMethods.map((method) => (
+                <section className="my-management-item" key={method.id}>
+                  <span className="payment-method-icon"><CreditCard size={19} /></span>
+                  <div>
+                    <strong>{method.name}</strong>
+                    <p>•••• {method.lastFour} · 매월 자동이체</p>
+                  </div>
+                  {method.default && <em>기본</em>}
+                </section>
+              ))}
+            </div>
+            <button className="my-add-item" onClick={() => setPaymentMethodView("add")}>+ 새 결제수단 추가</button>
+          </>
+        )}
+
+        {detail === "결제 수단 관리" && !paymentDataLoading && paymentMethodView === "add" && (
+          <>
+            {methodSaveStatus === "idle" ? (
+              <>
+                <div className="my-payment-heading">
+                  <span>결제 수단 추가</span>
+                  <h1>새 카드를 등록해 주세요</h1>
+                  <p>본인 명의의 신용·체크카드를 등록할 수 있어요.</p>
+                </div>
+                <form
+                  className="payment-method-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    startPaymentMethodSave();
+                  }}
+                >
+                  <PaymentMethodFields cardForm={cardForm} setCardForm={setCardForm} />
+                  <label className="payment-consent">
+                    <input type="checkbox" defaultChecked />
+                    <span>결제수단 등록 및 정기결제 이용에 동의합니다.</span>
+                  </label>
+                  <details className="payment-simulator compact">
+                    <summary>카드 등록 상태 테스트</summary>
+                    <select value={methodRegistrationScenario} onChange={(event) => setMethodRegistrationScenario(event.target.value as "success" | "error")}>
+                      <option value="success">정상 등록</option>
+                      <option value="error">등록 실패</option>
+                    </select>
+                  </details>
+                  <button className="primary-button" type="submit" disabled={!cardFormComplete}>결제수단 저장</button>
+                </form>
+              </>
+            ) : (
+              <PaymentMethodStatusPanel
+                status={methodSaveStatus}
+                onEdit={() => setMethodSaveStatus("idle")}
+                onRetry={() => setMethodSaveStatus("saving")}
+              />
+            )}
+          </>
+        )}
+
+        {detail === "알림 설정" && (
+          <>
+            <h1 className="my-detail-title">알림 설정</h1>
+            <section className="my-toggle-list">
+              {["성적표 등록 알림", "보험료 산정 알림", "이의신청 처리 알림", "혜택 및 이벤트 알림"].map((label, index) => (
+                <button
+                  key={label}
+                  role="switch"
+                  aria-checked={notificationSettings[index]}
+                  onClick={() => setNotificationSettings((current) => current.map((value, i) => i === index ? !value : value))}
+                >
+                  <span>{label}</span><i className={notificationSettings[index] ? "on" : ""} />
+                </button>
+              ))}
+            </section>
+          </>
+        )}
+
+        {detail === "약관 및 정책" && (
+          <>
+            <h1 className="my-detail-title">보험상품 약관</h1>
+            <article className="my-terms">
+              <h2>제1조 (목적)</h2>
+              <p>이 약관은 회사가 제공하는 ‘재수없수 스탠다드 보험상품(이하 ‘이 계약’)’의 체결과 이행에 관한 회사와 계약자, 피보험자 간의 권리와 의무를 정함을 목적으로 합니다.</p>
+              <h2>제2조 (보장 내용)</h2>
+              <p>피보험자가 대학수학능력시험 응시 결과 평소 예상 범위보다 15점 이상 하락하고, 이로 인해 재수를 하게 되는 경우 회사는 연간 재수 비용의 최대 70%, 최대 1,500만원 한도 내에서 보험금을 지급합니다.</p>
+              <h2>제3조 (보험료의 산정)</h2>
+              <p>월 보험료는 가입 시점의 성적 데이터, 성적 변동성, 재수 가능성 등을 종합적으로 반영하여 산정되며 매월 갱신 시 최근 확정 성적을 기준으로 재산정됩니다.</p>
+              <h2>제4조 (면책 사항)</h2>
+              <p>성적표의 위조·변조 또는 허위 제출이 확인되는 경우, 회사는 보험금을 지급하지 않으며 이미 지급된 보험금을 회수할 수 있습니다.</p>
+              <small>본 내용은 임시 예시이며, 실제 약관은 상품 설명서 및 계약서를 따릅니다.</small>
+            </article>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function MyPage({
+  onLogout,
+  onNotification,
+  hasUnread,
+}: {
+  onLogout: () => void;
+  onNotification: () => void;
+  hasUnread: boolean;
+}) {
   const [detail, setDetail] = useState<string | null>(null);
 
   if (detail) {
     return (
-      <div className="screen page-with-nav">
-        <TopBar back={() => setDetail(null)} backLabel="마이페이지" />
-        <main className="sub-page">
-          <span className="eyebrow">내 정보 관리</span>
-          <h1>{detail}</h1>
-          <section className="white-card detail-placeholder">
-            <CircleCheck size={42} />
-            <h2>안전하게 관리되고 있어요</h2>
-            <p>{detail} 정보를 확인하고 필요한 항목을 바로 수정할 수 있어요.</p>
-          </section>
-          <button className="secondary-button" onClick={() => setDetail(null)}>
-            마이페이지로 돌아가기
-          </button>
-        </main>
-      </div>
+      <MyDetailPage
+        detail={detail}
+        close={() => setDetail(null)}
+        onNotification={onNotification}
+        hasUnread={hasUnread}
+      />
     );
   }
 
   return (
-    <div className="screen page-with-nav">
-      <TopBar onNotification={() => setDetail("알림 설정")} />
+    <div className="screen page-with-nav mypage-screen">
+      <BrandTabHeader onNotification={onNotification} hasUnread={hasUnread} />
       <main className="mypage-content">
         <div className="profile">
-          <span className="profile-avatar">김</span>
-          <div>
-            <h1>김지민 학생</h1>
-            <p>함께한 지 145일째예요</p>
-          </div>
+          <h1>김지민 학생 <em>고3</em></h1>
         </div>
-        <section className="membership-card">
-          <div>
-            <small>가입 상품</small>
-            <strong>스탠다드</strong>
-          </div>
-          <div>
-            <small>보장 상한</small>
-            <strong>1,404만원</strong>
-          </div>
-          <div>
-            <small>가입일</small>
-            <strong>2026.03.02</strong>
-          </div>
+        <section className="membership-card" aria-label="가입 정보">
+          <div><small>가입 상품</small><strong>스탠다드</strong></div>
+          <div><small>보장 상한</small><strong>1,404만원</strong></div>
+          <div><small>가입일</small><strong>2026.03.02</strong></div>
         </section>
-        <section className="menu-card">
-          {myMenu.map(({ label, icon: Icon, detail: itemDetail }) => (
-            <button key={label} onClick={() => setDetail(label)}>
-              <span className="menu-icon">
-                <Icon size={19} />
-              </span>
-              <span>{label}</span>
-              {itemDetail && <em>{itemDetail}</em>}
-              <ChevronRight size={17} />
-            </button>
-          ))}
-        </section>
+        <div className="grouped-menu">
+          <section className="menu-card">
+            {myMenuGroups.map((group) => (
+              <div className="menu-group" key={group.title}>
+              <h2>{group.title}</h2>
+              {group.items.map((item) =>
+                item.static ? (
+                  <div className="menu-static-row" key={item.label}>
+                    <span>{item.label}</span>
+                    <em>{item.detail}</em>
+                  </div>
+                ) : (
+                  <button className="menu-row" key={item.label} onClick={() => setDetail(item.label)}>
+                    <span>{item.label}</span>
+                    <ChevronRight size={17} />
+                  </button>
+                ),
+              )}
+              </div>
+            ))}
+          </section>
+        </div>
         <button className="logout-button" onClick={onLogout}>
           <LogOut size={17} /> 로그아웃
         </button>
@@ -1200,19 +2515,17 @@ function ClaimStatus() {
   );
 }
 
-function NotificationModal({ close }: { close: () => void }) {
+function NotificationPage({ close }: { close: () => void }) {
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={close}>
-      <section className="notification-modal" role="dialog" aria-modal="true" aria-labelledby="notification-title" onMouseDown={(event) => event.stopPropagation()}>
-        <div className="modal-heading">
-          <div>
-            <span className="eyebrow">새 소식</span>
-            <h2 id="notification-title">알림</h2>
-          </div>
-          <button className="icon-button" onClick={close} aria-label="알림 닫기">
-            <X size={20} />
-          </button>
+    <div className="screen notification-page">
+      <TopBar back={close} backLabel="이전 화면" />
+      <main>
+        <div className="notification-page-heading">
+          <span className="eyebrow">새 소식</span>
+          <h1>알림</h1>
+          <p>중요한 일정과 재수없수의 새로운 소식을 확인하세요.</p>
         </div>
+        <section className="notification-list" aria-label="알림 목록">
         <div className="notice unread">
           <span>
             <TrendingUp size={19} />
@@ -1233,7 +2546,8 @@ function NotificationModal({ close }: { close: () => void }) {
             <small>어제</small>
           </div>
         </div>
-      </section>
+        </section>
+      </main>
     </div>
   );
 }
@@ -1243,7 +2557,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (tab: Tab) => void }) {
     { id: "home" as Tab, label: "홈", icon: Home },
     { id: "grades" as Tab, label: "성적분석", icon: ChartNoAxesCombined },
     { id: "converter" as Tab, label: "돈워리", icon: Calculator },
-    { id: "mypage" as Tab, label: "마이페이지", icon: UserRound },
+    { id: "mypage" as Tab, label: "마이", icon: UserRound },
   ];
   return (
     <nav className="bottom-nav" aria-label="주요 메뉴">
@@ -1263,16 +2577,60 @@ export default function AppPage() {
   const [stage, setStage] = useState<Stage>("app");
   const [tab, setTab] = useState<Tab>("home");
   const [homeScreen, setHomeScreen] = useState<HomeScreen>("main");
+  const [chatQuestion, setChatQuestion] = useState("");
+  const [canvasTone, setCanvasTone] = useState<CanvasTone>("cream");
+  const [gradeScreen, setGradeScreen] = useState<GradeScreen>("intro");
   const [converterScreen, setConverterScreen] = useState<ConverterScreen>("intro");
   const [claimScreen, setClaimScreen] = useState<ClaimScreen | null>(null);
   const [notifications, setNotifications] = useState(false);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true);
+  const [examPassed, setExamPassed] = useState(() => Date.now() >= EXAM_END_AT);
 
   const shellClass = useMemo(() => `app-shell stage-${stage}`, [stage]);
+
+  useEffect(() => {
+    if (examPassed) return;
+
+    const syncExamState = () => {
+      if (Date.now() >= EXAM_END_AT) setExamPassed(true);
+    };
+    const timer = window.setInterval(syncExamState, 30_000);
+
+    window.addEventListener("focus", syncExamState);
+    document.addEventListener("visibilitychange", syncExamState);
+    syncExamState();
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", syncExamState);
+      document.removeEventListener("visibilitychange", syncExamState);
+    };
+  }, [examPassed]);
+
+  useEffect(() => {
+    document.documentElement.dataset.canvas = canvasTone;
+    return () => {
+      delete document.documentElement.dataset.canvas;
+    };
+  }, [canvasTone]);
+
+  const visibleClaimScreen =
+    claimScreen ?? (stage === "app" && tab === "home" && examPassed ? "home" : null);
 
   const changeTab = (next: Tab) => {
     setTab(next);
     setClaimScreen(null);
     if (next === "home") setHomeScreen("main");
+  };
+
+  const openNotifications = () => {
+    setHasUnreadNotifications(false);
+    setNotifications(true);
+  };
+
+  const openChat = (question: string) => {
+    setChatQuestion(question);
+    setHomeScreen("chat");
   };
 
   return (
@@ -1283,18 +2641,30 @@ export default function AppPage() {
         {stage === "loading" && <Loading onDone={() => setStage("app")} />}
         {stage === "app" && (
           <>
-            {claimScreen ? (
-              <ClaimFlow screen={claimScreen} setScreen={setClaimScreen} close={() => setClaimScreen(null)} />
+            <CanvasToneToggle
+              tone={canvasTone}
+              onToggle={() => setCanvasTone((current) => (
+                current === "cream" ? "gray" : current === "gray" ? "gray-white" : current === "gray-white" ? "white" : current === "white" ? "cream-white" : "cream"
+              ))}
+            />
+            {notifications ? (
+              <NotificationPage close={() => setNotifications(false)} />
+            ) : visibleClaimScreen ? (
+              <ClaimFlow screen={visibleClaimScreen} setScreen={setClaimScreen} close={() => setClaimScreen(null)} />
             ) : tab === "home" ? (
               homeScreen === "main" ? (
                 <HomeMain
-                  onNotification={() => setNotifications(true)}
+                  onNotification={openNotifications}
+                  hasUnread={hasUnreadNotifications}
                   go={setHomeScreen}
                   goTab={changeTab}
-                  openClaim={() => setClaimScreen("home")}
+                  askAi={openChat}
                 />
               ) : homeScreen === "chat" ? (
-                <Chat back={() => setHomeScreen("main")} />
+                <Chat
+                  back={() => setHomeScreen("main")}
+                  initialQuestion={chatQuestion}
+                />
               ) : (
                 <PremiumDetail
                   screen={homeScreen}
@@ -1303,14 +2673,27 @@ export default function AppPage() {
                 />
               )
             ) : tab === "grades" ? (
-              <Grades />
+              <GradeFlow
+                screen={gradeScreen}
+                setScreen={setGradeScreen}
+                onNotification={openNotifications}
+                hasUnread={hasUnreadNotifications}
+              />
             ) : tab === "converter" ? (
-              <Converter screen={converterScreen} setScreen={setConverterScreen} />
+              <Converter
+                screen={converterScreen}
+                setScreen={setConverterScreen}
+                onNotification={openNotifications}
+                hasUnread={hasUnreadNotifications}
+              />
             ) : (
-              <MyPage onLogout={() => setStage("login")} />
+              <MyPage
+                onLogout={() => setStage("login")}
+                onNotification={openNotifications}
+                hasUnread={hasUnreadNotifications}
+              />
             )}
-            {!claimScreen && homeScreen !== "chat" && <BottomNav tab={tab} setTab={changeTab} />}
-            {notifications && <NotificationModal close={() => setNotifications(false)} />}
+            {!notifications && !visibleClaimScreen && homeScreen !== "chat" && <BottomNav tab={tab} setTab={changeTab} />}
           </>
         )}
       </div>
