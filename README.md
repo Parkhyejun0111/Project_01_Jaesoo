@@ -43,6 +43,84 @@ npm run dev:app
 웹에서 가입을 마치면 완료 화면의 "앱에서 내 계약 보기" 버튼이
 `?student_id=...` 를 달아 앱을 열고, 앱은 그 계약을 바로 불러옵니다.
 
+
+## 팀원용 빠른 시작
+
+```bash
+git clone -b Final_02 https://github.com/Parkhyejun0111/Project_01_Jaesoo.git
+cd Project_01_Jaesoo
+
+# 1) 프론트엔드 (Node 20+)
+npm install
+
+# 2) 백엔드 (Python 3.12+)
+cd api
+python3 -m venv .venv
+./.venv/bin/python -m pip install -r requirements-test.txt -r requirements.txt
+cd ..
+```
+
+터미널 3개로 띄웁니다.
+
+```bash
+cd api && ./.venv/bin/python -m uvicorn main:app --port 8000   # ① 백엔드
+npm run dev:web                                                # ② http://localhost:5173
+npm run dev:app                                                # ③ http://localhost:3000
+```
+
+### ⚠️ 키 없이도 뜹니다 — 다만 일부 기능이 꺼집니다
+
+비밀키는 저장소에 넣지 않습니다(`.env` 는 gitignore). 받은 그대로 실행하면
+`/api/health` 가 `llm:false, db:false` 이고 아래처럼 동작합니다.
+
+| 기능 | 키 없이 | 키 있으면 |
+|---|---|---|
+| 티어표·보험료 계산·약관 열람 | ✅ 정상 | ✅ |
+| 돈워리 계산기 | ✅ 정상 | ✅ |
+| AI 챗봇 | 약관 발췌 폴백 | 실제 LLM 답변 |
+| 학생 목록·성적·개인화 보험료 | ❌ 빈 화면 | ✅ |
+| 청약 제출 | ❌ 오류 안내 | ✅ 저장됨 |
+| 영수증 청구 | ❌ | ✅ |
+
+전 기능을 쓰려면 `api/.env.example` 을 `api/.env` 로 복사한 뒤 값을 채우세요.
+**키는 저장소가 아니라 별도 경로로 공유받아야 합니다.**
+
+```bash
+cp api/.env.example api/.env
+```
+
+최소로 필요한 값:
+
+```dotenv
+LLM_PROVIDER=anthropic
+LLM_API_KEY=sk-ant-...
+
+SUPABASE_DB_HOST=aws-1-ap-northeast-2.pooler.supabase.com
+SUPABASE_DB_PORT=6543
+SUPABASE_DB_USER=postgres.<project-ref>
+SUPABASE_DB_PASSWORD=...
+SUPABASE_DB_NAME=postgres
+```
+
+DB 를 처음 붙일 때만 한 번:
+
+```bash
+cd api && ./.venv/bin/python seed_supabase.py   # 학생 6명 시드
+```
+
+> 이 스크립트는 `jaesoo_` 접두사가 붙은 우리 테이블만 비웁니다.
+> 같은 Supabase 프로젝트의 다른 앱 테이블은 건드리지 않습니다.
+
+### ZIP 으로 받는 경우
+
+GitHub 저장소 → Branch: `Final_02` → Code → Download ZIP.
+`.git` 만 빠질 뿐 위 절차는 동일합니다.
+
+### 검증됨
+
+새로 clone 한 상태에서 `npm install` → 웹 빌드(0.6초) · 앱 빌드(2.4초) ·
+백엔드 테스트 246개 통과를 확인했습니다.
+
 ## 테스트
 ```bash
 cd api && ./.venv/bin/python -m pytest -q      # 242개
