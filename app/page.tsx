@@ -11,6 +11,7 @@ import {
   BookOpenCheck,
   Calculator,
   CalendarDays,
+  Camera,
   ChartNoAxesCombined,
   Check,
   ChevronDown,
@@ -30,6 +31,7 @@ import {
   LogOut,
   MapPin,
   MessageCircle,
+  Plus,
   RefreshCcw,
   ShieldCheck,
   SlidersHorizontal,
@@ -41,6 +43,7 @@ import {
   TrendingUp,
   UserRound,
   WalletCards,
+  X,
 } from "lucide-react";
 
 type Stage = "splash" | "login" | "loading" | "app";
@@ -48,20 +51,198 @@ type Tab = "home" | "grades" | "converter" | "mypage";
 type HomeScreen = "main" | "premium" | "history" | "chat";
 type ClaimScreen =
   | "home"
-  | "eligibility"
-  | "link"
   | "intro"
   | "step1"
+  | "cardChange"
   | "step2"
-  | "step3"
+  | "verifying"
+  | "result"
   | "submitting"
   | "done"
-  | "status";
+  | "status"
+  | "eligibilityDetail"
+  | "appeal"
+  | "appealStatus"
+  | "capture"
+  | "scanning"
+  | "scanResult";
+type ClaimResultVariant = "matched" | "review" | "proof" | "rejected";
+type EligibilityResult = "none" | "mild" | "severe";
+type CaptureContext = "receipt" | "proof";
+type ClaimPhase = "preExam" | "postExam" | "period1" | "between" | "period2";
 type ConverterScreen = "intro" | "input" | "cost" | "loading" | "result";
 type GradeScreen = "intro" | "loading" | "result";
-type CanvasTone = "cream" | "gray" | "gray-white" | "white" | "cream-white";
+type CanvasTone = "cream-white" | "gray-white";
 
-const EXAM_END_AT = Date.parse("2026-11-19T17:45:00+09:00");
+const claimPhaseInfo: Record<
+  ClaimPhase,
+  {
+    toggleLabel: string;
+    homeHeadline: string;
+    bannerTitle: string;
+    bannerText: string;
+    paidAmount: string;
+    remainingAmount: string;
+    progress: number;
+    ctaLabel: string;
+    ctaEnabled: boolean;
+    historySub: string;
+    introHeading: string;
+    introTimeline: { title: string; text: string; state: "active" | "current" | "" }[];
+  }
+> = {
+  preExam: {
+    toggleLabel: "수능 전",
+    homeHeadline: "수능 전이에요, 성적 관리에 집중해보세요",
+    bannerTitle: "청구는 아직 준비 중이에요",
+    bannerText: "수능 이후 1차 청구가 열려요. 그때 알림으로 알려드릴게요.",
+    paidAmount: "0원",
+    remainingAmount: "1,404만원",
+    progress: 0,
+    ctaLabel: "청구 준비 중",
+    ctaEnabled: false,
+    historySub: "청구 내역 없음",
+    introHeading: "1차 청구, 아직 준비 중이에요",
+    introTimeline: [
+      { title: "수능", text: "성적 확정 · 보장 자격이 정해져요", state: "" },
+      { title: "1차 청구", text: "수능 이후 접수 시작", state: "" },
+      { title: "2차 청구", text: "1차로부터 6개월 후 접수", state: "" },
+    ],
+  },
+  postExam: {
+    toggleLabel: "수능 후",
+    homeHeadline: "수능 종료 · 1차 청구 준비 중이에요",
+    bannerTitle: "1차 청구 준비 중이에요",
+    bannerText: "수능이 끝났어요. 1차 청구는 7월 1일부터 열려요.",
+    paidAmount: "0원",
+    remainingAmount: "1,404만원",
+    progress: 0,
+    ctaLabel: "아직 접수 기간이 아니에요",
+    ctaEnabled: false,
+    historySub: "청구 내역 없음",
+    introHeading: "1차 청구, 곧 열려요",
+    introTimeline: [
+      { title: "수능 · 종료", text: "성적 확정 · 보장 자격 확인 완료", state: "active" },
+      { title: "1차 청구 · 접수 예정", text: "2026.07.01 ~ 07.31 · 1개월치 학원비 영수증 필요", state: "" },
+      { title: "2차 청구", text: "1차로부터 6개월 후 접수", state: "" },
+    ],
+  },
+  period1: {
+    toggleLabel: "1차 청구 기간",
+    homeHeadline: "1차 청구가 열렸어요, 지금 시작해보세요",
+    bannerTitle: "1차 청구가 열렸어요",
+    bannerText: "7월 31일까지 접수할 수 있어요. 영수증만 올리면 자동으로 검증돼요.",
+    paidAmount: "0원",
+    remainingAmount: "1,404만원",
+    progress: 0,
+    ctaLabel: "청구 시작하기",
+    ctaEnabled: true,
+    historySub: "청구 내역 없음",
+    introHeading: "1차 청구, 두 단계면 끝나요",
+    introTimeline: [
+      { title: "1차 청구 · 접수 가능", text: "2026.07.01 ~ 07.31 · 1개월치 학원비 영수증 필요", state: "current" },
+      { title: "2차 청구", text: "1차로부터 6개월 후 접수", state: "" },
+      { title: "보장 종료", text: "2차 지급 후 계약이 끝나요", state: "" },
+    ],
+  },
+  between: {
+    toggleLabel: "1차 종료 · 2차 전",
+    homeHeadline: "1차 지급 완료 · 2차 청구 준비 중이에요",
+    bannerTitle: "2차 청구 준비 중이에요",
+    bannerText: "1차 지급이 끝났어요. 2차 청구는 12월 1일부터 열려요.",
+    paidAmount: "364만원",
+    remainingAmount: "1,040만원",
+    progress: 26,
+    ctaLabel: "아직 접수 기간이 아니에요",
+    ctaEnabled: false,
+    historySub: "1차 지급완료 · 364만원",
+    introHeading: "2차 청구, 곧 열려요",
+    introTimeline: [
+      { title: "1차 청구 · 지급완료", text: "2026.06.30 접수 · 364만원 · 영수증 대조 결과 정상", state: "active" },
+      { title: "2차 청구 · 접수 예정", text: "2026.12.01 ~ 12.31 · 6개월치 학원비 영수증 필요", state: "" },
+      { title: "보장 종료", text: "2차 지급 후 계약이 끝나요", state: "" },
+    ],
+  },
+  period2: {
+    toggleLabel: "2차 청구 기간",
+    homeHeadline: "수능이 끝났어요, 지금 청구를 시작해보세요",
+    bannerTitle: "2차 청구가 열렸어요",
+    bannerText: "12월 31일까지 접수할 수 있어요. 영수증만 올리면 자동으로 검증돼요.",
+    paidAmount: "364만원",
+    remainingAmount: "1,040만원",
+    progress: 26,
+    ctaLabel: "청구 시작하기",
+    ctaEnabled: true,
+    historySub: "1차 지급완료 · 364만원",
+    introHeading: "2차 청구, 두 단계면 끝나요",
+    introTimeline: [
+      { title: "1차 청구 · 지급완료", text: "2026.06.30 접수 · 364만원 · 영수증 대조 결과 정상", state: "active" },
+      { title: "2차 청구 · 접수 가능", text: "2026.12.01 ~ 12.31 · 6개월치 학원비 영수증 필요", state: "current" },
+      { title: "보장 종료", text: "2차 지급 후 계약이 끝나요", state: "" },
+    ],
+  },
+};
+
+const eligibilityInfo: Record<
+  EligibilityResult,
+  {
+    determinedAt: string;
+    isEligible: boolean;
+    tierLabel: string;
+    title: string;
+    desc: string;
+    expectedGrade: string;
+    actualGrade: string;
+    dropSigma: string;
+    mildThreshold: string;
+    severeThreshold: string;
+    coverageLimit: string;
+    claimWindow: string;
+  }
+> = {
+  none: {
+    determinedAt: "2026.12.04",
+    isEligible: false,
+    tierLabel: "비대상",
+    title: "이번엔 보장 대상이 아니에요",
+    desc: "예상 성적 대비 하락폭이 경증 기준에 닿지 않았어요. 성적이 크게 떨어지지 않았다는 뜻이에요.",
+    expectedGrade: "2.41등급",
+    actualGrade: "3.19등급",
+    dropSigma: "-1.12σ",
+    mildThreshold: "-1.75σ 이하",
+    severeThreshold: "-2.25σ 이하",
+    coverageLimit: "0원",
+    claimWindow: "7월 1일 ~ 7월 31일",
+  },
+  mild: {
+    determinedAt: "2026.12.04",
+    isEligible: true,
+    tierLabel: "경증",
+    title: "경증 보장 대상이에요",
+    desc: "예상 성적 대비 하락폭이 경증 기준을 넘었어요. 1차 청구를 접수할 수 있어요.",
+    expectedGrade: "2.41등급",
+    actualGrade: "3.54등급",
+    dropSigma: "-1.92σ",
+    mildThreshold: "-1.75σ 이하",
+    severeThreshold: "-2.25σ 이하",
+    coverageLimit: "702만원",
+    claimWindow: "7월 1일 ~ 7월 31일",
+  },
+  severe: {
+    determinedAt: "2026.12.04",
+    isEligible: true,
+    tierLabel: "중증",
+    title: "중증 보장 대상이에요",
+    desc: "예상 성적 대비 하락폭이 중증 기준을 넘었어요. 1차 청구를 접수할 수 있어요.",
+    expectedGrade: "2.41등급",
+    actualGrade: "3.98등급",
+    dropSigma: "-2.41σ",
+    mildThreshold: "-1.75σ 이하",
+    severeThreshold: "-2.25σ 이하",
+    coverageLimit: "1,404만원",
+    claimWindow: "7월 1일 ~ 7월 31일",
+  },
+};
 
 const subjects = {
   국어: { color: "#F5604E", values: [55, 58, 61, 60, 64, 66, 70, 73] },
@@ -238,20 +419,11 @@ function HeroAction({
   );
 }
 
-function CanvasToneToggle({ tone, onToggle }: { tone: CanvasTone; onToggle: () => void }) {
-  const toneLabel = tone === "cream" ? "크림" : tone === "gray" ? "회색" : tone === "gray-white" ? "회색&화이트" : tone === "white" ? "화이트" : "크림&화이트";
-  const nextToneLabel = tone === "cream" ? "회색" : tone === "gray" ? "회색&화이트" : tone === "gray-white" ? "화이트" : tone === "white" ? "크림&화이트" : "크림";
-
+function ClaimPhaseToggle({ phase, onCycle }: { phase: ClaimPhase; onCycle: () => void }) {
   return (
-    <button
-      className="canvas-tone-toggle"
-      type="button"
-      onClick={onToggle}
-      aria-pressed={tone !== "cream"}
-      aria-label={`${nextToneLabel} 테마로 전환`}
-    >
-      <Sun size={17} aria-hidden="true" />
-      <span>{toneLabel}</span>
+    <button className="claim-phase-toggle" type="button" onClick={onCycle} aria-label="청구 진행 단계 미리보기 전환">
+      <Clock3 size={17} aria-hidden="true" />
+      <span>{claimPhaseInfo[phase].toggleLabel}</span>
     </button>
   );
 }
@@ -262,12 +434,16 @@ function HomeMain({
   go,
   goTab,
   askAi,
+  claimPhase,
+  onOpenClaim,
 }: {
   onNotification: () => void;
   hasUnread: boolean;
   go: (screen: HomeScreen) => void;
   goTab: (tab: Tab) => void;
   askAi: (question: string) => void;
+  claimPhase: ClaimPhase;
+  onOpenClaim: () => void;
 }) {
   const [question, setQuestion] = useState("");
 
@@ -336,24 +512,39 @@ function HomeMain({
       </section>
 
       <section className="home-content">
-        <div className="metric-grid">
-          <article className="metric-card premium-card">
-            <span className="metric-icon mint">
-              <WalletCards size={20} />
+        {claimPhase !== "preExam" ? (
+          <button className="home-feature-card claim-feature claim-top" onClick={onOpenClaim}>
+            <span className="feature-arrow">
+              <ArrowRight size={17} />
             </span>
-            <span>현재 월 보험료</span>
-            <strong>42,000원</strong>
-            <small>7월 12일 납입 예정</small>
-          </article>
-          <article className="metric-card dday-card">
-            <span className="metric-icon lime">
-              <CalendarDays size={20} />
+            <span className="feature-icon">
+              <FileText size={25} />
             </span>
-            <span>보험료 재산정까지</span>
-            <strong>D-17</strong>
-            <small>8월 모의고사 반영</small>
-          </article>
-        </div>
+            <span className="claim-feature-text">
+              <small>보험금 청구</small>
+              <strong>{claimPhaseInfo[claimPhase].homeHeadline}</strong>
+            </span>
+          </button>
+        ) : (
+          <div className="metric-grid">
+            <article className="metric-card premium-card">
+              <span className="metric-icon mint">
+                <WalletCards size={20} />
+              </span>
+              <span>현재 월 보험료</span>
+              <strong>42,000원</strong>
+              <small>7월 12일 납입 예정</small>
+            </article>
+            <article className="metric-card dday-card">
+              <span className="metric-icon lime">
+                <CalendarDays size={20} />
+              </span>
+              <span>보험료 재산정까지</span>
+              <strong>D-17</strong>
+              <small>2026-08-01</small>
+            </article>
+          </div>
+        )}
 
         <div className="home-feature-grid">
           <button className="home-feature-card grades-feature" onClick={() => goTab("grades")}>
@@ -364,7 +555,11 @@ function HomeMain({
               <ChartNoAxesCombined size={25} />
             </span>
             <small>성적분석</small>
-            <strong>성적의 추이와 안정성을 점검하세요</strong>
+            <strong>
+              성적의 추이와
+              <br />
+              안정성을 점검하세요
+            </strong>
           </button>
           <button className="home-feature-card converter-feature" onClick={() => goTab("converter")}>
             <span className="feature-arrow">
@@ -374,7 +569,11 @@ function HomeMain({
               <Calculator size={25} />
             </span>
             <small>돈워리</small>
-            <strong>우리 집 재수 비용을 미리 계산해보세요</strong>
+            <strong>
+              우리 집 재수 비용을
+              <br />
+              미리 계산해보세요
+            </strong>
           </button>
         </div>
       </section>
@@ -809,7 +1008,6 @@ function GradeLoading({ onDone }: { onDone: () => void }) {
   return (
     <div className="screen grade-analysis-loading" aria-live="polite">
       <div className="grade-analysis-loading-art" aria-hidden="true">
-        <img src="/grade-analysis.png" alt="" />
         <span>
           <LoaderCircle className="spinner dark" size={36} />
         </span>
@@ -874,13 +1072,15 @@ function Grades({ onNotification, hasUnread }: { onNotification: () => void; has
             <div className="score-card-stack">
               <section className="score-card white-card">
                 <div className="score-heading-row">
-                  <span className="eyebrow">수능 예상 점수</span>
-                  <h2>
-                    백분위 <strong>63</strong>
-                    <small>예상 범위 56~70</small>
-                  </h2>
+                  <div className="score-heading-top">
+                    <span className="eyebrow">수능 예상 점수</span>
+                    <h2>
+                      백분위 <b>63</b>
+                      <small>예상 범위 56~70</small>
+                    </h2>
+                  </div>
                   <p>
-                    모의고사 9회 평균 백분위 63, <strong>전국 상위 37%</strong>입니다.
+                    그동안의 모의고사 성적 추이를 바탕으로 예상한 백분위 입니다.
                   </p>
                 </div>
                 <PercentileChart />
@@ -930,14 +1130,6 @@ function Grades({ onNotification, hasUnread }: { onNotification: () => void; has
 function WeakSubjects() {
   const [prioritySlide, setPrioritySlide] = useState(0);
   const prioritySliderRef = useRef<HTMLDivElement>(null);
-  const showPrioritySlide = (index: number) => {
-    const slider = prioritySliderRef.current;
-    setPrioritySlide(index);
-    slider?.scrollTo({
-      left: index * Math.max(0, slider.clientWidth - 22),
-      behavior: "smooth",
-    });
-  };
   const rows = [
     ["국어", 56, "#F5604E", "보통"],
     ["수학", 52, "#13BCAD", "보통"],
@@ -1044,38 +1236,6 @@ function WeakSubjects() {
             </article>
           </div>
         </div>
-        <div className="focus-priority-controls" aria-label="집중 보완 우선순위 카드 선택">
-          <button
-            type="button"
-            onClick={() => showPrioritySlide(prioritySlide === 0 ? 1 : 0)}
-            aria-label="이전 우선순위 보기"
-          >
-            <ChevronLeft size={19} />
-          </button>
-          <div className="focus-priority-dots" aria-label={`${prioritySlide + 1} / 2`}>
-            <button
-              type="button"
-              className={prioritySlide === 0 ? "active" : ""}
-              onClick={() => showPrioritySlide(0)}
-              aria-label="1순위 영어 보기"
-              aria-current={prioritySlide === 0 ? "true" : undefined}
-            />
-            <button
-              type="button"
-              className={prioritySlide === 1 ? "active" : ""}
-              onClick={() => showPrioritySlide(1)}
-              aria-label="2순위 수학 보기"
-              aria-current={prioritySlide === 1 ? "true" : undefined}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => showPrioritySlide(prioritySlide === 0 ? 1 : 0)}
-            aria-label="다음 우선순위 보기"
-          >
-            <ChevronRight size={19} />
-          </button>
-        </div>
       </section>
     </>
   );
@@ -1100,16 +1260,11 @@ function Converter({
     academy: "재수종합학원",
     region: "수도권",
   });
-  const [showEquivalentFormulas, setShowEquivalentFormulas] = useState(true);
   const comparisonAmount = 2292;
 
   const coveredAmount = Math.min(1400, comparisonAmount);
   const finalAmount = Math.max(comparisonAmount - coveredAmount, 0);
-  const coveragePercent = comparisonAmount > 0 ? Math.round((coveredAmount / comparisonAmount) * 100) : 0;
   const formattedComparison = comparisonAmount.toLocaleString("ko-KR");
-  const formattedWon = (comparisonAmount * 10000).toLocaleString("ko-KR");
-  const formattedCoveredWon = (coveredAmount * 10000).toLocaleString("ko-KR");
-  const formattedFinalWon = (finalAmount * 10000).toLocaleString("ko-KR");
   const savingsMonths = (comparisonAmount / 191).toFixed(1);
   const tuitionTerms = (comparisonAmount / 347).toFixed(1);
   const retirementPercent = ((comparisonAmount / 38200) * 100).toFixed(1);
@@ -1186,36 +1341,6 @@ function Converter({
             <small>{converterChoices.academy} · {converterChoices.region} 시세 반영</small>
           </section>
 
-          <section className="converter-statement" aria-labelledby="statement-title">
-            <header>
-              <div>
-                <small>OFFICIAL STATEMENT</small>
-                <h1 id="statement-title">재수 비용 정산 내역서</h1>
-              </div>
-              <span className="statement-stamp"><Check size={15} /> {coveragePercent}% 지원 확정</span>
-            </header>
-            <div className="statement-line">
-              <span>1년 표준 재수 비용</span>
-              <strong>{formattedWon} 원</strong>
-            </div>
-            <div className="statement-deduction">
-              <span>차감 보장 지원금</span>
-              <strong>- {formattedCoveredWon} 원</strong>
-            </div>
-            <div className="statement-tear" aria-hidden="true" />
-            <div className="statement-final">
-              <div>
-                <span>최종 본인 부담금</span>
-                <strong>{formattedFinalWon} 원</strong>
-              </div>
-              <b>총 {coveredAmount.toLocaleString("ko-KR")}만원 경감</b>
-            </div>
-            <dl className="statement-meta">
-              <div><dt>지원 방식</dt><dd>현물 40% + 현금 60%</dd></div>
-              <div><dt>월 한도</dt><dd>최대 140만원</dd></div>
-            </dl>
-          </section>
-
           <div className="converter-result-heading">
             <div>
               <h2><mark>{formattedComparison}만원</mark>, 우리 집엔 얼마나 클까요?</h2>
@@ -1223,75 +1348,71 @@ function Converter({
             </div>
           </div>
 
-          <section className="converter-formula-control" aria-label="수식 표시 설정">
-            <button
-              type="button"
-              className={`formula-toggle ${showEquivalentFormulas ? "on" : ""}`}
-              onClick={() => setShowEquivalentFormulas((current) => !current)}
-              aria-pressed={showEquivalentFormulas}
-            >
-              <span><i /></span>
-              수식 표시
-            </button>
-          </section>
-
-          <div
-            id="converter-equivalent-cards"
-            className={`converter-equivalents ${showEquivalentFormulas ? "show-formulas" : "hide-formulas"}`}
-          >
+          <div className="converter-equivalents" role="list" aria-label="비교 환산 카드">
             <article className="saving">
               <div className="equivalent-summary">
                 <span><WalletCards size={22} /></span>
-                <div><small>저축 기준</small><strong>우리 집 월 저축액</strong></div>
+                <div><strong>우리 집 월 저축액</strong></div>
                 <b>{savingsMonths}<small>개월분</small></b>
               </div>
               <div className="equivalent-detail">
                 <p>이만큼 저축해야 모을 수 있는 금액이에요.</p>
               </div>
-              <div className="equivalent-formula" aria-hidden={!showEquivalentFormulas}>
-                <code>{formattedComparison}만원 ÷ 월 191만원</code><span>우리 집 월 저축액 기준</span>
+              <div className="equivalent-formula">
+                <code>{formattedComparison}만원 ÷ 월 191만원</code>
               </div>
             </article>
             <article className="tuition">
               <div className="equivalent-summary">
                 <span><GraduationCap size={23} /></span>
-                <div><small>교육비 기준</small><strong>동생 대학 등록금</strong></div>
+                <div><strong>동생 대학 등록금</strong></div>
                 <b>{tuitionTerms}<small>학기분</small></b>
               </div>
               <div className="equivalent-detail">
                 <p>이만큼 대학교를 다닐 수 있는 학기예요.</p>
               </div>
-              <div className="equivalent-formula" aria-hidden={!showEquivalentFormulas}>
-                <code>{formattedComparison}만원 ÷ 학기당 347만원</code><span>4년제 평균 등록금 기준</span>
+              <div className="equivalent-formula">
+                <code>{formattedComparison}만원 ÷ 학기당 347만원</code>
               </div>
             </article>
             <article className="retirement">
               <div className="equivalent-summary">
                 <span><Flag size={22} /></span>
-                <div><small>자산 목표 기준</small><strong>노후 자금 목표 대비</strong></div>
+                <div><strong>노후 자금 목표 대비</strong></div>
                 <b>{retirementPercent}<small>%</small></b>
               </div>
               <div className="equivalent-detail">
                 <p>노후 목표액에서 차지하는 비중이에요.</p>
               </div>
-              <div className="equivalent-formula" aria-hidden={!showEquivalentFormulas}>
-                <code>{formattedComparison}만원 ÷ 목표 38,200만원</code><span>은퇴 목표 3.82억 기준</span>
+              <div className="equivalent-formula">
+                <code>{formattedComparison}만원 ÷ 목표 38,200만원</code>
               </div>
             </article>
             <article className="income">
               <div className="equivalent-summary">
                 <span><CreditCard size={22} /></span>
-                <div><small>소득 기준</small><strong>우리 집 월 소득</strong></div>
+                <div><strong>우리 집 월 소득</strong></div>
                 <b>{incomeMonths}<small>개월치</small></b>
               </div>
               <div className="equivalent-detail">
                 <p>몇 달치 소득에 해당하는 금액이에요.</p>
               </div>
-              <div className="equivalent-formula" aria-hidden={!showEquivalentFormulas}>
-                <code>{formattedComparison}만원 ÷ 월 636만원</code><span>가계 세후 소득 기준</span>
+              <div className="equivalent-formula">
+                <code>{formattedComparison}만원 ÷ 월 636만원</code>
               </div>
             </article>
           </div>
+
+          <div className="converter-coverage-note">
+            <h2><mark>{formattedComparison}만원</mark>, 재수없수를 통해 보장을 받으면 얼마일까요?</h2>
+            <p>보장을 받은 후 지불하실 재수비용이에요.</p>
+            <ul className="converter-coverage-detail">
+              <li>현재 스탠다드 상품 기준 최대 보장금을 적용시,</li>
+              <li className="highlight">{coveredAmount.toLocaleString("ko-KR")}만원 보장</li>
+              <li>최종적인 재수 비용은 {finalAmount.toLocaleString("ko-KR")}만원 입니다</li>
+            </ul>
+          </div>
+
           <button
             type="button"
             className="converter-restart"
@@ -1304,7 +1425,6 @@ function Converter({
                 academy: "재수종합학원",
                 region: "수도권",
               });
-              setShowEquivalentFormulas(true);
               setScreen("input");
             }}
           >
@@ -1502,7 +1622,7 @@ const myMenuGroups: { title: string; items: MyMenuItem[] }[] = [
   },
   {
     title: "기타",
-    items: [{ label: "알림 설정" }, { label: "약관 및 정책" }],
+    items: [{ label: "알림 설정" }, { label: "테마 설정" }, { label: "약관 및 정책" }],
   },
 ];
 
@@ -1679,11 +1799,15 @@ function MyDetailPage({
   close,
   onNotification,
   hasUnread,
+  canvasTone,
+  onChangeCanvasTone,
 }: {
   detail: string;
   close: () => void;
   onNotification: () => void;
   hasUnread: boolean;
+  canvasTone: CanvasTone;
+  onChangeCanvasTone: (tone: CanvasTone) => void;
 }) {
   const [notificationSettings, setNotificationSettings] = useState([true, true, true, false]);
   const [gradeSort, setGradeSort] = useState<"recent" | "past">("recent");
@@ -1700,7 +1824,7 @@ function MyDetailPage({
   ]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("4821");
   const [cardForm, setCardForm] = useState({ number: "", expiry: "", cvc: "", owner: "" });
-  const isPaymentDetail = ["보험료 결제", "보험료 납입 내역", "결제 수단 관리"].includes(detail);
+  const isPaymentDetail = detail === "보험료 결제";
   const [paymentDataLoading, setPaymentDataLoading] = useState(isPaymentDetail);
 
   useEffect(() => {
@@ -2140,6 +2264,36 @@ function MyDetailPage({
           </>
         )}
 
+        {detail === "테마 설정" && (
+          <>
+            <h1 className="my-detail-title">테마 설정</h1>
+            <p className="my-detail-desc">앱 전체에 적용할 배경 테마를 선택하세요.</p>
+            <section className="theme-option-list">
+              {[
+                { tone: "cream-white" as const, label: "크림 & 화이트", desc: "따뜻한 크림 배경 + 화이트 콘텐츠 영역", swatch: "#FFFBF2" },
+                { tone: "gray-white" as const, label: "회색 & 화이트", desc: "차분한 회색 배경 + 화이트 콘텐츠 영역", swatch: "#F3F3F3" },
+              ].map((option) => (
+                <button
+                  key={option.tone}
+                  type="button"
+                  className={`theme-option ${canvasTone === option.tone ? "active" : ""}`}
+                  onClick={() => onChangeCanvasTone(option.tone)}
+                  aria-pressed={canvasTone === option.tone}
+                >
+                  <span className="theme-swatch" style={{ background: option.swatch }}>
+                    <Sun size={16} />
+                  </span>
+                  <span className="theme-option-text">
+                    <strong>{option.label}</strong>
+                    <small>{option.desc}</small>
+                  </span>
+                  {canvasTone === option.tone && <Check size={18} />}
+                </button>
+              ))}
+            </section>
+          </>
+        )}
+
         {detail === "약관 및 정책" && (
           <>
             <h1 className="my-detail-title">보험상품 약관</h1>
@@ -2165,10 +2319,14 @@ function MyPage({
   onLogout,
   onNotification,
   hasUnread,
+  canvasTone,
+  onChangeCanvasTone,
 }: {
   onLogout: () => void;
   onNotification: () => void;
   hasUnread: boolean;
+  canvasTone: CanvasTone;
+  onChangeCanvasTone: (tone: CanvasTone) => void;
 }) {
   const [detail, setDetail] = useState<string | null>(null);
 
@@ -2179,6 +2337,8 @@ function MyPage({
         close={() => setDetail(null)}
         onNotification={onNotification}
         hasUnread={hasUnread}
+        canvasTone={canvasTone}
+        onChangeCanvasTone={onChangeCanvasTone}
       />
     );
   }
@@ -2225,7 +2385,37 @@ function MyPage({
   );
 }
 
-function ClaimFlow({ screen, setScreen, close }: { screen: ClaimScreen; setScreen: (screen: ClaimScreen) => void; close: () => void }) {
+function ClaimFlow({
+  screen,
+  setScreen,
+  close,
+  phase,
+}: {
+  screen: ClaimScreen;
+  setScreen: (screen: ClaimScreen) => void;
+  close: () => void;
+  phase: ClaimPhase;
+}) {
+  const [cardLast4, setCardLast4] = useState("4821");
+  const [resultPreview, setResultPreview] = useState<ClaimResultVariant>("matched");
+  const [eligibilityResult, setEligibilityResult] = useState<EligibilityResult>("none");
+  const [appealFiled, setAppealFiled] = useState(false);
+  const [captureContext, setCaptureContext] = useState<CaptureContext>("receipt");
+  const [receiptCaptured, setReceiptCaptured] = useState(false);
+  const [proofCaptured, setProofCaptured] = useState(false);
+
+  useEffect(() => {
+    if (screen !== "verifying") return;
+    const timer = window.setTimeout(() => setScreen("result"), 1600);
+    return () => window.clearTimeout(timer);
+  }, [screen, setScreen]);
+
+  useEffect(() => {
+    if (screen !== "scanning") return;
+    const timer = window.setTimeout(() => setScreen("scanResult"), 1200);
+    return () => window.clearTimeout(timer);
+  }, [screen, setScreen]);
+
   useEffect(() => {
     if (screen !== "submitting") return;
     const timer = window.setTimeout(() => setScreen("done"), 1400);
@@ -2234,16 +2424,55 @@ function ClaimFlow({ screen, setScreen, close }: { screen: ClaimScreen; setScree
 
   const backMap: Record<ClaimScreen, ClaimScreen | null> = {
     home: null,
-    eligibility: "home",
-    link: "home",
     intro: "home",
     step1: "intro",
+    cardChange: "step1",
     step2: "step1",
-    step3: "step2",
-    submitting: "step3",
-    done: "home",
+    verifying: null,
+    result: "step2",
+    submitting: null,
+    done: null,
     status: "home",
+    eligibilityDetail: "home",
+    appeal: "eligibilityDetail",
+    appealStatus: "home",
+    capture: null,
+    scanning: null,
+    scanResult: null,
   };
+
+  const backLabel: Partial<Record<ClaimScreen, string>> = {
+    home: "홈",
+    intro: "홈",
+    step1: "청구 안내",
+    cardChange: "카드 확인",
+    step2: "카드 확인",
+    result: "영수증 업로드",
+    status: "홈",
+    eligibilityDetail: "홈",
+    appeal: "보장 자격 상세",
+    appealStatus: "홈",
+  };
+
+  const captureOrigin: ClaimScreen = captureContext === "proof" ? "appeal" : "step2";
+
+  if (screen === "verifying") {
+    return <ClaimVerifying />;
+  }
+
+  if (screen === "scanning") {
+    return (
+      <div className="screen page-with-nav claim-verifying">
+        <div className="claim-spinner" />
+        <h1>서류를 스캔하고 있어요</h1>
+        <p>
+          글씨가 잘 보이는지 확인하고 있어요.
+          <br />
+          잠시만 기다려주세요.
+        </p>
+      </div>
+    );
+  }
 
   if (screen === "submitting") {
     return (
@@ -2257,16 +2486,37 @@ function ClaimFlow({ screen, setScreen, close }: { screen: ClaimScreen; setScree
   }
 
   if (screen === "done") {
+    const isFirstRound = phase === "preExam" || phase === "postExam" || phase === "period1";
     return (
       <div className="screen claim-done">
         <span className="done-icon">
           <Check size={42} />
         </span>
-        <span className="eyebrow light">접수번호 JS-260624-017</span>
-        <h1>1차 청구 접수가 완료됐어요</h1>
-        <p>진행 상황이 바뀌면 알림으로 바로 알려드릴게요.</p>
+        <h1>{isFirstRound ? "1차 청구가 접수됐어요" : "2차 청구가 접수됐어요"}</h1>
+        <p>심사가 끝나면 등록하신 계좌로 입금돼요.</p>
+        <section className="white-card claim-kv-card claim-done-card">
+          <div className="claim-kv-row">
+            <span className="k">접수번호</span>
+            <span className="v">{isFirstRound ? "CLM-2026-0006213" : "CLM-2026-0012487"}</span>
+          </div>
+          <div className="claim-kv-row">
+            <span className="k">접수일</span>
+            <span className="v">{isFirstRound ? "2026.07.14" : "2026.12.04"}</span>
+          </div>
+          <div className="claim-kv-row">
+            <span className="k">지급 예정액</span>
+            <span className="v positive">{isFirstRound ? "364만원" : "1,040만원"}</span>
+          </div>
+          <div className="claim-kv-row">
+            <span className="k">예상 지급일</span>
+            <span className="v">{isFirstRound ? "2026.07.21" : "2026.12.11"}</span>
+          </div>
+        </section>
+        <div className="claim-note claim-done-note">
+          {isFirstRound ? "2차 청구는 1차로부터 6개월 뒤에 열려요." : "2차 지급이 끝나면 보장이 종료돼요. 더 청구할 건은 없습니다."}
+        </div>
         <button className="white-button" onClick={() => setScreen("status")}>
-          청구 진행 상황 보기
+          진행 상황 보기
         </button>
         <button className="ghost-button" onClick={close}>
           홈으로
@@ -2275,217 +2525,847 @@ function ClaimFlow({ screen, setScreen, close }: { screen: ClaimScreen; setScree
     );
   }
 
-  const previous = backMap[screen];
+  const previous =
+    screen === "capture" ? captureOrigin : screen === "scanResult" ? "capture" : backMap[screen];
+  const label =
+    screen === "capture"
+      ? captureContext === "proof"
+        ? "이의 신청"
+        : "영수증 업로드"
+      : screen === "scanResult"
+        ? "사진 촬영"
+        : (backLabel[screen] ?? "이전 화면");
+
   return (
     <div className="screen page-with-nav claim-screen">
-      <TopBar back={previous ? () => setScreen(previous) : close} backLabel={screen === "home" ? "홈" : "청구 홈"} />
-      {screen === "home" && <ClaimHome setScreen={setScreen} />}
-      {screen === "eligibility" && <ClaimEligibility />}
-      {screen === "link" && <ClaimLink />}
-      {screen === "intro" && <ClaimIntro onStart={() => setScreen("step1")} />}
-      {screen === "step1" && <ClaimStep step={1} next={() => setScreen("step2")} />}
-      {screen === "step2" && <ClaimStep step={2} next={() => setScreen("step3")} />}
-      {screen === "step3" && <ClaimStep step={3} next={() => setScreen("submitting")} />}
+      <TopBar back={previous ? () => setScreen(previous) : close} backLabel={label} />
+      {screen === "home" && (
+        <ClaimHome
+          setScreen={setScreen}
+          phase={phase}
+          eligibilityResult={eligibilityResult}
+          onChangeEligibilityResult={setEligibilityResult}
+          appealFiled={appealFiled}
+        />
+      )}
+      {screen === "intro" && <ClaimIntro onStart={() => setScreen("step1")} phase={phase} />}
+      {screen === "step1" && (
+        <ClaimCardStep cardLast4={cardLast4} onConfirm={() => setScreen("step2")} onChangeCard={() => setScreen("cardChange")} />
+      )}
+      {screen === "cardChange" && (
+        <ClaimCardChange
+          onSave={(last4) => {
+            setCardLast4(last4);
+            setScreen("step1");
+          }}
+        />
+      )}
+      {screen === "step2" && (
+        <ClaimUpload
+          onUpload={() => setScreen("verifying")}
+          previewResult={resultPreview}
+          onChangePreviewResult={setResultPreview}
+          captured={receiptCaptured}
+          onCapture={() => {
+            setCaptureContext("receipt");
+            setScreen("capture");
+          }}
+        />
+      )}
+      {screen === "capture" && (
+        <ClaimCapture
+          onCapture={() => setScreen("scanning")}
+        />
+      )}
+      {screen === "scanResult" && (
+        <ClaimScanResult
+          onRetake={() => setScreen("capture")}
+          onConfirm={() => {
+            if (captureContext === "proof") {
+              setProofCaptured(true);
+              setScreen("appeal");
+            } else {
+              setReceiptCaptured(true);
+              setScreen("step2");
+            }
+          }}
+        />
+      )}
+      {screen === "result" && (
+        <ClaimResult
+          variant={resultPreview}
+          cardLast4={cardLast4}
+          onSubmit={() => setScreen("submitting")}
+          onRetryUpload={() => setScreen("step2")}
+          onChangeCard={() => setScreen("cardChange")}
+          onViewStatus={() => setScreen("status")}
+        />
+      )}
       {screen === "status" && <ClaimStatus />}
+      {screen === "eligibilityDetail" && (
+        <ClaimEligibilityDetail result={eligibilityResult} onAppeal={() => setScreen("appeal")} />
+      )}
+      {screen === "appeal" && (
+        <ClaimAppeal
+          onSubmit={() => {
+            setAppealFiled(true);
+            setScreen("home");
+          }}
+          captured={proofCaptured}
+          onCapture={() => {
+            setCaptureContext("proof");
+            setScreen("capture");
+          }}
+        />
+      )}
+      {screen === "appealStatus" && <ClaimAppealStatus />}
     </div>
   );
 }
 
-function ClaimHome({ setScreen }: { setScreen: (screen: ClaimScreen) => void }) {
+function ClaimHome({
+  setScreen,
+  phase,
+  eligibilityResult,
+  onChangeEligibilityResult,
+  appealFiled,
+}: {
+  setScreen: (screen: ClaimScreen) => void;
+  phase: ClaimPhase;
+  eligibilityResult: EligibilityResult;
+  onChangeEligibilityResult: (result: EligibilityResult) => void;
+  appealFiled: boolean;
+}) {
+  const info = claimPhaseInfo[phase];
+  const eligibility = eligibilityInfo[eligibilityResult];
+  const showEligibilityCard = phase === "postExam";
   return (
     <main className="sub-page">
       <span className="eyebrow">보험금 청구</span>
       <h1>필요할 때 든든하게 챙겨드려요</h1>
-      <section className="white-card claim-membership">
-        <div>
-          <span>가입 티어</span>
-          <strong>스탠다드</strong>
+      {showEligibilityCard ? (
+        <section className={`claim-open-card ${eligibility.isEligible ? "" : "not-eligible"}`}>
+          <span className="eyebrow light">보장 판정 완료 · {eligibility.determinedAt}</span>
+          <h2>{eligibility.title}</h2>
+          <p>
+            {eligibility.isEligible
+              ? `1차 청구 기간은 ${eligibility.claimWindow}이에요. 보장 한도 ${eligibility.coverageLimit} 안에서 지급돼요.`
+              : eligibility.desc}
+          </p>
+          {!eligibility.isEligible && (
+            <div className="claim-eligibility-stats">
+              <div>
+                <span>예상 성적 대비 하락폭</span>
+                <strong>{eligibility.dropSigma}</strong>
+              </div>
+              <div>
+                <span>경증 기준</span>
+                <strong>{eligibility.mildThreshold}</strong>
+              </div>
+              <div>
+                <span>중증 기준</span>
+                <strong>{eligibility.severeThreshold}</strong>
+              </div>
+            </div>
+          )}
+          <button className="white-button" onClick={() => setScreen("eligibilityDetail")}>
+            판정 근거 자세히 보기
+          </button>
+        </section>
+      ) : null}
+      {showEligibilityCard && (
+        <div className="claim-field">
+          <label>판정 결과 미리보기 (테스트용)</label>
+          <div className="claim-seg">
+            {(["none", "mild", "severe"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={eligibilityResult === option ? "on" : ""}
+                onClick={() => onChangeEligibilityResult(option)}
+              >
+                {eligibilityInfo[option].tierLabel}
+              </button>
+            ))}
+          </div>
         </div>
-        <div>
-          <span>가입한 재수 형태</span>
-          <strong>재수종합학원</strong>
-        </div>
-      </section>
-      <section className="claim-open-card">
-        <span className="eyebrow light">2026.11.19 평가 · 중증 · 한도 1,404만원</span>
-        <h2>1차 청구가 열렸어요</h2>
-        <p>6월 30일까지 제출할 수 있어요. 연동된 결제 520만원이 준비돼 있어요.</p>
-        <div className="claim-progress">
-          <span style={{ width: "74%" }} />
-        </div>
-        <small>잔여 보장 한도 1,404만원</small>
-        <button className="white-button" onClick={() => setScreen("intro")}>
-          청구 시작하기
-        </button>
-      </section>
-      <div className="claim-menu">
-        <button onClick={() => setScreen("eligibility")}>
-          <ShieldCheck size={20} />
+      )}
+      {!showEligibilityCard && (
+        <section className="claim-open-card">
+          <span className="eyebrow light">보장 자격 확정 · 중증 · 한도 1,404만원</span>
+          <h2>{info.bannerTitle}</h2>
+          <p>{info.bannerText}</p>
+          <div className="claim-progress">
+            <span style={{ width: `${info.progress}%` }} />
+          </div>
+          <div className="claim-progress-legend">
+            <span>
+              <i className="claim-legend-dot" />
+              기지급 <b>{info.paidAmount}</b>
+            </span>
+            <span>
+              <i className="claim-legend-dot off" />
+              잔여 <b>{info.remainingAmount}</b>
+            </span>
+          </div>
+          <button className="white-button" onClick={() => setScreen("intro")} disabled={!info.ctaEnabled}>
+            {info.ctaLabel}
+          </button>
+        </section>
+      )}
+      {showEligibilityCard && !eligibility.isEligible && appealFiled && (
+        <button type="button" className="claim-lrow" onClick={() => setScreen("appealStatus")}>
           <span>
-            <strong>보장 자격 상세</strong>
-            <small>2026.11.19 판정 · 중증</small>
+            <strong>이의 신청 진행 상황</strong>
+            <small>검토 중 · 5영업일 이내 안내</small>
           </span>
           <ChevronRight size={17} />
         </button>
-        <button onClick={() => setScreen("link")}>
-          <CreditCard size={20} />
-          <span>
-            <strong>결제 내역 연동</strong>
-            <small>2개 카드 연동됨</small>
-          </span>
-          <ChevronRight size={17} />
-        </button>
-        <button onClick={() => setScreen("status")}>
-          <FileText size={20} />
-          <span>
-            <strong>내 청구 내역</strong>
-            <small>아직 청구 내역이 없어요</small>
-          </span>
-          <ChevronRight size={17} />
-        </button>
-      </div>
+      )}
+      <button type="button" className="claim-lrow" onClick={() => setScreen("status")}>
+        <span>
+          <strong>내 청구 내역</strong>
+          <small>{info.historySub}</small>
+        </span>
+        <ChevronRight size={17} />
+      </button>
     </main>
   );
 }
 
-function ClaimEligibility() {
+function ClaimEligibilityDetail({
+  result,
+  onAppeal,
+}: {
+  result: EligibilityResult;
+  onAppeal: () => void;
+}) {
+  const info = eligibilityInfo[result];
   return (
     <main className="sub-page">
       <span className="eyebrow">보장 자격 상세</span>
-      <h1>1차 청구 대상이에요</h1>
-      <section className="eligibility-hero">
-        <ShieldCheck size={34} />
-        <span>보장 가능</span>
-        <strong>중증 기준 충족</strong>
+      <h1>보장 자격 상세</h1>
+      <div className="claim-note">
+        판정은 예상 성적(밴드)과 실제 수능 성적의 차이를 표준편차 단위로 계산해 나옵니다.
+      </div>
+      <section className="white-card claim-kv-card">
+        <div className="claim-kv-row">
+          <span className="k">예상 성적(밴드 중심)</span>
+          <span className="v">{info.expectedGrade}</span>
+        </div>
+        <div className="claim-kv-row">
+          <span className="k">실제 수능 성적</span>
+          <span className="v">{info.actualGrade}</span>
+        </div>
+        <div className="claim-kv-row">
+          <span className="k">하락폭</span>
+          <span className="v">{info.dropSigma}</span>
+        </div>
+        <div className="claim-kv-row">
+          <span className="k">판정</span>
+          <span className={`v ${info.isEligible ? "positive" : ""}`}>{info.tierLabel}</span>
+        </div>
       </section>
-      <section className="white-card">
-        <h2>판정 근거</h2>
-        {["2026년 수능 성적 등록 완료", "가입 후 대기기간 충족", "보장 제외 항목 없음"].map((item) => (
-          <div className="check-row" key={item}>
-            <CircleCheck size={18} /> {item}
-          </div>
-        ))}
+      <section className="white-card claim-kv-card">
+        <h2>기준선</h2>
+        <div className="claim-kv-row">
+          <span className="k">경증</span>
+          <span className="v">{info.mildThreshold}</span>
+        </div>
+        <div className="claim-kv-row">
+          <span className="k">중증</span>
+          <span className="v">{info.severeThreshold}</span>
+        </div>
       </section>
+      {!info.isEligible && (
+        <button className="white-button" onClick={onAppeal}>
+          이의 신청하기
+        </button>
+      )}
     </main>
   );
 }
 
-function ClaimLink() {
-  const [linked, setLinked] = useState(true);
+function ClaimAppeal({
+  onSubmit,
+  captured,
+  onCapture,
+}: {
+  onSubmit: () => void;
+  captured: boolean;
+  onCapture: () => void;
+}) {
+  const [reason, setReason] = useState<"성적 반영 오류" | "기타">("성적 반영 오류");
+  const [detail, setDetail] = useState("");
   return (
-    <main className="sub-page">
-      <span className="eyebrow">결제 내역 연동</span>
-      <h1>학원비 결제를 자동으로 모아요</h1>
-      <section className="white-card linked-card">
-        <CreditCard size={25} />
-        <div>
-          <strong>재수카드 · 4821</strong>
-          <span>최근 동기화 방금 전</span>
+    <main className="sub-page claim-step">
+      <h1>이의 신청</h1>
+      <div className="claim-note warn">
+        성적 자료가 잘못 반영됐다고 판단되면 신청해 주세요. 접수 후 5영업일 안에 결과를 알려드려요.
+      </div>
+      <div className="claim-field">
+        <label>이의 사유</label>
+        <div className="claim-seg">
+          {(["성적 반영 오류", "기타"] as const).map((option) => (
+            <button key={option} type="button" className={reason === option ? "on" : ""} onClick={() => setReason(option)}>
+              {option}
+            </button>
+          ))}
         </div>
-        <button className={`toggle ${linked ? "on" : ""}`} onClick={() => setLinked(!linked)} aria-label="카드 연동 전환">
-          <i />
-        </button>
-      </section>
-      <section className="white-card linked-card">
-        <CreditCard size={25} />
-        <div>
-          <strong>가족카드 · 1098</strong>
-          <span>최근 동기화 오늘 09:20</span>
-        </div>
-        <span className="status-badge">연동됨</span>
-      </section>
-      <button className="secondary-button">
-        <RefreshCcw size={17} /> 결제 내역 새로고침
+      </div>
+      <div className="claim-field">
+        <label>상세 내용</label>
+        <textarea
+          className="claim-input claim-textarea"
+          value={detail}
+          onChange={(event) => setDetail(event.target.value)}
+          placeholder="어떤 부분이 잘못됐는지 적어주세요"
+          rows={4}
+        />
+      </div>
+      <button type="button" className="claim-drop" onClick={onCapture}>
+        <FileText size={24} />
+        <strong>{captured ? "증빙 자료 첨부됨 · 다시 올리기" : "증빙 자료 올리기"}</strong>
+        <small>성적표 · 성적증명서</small>
+      </button>
+      <button className="primary-button" onClick={onSubmit} disabled={!detail.trim()}>
+        이의 신청 접수하기
       </button>
     </main>
   );
 }
 
-function ClaimIntro({ onStart }: { onStart: () => void }) {
+function ClaimAppealStatus() {
   return (
-    <main className="claim-intro sub-page">
-      <span className="step-orb">
-        <FileText size={28} />
-      </span>
-      <span className="eyebrow">3단계면 끝나요</span>
-      <h1>1차 보험금 청구를 시작할게요</h1>
-      <p>결제 내역을 확인하고, 받는 방법을 고른 뒤 최종 동의하면 접수돼요.</p>
-      <div className="intro-steps">
+    <main className="sub-page">
+      <span className="eyebrow">이의 신청 진행 상황</span>
+      <h1>검토가 진행 중이에요</h1>
+      <section className="white-card status-timeline">
         {[
-          ["01", "비용 증빙", "연동한 결제를 골라요"],
-          ["02", "받는 방법", "계좌와 바우처를 정해요"],
-          ["03", "지급액 확인", "최종 내용을 확인해요"],
-        ].map(([number, title, text]) => (
-          <div key={number}>
-            <span>{number}</span>
+          { title: "접수 완료", text: "2026.12.05 오전 10:12", state: "active" as const },
+          { title: "서류 검토 중", text: "영업일 기준 5일 이내", state: "current" as const },
+          { title: "결과 안내", text: "검토 완료 후 알림", state: "" as const },
+        ].map((item) => (
+          <div className={item.state} key={item.title}>
+            <i>{item.state === "active" ? <Check size={14} /> : null}</i>
             <p>
-              <strong>{title}</strong>
-              <small>{text}</small>
+              <strong>{item.title}</strong>
+              <span>{item.text}</span>
             </p>
           </div>
         ))}
+      </section>
+      <div className="claim-note">결과가 나오면 알림으로 바로 알려드릴게요.</div>
+    </main>
+  );
+}
+
+function ClaimCapture({ onCapture }: { onCapture: () => void }) {
+  return (
+    <main className="claim-capture">
+      <div className="claim-camera-frame">
+        <div className="claim-camera-guide" />
+        <p>서류 전체가 프레임 안에 들어오게 맞춰주세요</p>
       </div>
-      <button className="primary-button" onClick={onStart}>
-        1차 청구 시작하기 <ArrowRight size={18} />
+      <button type="button" className="claim-shutter" onClick={onCapture} aria-label="촬영하기">
+        <Camera size={26} />
       </button>
     </main>
   );
 }
 
-function ClaimStep({ step, next }: { step: number; next: () => void }) {
-  const content = {
-    1: {
-      title: "청구할 비용을 선택해주세요",
-      subtitle: "연동된 학원비와 교재비를 확인했어요.",
-      options: ["재수종합학원 4~6월 · 420만원", "온라인 강의 패키지 · 60만원", "교재·모의고사 · 40만원"],
-      button: "다음",
-    },
-    2: {
-      title: "보험금을 어떻게 받을까요?",
-      subtitle: "계좌 지급과 교육 바우처를 함께 선택할 수 있어요.",
-      options: ["계좌로 80% 받기 · 416만원", "교육 바우처 20% 받기 · 104만원"],
-      button: "다음",
-    },
-    3: {
-      title: "최종 지급액을 확인해주세요",
-      subtitle: "공제 없이 총 520만원을 받을 수 있어요.",
-      options: ["계좌 지급 · 416만원", "교육 바우처 · 104만원", "보호자 확인 및 전자 동의"],
-      button: "청구 제출하기",
-    },
-  }[step]!;
-  const [checked, setChecked] = useState(content.options);
+function ClaimScanResult({ onRetake, onConfirm }: { onRetake: () => void; onConfirm: () => void }) {
+  return (
+    <main className="sub-page">
+      <span className="eyebrow">스캔 결과 확인</span>
+      <h1>이 사진으로 사용할까요?</h1>
+      <div className="claim-scan-preview">
+        <FileText size={32} />
+        <span>서류 이미지 미리보기</span>
+      </div>
+      <div className="claim-note">글씨가 잘리지 않고 또렷하게 나왔는지 확인해주세요.</div>
+      <div className="claim-btn-stack">
+        <button className="primary-button" onClick={onConfirm}>
+          이 사진 사용하기
+        </button>
+        <button className="secondary-button" onClick={onRetake}>
+          다시 찍기
+        </button>
+      </div>
+    </main>
+  );
+}
+
+function ClaimIntro({ onStart, phase }: { onStart: () => void; phase: ClaimPhase }) {
+  const info = claimPhaseInfo[phase];
+  return (
+    <main className="sub-page">
+      <span className="eyebrow">청구 안내</span>
+      <h1>{info.introHeading}</h1>
+      <div className="claim-note">
+        <b>청구는 두 번으로 끝나요.</b>
+        <br />
+        가입 1개월 뒤 1차, 그로부터 6개월 뒤 2차 학원비 영수증을 확인하면 보장이 마무리됩니다.
+      </div>
+      <section className="white-card">
+        <h2>내 청구 일정</h2>
+        <div className="status-timeline">
+          {info.introTimeline.map((item) => (
+            <div className={item.state} key={item.title}>
+              <i>{item.state === "active" ? <Check size={14} /> : null}</i>
+              <p>
+                <strong>{item.title}</strong>
+                <span>{item.text}</span>
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="white-card claim-kv-card">
+        <h2>미리 준비할 것</h2>
+        <div className="claim-kv-row">
+          <span className="k">등록한 학부모 카드</span>
+          <span className="v">신한 ●●●● 4821</span>
+        </div>
+        <div className="claim-kv-row">
+          <span className="k">학원 카드 영수증</span>
+          <span className="v">사진 또는 PDF</span>
+        </div>
+      </section>
+      <button className="primary-button" onClick={onStart}>
+        카드 확인하고 시작하기 <ArrowRight size={18} />
+      </button>
+    </main>
+  );
+}
+
+function ClaimCardStep({
+  cardLast4,
+  onConfirm,
+  onChangeCard,
+}: {
+  cardLast4: string;
+  onConfirm: () => void;
+  onChangeCard: () => void;
+}) {
   return (
     <main className="sub-page claim-step">
-      <span className="step-label">STEP {step} / 3</span>
-      <h1>{content.title}</h1>
-      <p>{content.subtitle}</p>
-      <div className="step-progress">
-        <span style={{ width: `${(step / 3) * 100}%` }} />
+      <div className="claim-steps">
+        <i className="on" />
+        <i />
+        <i />
       </div>
-      <section className="check-options">
-        {content.options.map((option) => {
-          const isChecked = checked.includes(option);
-          return (
-            <button
-              className={isChecked ? "active" : ""}
-              key={option}
-              onClick={() => setChecked((current) => (isChecked ? current.filter((item) => item !== option) : [...current, option]))}
-            >
-              <span className="fake-check">{isChecked && <Check size={15} />}</span>
-              <strong>{option}</strong>
-            </button>
-          );
-        })}
+      <span className="step-label">STEP 1 / 3 · 등록 카드 확인</span>
+      <h1>이 카드로 결제한 게 맞나요?</h1>
+      <p>영수증의 카드 뒤 4자리가 아래 카드와 같아야 자동으로 통과돼요.</p>
+      <section className="white-card claim-kv-card">
+        <div className="claim-kv-row">
+          <span className="k">카드사</span>
+          <span className="v">신한카드</span>
+        </div>
+        <div className="claim-kv-row">
+          <span className="k">카드번호 뒤 4자리</span>
+          <span className="v">●●●● {cardLast4}</span>
+        </div>
+        <div className="claim-kv-row">
+          <span className="k">카드 명의자</span>
+          <span className="v">김○○ (학부모)</span>
+        </div>
+        <div className="claim-kv-row">
+          <span className="k">상태</span>
+          <span className="v positive">활성 · 사용 가능</span>
+        </div>
       </section>
-      {step === 3 && (
-        <section className="payout-card">
-          <span>최종 예상 지급액</span>
-          <strong>5,200,000원</strong>
-        </section>
-      )}
-      <button className="primary-button" onClick={next} disabled={checked.length === 0}>
-        {content.button} {step < 3 ? <ArrowRight size={18} /> : <LockKeyhole size={17} />}
+      <div className="claim-note warn">카드를 재발급·분실했다면 먼저 변경해 주세요. 변경 전 영수증을 올리면 불일치로 반려됩니다.</div>
+      <div className="claim-btn-stack">
+        <button className="primary-button" onClick={onConfirm}>
+          이 카드로 진행하기 <ArrowRight size={18} />
+        </button>
+        <button className="secondary-button" onClick={onChangeCard}>
+          등록 카드 변경
+        </button>
+      </div>
+    </main>
+  );
+}
+
+function ClaimCardChange({ onSave }: { onSave: (last4: string) => void }) {
+  const [reason, setReason] = useState<"만료" | "분실" | "재발급">("분실");
+  const [last4, setLast4] = useState("");
+  return (
+    <main className="sub-page claim-step">
+      <h1>등록 카드 변경</h1>
+      <div className="claim-note">변경한 카드는 이번 청구부터 바로 대조 기준이 됩니다.</div>
+      <div className="claim-field">
+        <label>카드사</label>
+        <div className="claim-input">
+          신한카드 <ChevronDown size={15} />
+        </div>
+      </div>
+      <div className="claim-field">
+        <label>카드번호 뒤 4자리</label>
+        <input
+          className="claim-input"
+          value={last4}
+          onChange={(event) => setLast4(event.target.value.replace(/\D/g, "").slice(0, 4))}
+          placeholder="숫자 4자리"
+          inputMode="numeric"
+        />
+      </div>
+      <div className="claim-field">
+        <label>카드 명의자</label>
+        <div className="claim-input">김○○</div>
+      </div>
+      <div className="claim-field">
+        <label>변경 사유</label>
+        <div className="claim-seg">
+          {(["만료", "분실", "재발급"] as const).map((option) => (
+            <button key={option} type="button" className={reason === option ? "on" : ""} onClick={() => setReason(option)}>
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+      <section className="white-card claim-kv-card claim-kv-muted">
+        <div className="claim-kv-row">
+          <span className="k">기존 카드</span>
+          <span className="v muted-strike">신한 ●●●● 4821</span>
+        </div>
+        <div className="claim-kv-row">
+          <span className="k">변경 후</span>
+          <span className="v">신한 ●●●● {last4 || "○○○○"}</span>
+        </div>
+      </section>
+      <button className="primary-button" onClick={() => onSave(last4 || "4821")} disabled={last4.length !== 4}>
+        카드 변경 저장
       </button>
+    </main>
+  );
+}
+
+function ClaimUpload({
+  onUpload,
+  previewResult,
+  onChangePreviewResult,
+  captured,
+  onCapture,
+}: {
+  onUpload: () => void;
+  previewResult: ClaimResultVariant;
+  onChangePreviewResult: (variant: ClaimResultVariant) => void;
+  captured: boolean;
+  onCapture: () => void;
+}) {
+  const previewLabels: Record<ClaimResultVariant, string> = {
+    matched: "일치",
+    review: "확인",
+    proof: "서류",
+    rejected: "불일치",
+  };
+  return (
+    <main className="sub-page claim-step">
+      <div className="claim-steps">
+        <i className="on" />
+        <i className="on" />
+        <i />
+      </div>
+      <span className="step-label">STEP 2 / 3 · 영수증 업로드</span>
+      <h1>학원 카드 영수증을 올려주세요</h1>
+      <p>7~12월 결제분이 필요해요. 여러 장이면 모두 올려도 됩니다.</p>
+      <button type="button" className="claim-drop" onClick={onCapture}>
+        <Camera size={26} />
+        <strong>{captured ? "촬영 완료 · 다시 찍기" : "사진 찍기 · 파일 선택"}</strong>
+        <small>
+          JPG · PNG · PDF / 장당 10MB 이하
+          <br />
+          글씨가 잘리지 않게 전체가 나오도록 찍어주세요
+        </small>
+      </button>
+      <section className="white-card">
+        <h2>영수증에서 읽는 항목</h2>
+        <div className="claim-chips">
+          {["카드 뒤 4자리", "카드사", "학원명", "사업자등록번호", "결제금액", "결제일", "승인번호", "결제수단"].map((chip) => (
+            <span key={chip}>{chip}</span>
+          ))}
+        </div>
+      </section>
+      <div className="claim-field">
+        <label>결과 미리보기 (테스트용)</label>
+        <div className="claim-seg">
+          {(["matched", "review", "proof", "rejected"] as const).map((variant) => (
+            <button
+              key={variant}
+              type="button"
+              className={previewResult === variant ? "on" : ""}
+              onClick={() => onChangePreviewResult(variant)}
+            >
+              {previewLabels[variant]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <button className="primary-button" onClick={onUpload}>
+        업로드하고 검증하기 <ArrowRight size={18} />
+      </button>
+    </main>
+  );
+}
+
+function ClaimVerifying() {
+  const steps = [
+    { label: "영수증 파일 저장", sub: "3장 업로드 완료", done: true },
+    { label: "OCR 실행", sub: "결제 정보 추출 완료", done: true },
+    { label: "등록 카드와 대조", sub: "뒤 4자리·카드사 확인 중", done: false },
+    { label: "학원 정보와 대조", sub: "학원명·사업자등록번호 대기", done: false },
+  ];
+  return (
+    <div className="screen page-with-nav claim-verifying">
+      <div className="claim-spinner" />
+      <h1>영수증을 확인하고 있어요</h1>
+      <p>
+        보통 30초, 길어도 1분이면 끝나요.
+        <br />
+        앱을 닫아도 결과는 알림으로 보내드려요.
+      </p>
+      <section className="white-card claim-verify-list">
+        {steps.map((step, index) => (
+          <div className="claim-verify-item" key={step.label}>
+            <span className={`claim-verify-marker ${step.done ? "" : "wait"}`}>{step.done ? <Check size={12} /> : index + 1}</span>
+            <span>
+              <strong>{step.label}</strong>
+              <small>{step.sub}</small>
+            </span>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function ClaimResult({
+  variant,
+  cardLast4,
+  onSubmit,
+  onRetryUpload,
+  onChangeCard,
+  onViewStatus,
+}: {
+  variant: ClaimResultVariant;
+  cardLast4: string;
+  onSubmit: () => void;
+  onRetryUpload: () => void;
+  onChangeCard: () => void;
+  onViewStatus: () => void;
+}) {
+  if (variant === "matched") {
+    return (
+      <main className="sub-page claim-step">
+        <div className="claim-steps">
+          <i className="on" />
+          <i className="on" />
+          <i className="on" />
+        </div>
+        <section className="claim-result-head">
+          <span className="icon">
+            <Check size={20} />
+          </span>
+          <h2>정상 확인됐어요</h2>
+          <p>
+            등록 카드와 학원 정보가 모두 일치해요.
+            <br />
+            바로 청구를 접수할 수 있어요.
+          </p>
+        </section>
+        <section className="white-card">
+          <div className="claim-match-row">
+            <div>
+              <div className="label">카드 뒤 4자리</div>
+              <div className="value">{cardLast4}</div>
+              <div className="sub">
+                등록 {cardLast4} · 영수증 {cardLast4}
+              </div>
+            </div>
+            <span className="claim-tag ok">일치</span>
+          </div>
+          <div className="claim-match-row">
+            <div>
+              <div className="label">학원</div>
+              <div className="value">○○기숙학원</div>
+              <div className="sub">사업자 123-45-67890</div>
+            </div>
+            <span className="claim-tag ok">일치</span>
+          </div>
+          <div className="claim-match-row">
+            <div>
+              <div className="label">결제금액 · 승인번호</div>
+              <div className="value">15,000,000원</div>
+              <div className="sub">승인 12345678 · 형식 정상</div>
+            </div>
+            <span className="claim-tag ok">정상</span>
+          </div>
+        </section>
+        <div className="claim-btn-stack">
+          <button className="primary-button" onClick={onSubmit}>
+            청구 접수하기
+          </button>
+          <button className="secondary-button" onClick={onRetryUpload}>
+            영수증 다시 올리기
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (variant === "review") {
+    return (
+      <main className="sub-page claim-step">
+        <div className="claim-steps">
+          <i className="on" />
+          <i className="on" />
+          <i className="on" />
+        </div>
+        <section className="claim-result-head warn">
+          <span className="icon">
+            <TriangleAlert size={20} />
+          </span>
+          <h2>추가 확인이 필요해요</h2>
+          <p>
+            대부분 맞지만 한 항목을 사람이 다시 봐야 해요.
+            <br />
+            1영업일 안에 결과를 알려드려요.
+          </p>
+        </section>
+        <section className="white-card">
+          <div className="claim-match-row">
+            <div>
+              <div className="label">카드 뒤 4자리</div>
+              <div className="value">{cardLast4}</div>
+              <div className="sub">
+                등록 {cardLast4} · 영수증 {cardLast4}
+              </div>
+            </div>
+            <span className="claim-tag ok">일치</span>
+          </div>
+          <div className="claim-match-row">
+            <div>
+              <div className="label">학원</div>
+              <div className="value">○○기숙학원</div>
+              <div className="sub">사업자 123-45-67890</div>
+            </div>
+            <span className="claim-tag ok">일치</span>
+          </div>
+          <div className="claim-match-row">
+            <div>
+              <div className="label">결제일</div>
+              <div className="value">2026.06.28</div>
+              <div className="sub">보장 기간 시작 이틀 전 결제</div>
+            </div>
+            <span className="claim-tag warn">확인</span>
+          </div>
+        </section>
+        <div className="claim-note warn">검토가 끝나면 알림으로 알려드려요. 추가로 하실 일은 없어요.</div>
+        <button className="primary-button claim-amber" onClick={onViewStatus}>
+          진행 상황 보기
+        </button>
+      </main>
+    );
+  }
+
+  if (variant === "proof") {
+    return (
+      <main className="sub-page claim-step">
+        <section className="claim-result-head warn">
+          <span className="icon">
+            <Plus size={20} />
+          </span>
+          <h2>카드사 이용내역이 필요해요</h2>
+          <p>
+            영수증만으로는 실제 결제를 확인하기 어려워요.
+            <br />
+            공식 이용내역을 올려주시면 바로 처리됩니다.
+          </p>
+        </section>
+        <section className="white-card">
+          <h2>이상으로 잡힌 항목</h2>
+          <div className="claim-match-row">
+            <div>
+              <div className="label">결제금액</div>
+              <div className="value">15,000,000원</div>
+              <div className="sub">동일 승인번호가 2건 확인됨</div>
+            </div>
+            <span className="claim-tag warn">중복</span>
+          </div>
+        </section>
+        <button type="button" className="claim-drop">
+          <FileText size={24} />
+          <strong>카드사 이용내역 올리기</strong>
+          <small>
+            신한카드 앱 › 이용내역 › 기간 조회 후 PDF 저장
+            <br />
+            12월 24일까지 제출해 주세요
+          </small>
+        </button>
+        <div className="claim-btn-stack">
+          <button className="primary-button claim-amber" onClick={onSubmit}>
+            이용내역 제출하기
+          </button>
+          <button className="secondary-button" onClick={onViewStatus}>
+            나중에 하기
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="sub-page claim-step">
+      <div className="claim-steps">
+        <i className="on" />
+        <i className="on" />
+        <i className="on" />
+      </div>
+      <section className="claim-result-head bad">
+        <span className="icon">
+          <X size={20} />
+        </span>
+        <h2>등록 카드와 달라요</h2>
+        <p>
+          영수증의 카드가 가입 시 등록한 카드가 아니에요.
+          <br />
+          아래 방법 중 하나로 다시 시도해 주세요.
+        </p>
+      </section>
+      <section className="white-card">
+        <div className="claim-match-row">
+          <div>
+            <div className="label">카드 뒤 4자리</div>
+            <div className="value">7302</div>
+            <div className="sub">등록 {cardLast4} · 영수증 7302</div>
+          </div>
+          <span className="claim-tag bad">불일치</span>
+        </div>
+        <div className="claim-match-row">
+          <div>
+            <div className="label">학원</div>
+            <div className="value">○○기숙학원</div>
+            <div className="sub">사업자 123-45-67890</div>
+          </div>
+          <span className="claim-tag ok">일치</span>
+        </div>
+      </section>
+      <div className="claim-note bad">
+        <b>1</b> 실제로 다른 카드로 결제했다면 등록 카드를 먼저 변경하세요.
+        <br />
+        <b>2</b> 다른 영수증을 잘못 올렸다면 해당 영수증만 다시 올리면 돼요.
+      </div>
+      <div className="claim-btn-stack">
+        <button className="primary-button claim-red" onClick={onRetryUpload}>
+          영수증 다시 올리기
+        </button>
+        <button className="secondary-button" onClick={onChangeCard}>
+          등록 카드 변경하기
+        </button>
+      </div>
     </main>
   );
 }
@@ -2494,23 +3374,50 @@ function ClaimStatus() {
   return (
     <main className="sub-page">
       <span className="eyebrow">청구 진행 상황</span>
-      <h1>접수 내용을 확인하고 있어요</h1>
-      <section className="white-card status-timeline">
-        {[
-          ["접수 완료", "오늘 오전 10:24", true],
-          ["서류 확인", "영업일 기준 1~2일", true],
-          ["지급 심사", "확인 예정", false],
-          ["지급 완료", "심사 후 알림", false],
-        ].map(([title, text, active]) => (
-          <div className={active ? "active" : ""} key={String(title)}>
-            <i>{active ? <Check size={14} /> : null}</i>
-            <p>
-              <strong>{title}</strong>
-              <span>{text}</span>
-            </p>
-          </div>
-        ))}
+      <h1>내 청구 내역</h1>
+      <section className="white-card">
+        <h2>보장 한도 사용</h2>
+        <div className="claim-limit-track">
+          <span style={{ width: "100%" }} />
+        </div>
+        <div className="claim-limit-caption">
+          <span>사용 1,404만원</span>
+          <span>한도 1,404만원</span>
+        </div>
       </section>
+      <section className="white-card">
+        <div className="claim-match-row">
+          <div>
+            <div className="label">1차 청구 · 2026.06.30</div>
+            <div className="value">364만원</div>
+            <div className="sub">영수증 2건 · 정상 확인</div>
+          </div>
+          <span className="claim-tag ok">지급완료</span>
+        </div>
+        <div className="claim-match-row">
+          <div>
+            <div className="label">2차 청구 · 2026.12.04</div>
+            <div className="value">1,040만원</div>
+            <div className="sub">영수증 3건 · 정상 확인</div>
+          </div>
+          <span className="claim-tag warn">심사중</span>
+        </div>
+      </section>
+      <button type="button" className="claim-lrow">
+        <span>
+          <strong>제출한 영수증 보기</strong>
+          <small>총 5건</small>
+        </span>
+        <ChevronRight size={17} />
+      </button>
+      <button type="button" className="claim-lrow">
+        <span>
+          <strong>검증 결과 상세</strong>
+          <small>차수별 대조 항목 확인</small>
+        </span>
+        <ChevronRight size={17} />
+      </button>
+      <div className="claim-note">2차까지 지급되면 청구 절차가 모두 끝나요.</div>
     </main>
   );
 }
@@ -2578,34 +3485,20 @@ export default function AppPage() {
   const [tab, setTab] = useState<Tab>("home");
   const [homeScreen, setHomeScreen] = useState<HomeScreen>("main");
   const [chatQuestion, setChatQuestion] = useState("");
-  const [canvasTone, setCanvasTone] = useState<CanvasTone>("cream");
+  const [canvasTone, setCanvasTone] = useState<CanvasTone>("cream-white");
   const [gradeScreen, setGradeScreen] = useState<GradeScreen>("intro");
   const [converterScreen, setConverterScreen] = useState<ConverterScreen>("intro");
   const [claimScreen, setClaimScreen] = useState<ClaimScreen | null>(null);
   const [notifications, setNotifications] = useState(false);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true);
-  const [examPassed, setExamPassed] = useState(() => Date.now() >= EXAM_END_AT);
+  const [claimPhase, setClaimPhase] = useState<ClaimPhase>("period2");
 
   const shellClass = useMemo(() => `app-shell stage-${stage}`, [stage]);
 
-  useEffect(() => {
-    if (examPassed) return;
-
-    const syncExamState = () => {
-      if (Date.now() >= EXAM_END_AT) setExamPassed(true);
-    };
-    const timer = window.setInterval(syncExamState, 30_000);
-
-    window.addEventListener("focus", syncExamState);
-    document.addEventListener("visibilitychange", syncExamState);
-    syncExamState();
-
-    return () => {
-      window.clearInterval(timer);
-      window.removeEventListener("focus", syncExamState);
-      document.removeEventListener("visibilitychange", syncExamState);
-    };
-  }, [examPassed]);
+  const cycleClaimPhase = () => {
+    const order: ClaimPhase[] = ["preExam", "postExam", "period1", "between", "period2"];
+    setClaimPhase((current) => order[(order.indexOf(current) + 1) % order.length]);
+  };
 
   useEffect(() => {
     document.documentElement.dataset.canvas = canvasTone;
@@ -2614,8 +3507,7 @@ export default function AppPage() {
     };
   }, [canvasTone]);
 
-  const visibleClaimScreen =
-    claimScreen ?? (stage === "app" && tab === "home" && examPassed ? "home" : null);
+  const visibleClaimScreen = claimScreen;
 
   const changeTab = (next: Tab) => {
     setTab(next);
@@ -2641,16 +3533,11 @@ export default function AppPage() {
         {stage === "loading" && <Loading onDone={() => setStage("app")} />}
         {stage === "app" && (
           <>
-            <CanvasToneToggle
-              tone={canvasTone}
-              onToggle={() => setCanvasTone((current) => (
-                current === "cream" ? "gray" : current === "gray" ? "gray-white" : current === "gray-white" ? "white" : current === "white" ? "cream-white" : "cream"
-              ))}
-            />
+            <ClaimPhaseToggle phase={claimPhase} onCycle={cycleClaimPhase} />
             {notifications ? (
               <NotificationPage close={() => setNotifications(false)} />
             ) : visibleClaimScreen ? (
-              <ClaimFlow screen={visibleClaimScreen} setScreen={setClaimScreen} close={() => setClaimScreen(null)} />
+              <ClaimFlow screen={visibleClaimScreen} setScreen={setClaimScreen} close={() => setClaimScreen(null)} phase={claimPhase} />
             ) : tab === "home" ? (
               homeScreen === "main" ? (
                 <HomeMain
@@ -2659,6 +3546,8 @@ export default function AppPage() {
                   go={setHomeScreen}
                   goTab={changeTab}
                   askAi={openChat}
+                  claimPhase={claimPhase}
+                  onOpenClaim={() => setClaimScreen("home")}
                 />
               ) : homeScreen === "chat" ? (
                 <Chat
@@ -2691,9 +3580,11 @@ export default function AppPage() {
                 onLogout={() => setStage("login")}
                 onNotification={openNotifications}
                 hasUnread={hasUnreadNotifications}
+                canvasTone={canvasTone}
+                onChangeCanvasTone={setCanvasTone}
               />
             )}
-            {!notifications && !visibleClaimScreen && homeScreen !== "chat" && <BottomNav tab={tab} setTab={changeTab} />}
+            {!notifications && homeScreen !== "chat" && visibleClaimScreen !== "submitting" && visibleClaimScreen !== "done" && <BottomNav tab={tab} setTab={changeTab} />}
           </>
         )}
       </div>
