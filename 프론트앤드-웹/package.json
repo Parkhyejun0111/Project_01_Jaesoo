@@ -1,8 +1,9 @@
 {
-  "name": "jaesu-app-theme-a",
+  "name": "jaesoo-frontend-web",
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "description": "재수없수 — 인강사이트 임베디드 보험 웹 프론트엔드 (랜딩 → 보험소개 → 상품선택 → 약관 → 청약서 → 가입완료·앱다운로드)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -15,8 +16,5 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^5.4.10"
-  },
-  "allowScripts": {
-    "esbuild@0.21.5": true
   }
 }
