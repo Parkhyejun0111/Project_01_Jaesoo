@@ -9,16 +9,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from receipt_verification import create_receipt_router
 
 try:
     from dotenv import load_dotenv
 
-    load_dotenv()
+    load_dotenv(override=True)
 except Exception:  # noqa: BLE001
     pass
 
 app = FastAPI(title="재수없수 API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(create_receipt_router())
 application = app
 handler = app
 
@@ -56,16 +58,16 @@ def root():
 
 @app.get("/api/health")
 def health():
-    import os
-
     import db_supabase as db
+    from rag_light import available_providers, pick_provider, selected_model_type
 
-    openai_on = (os.getenv("OPENAI_API_KEY") or "").startswith("sk-")
-    anthropic_on = (os.getenv("LLM_API_KEY") or os.getenv("ANTHROPIC_API_KEY") or "").startswith("sk-ant-")
+    provider = pick_provider()
     return {
         "status": "ok",
-        "llm": openai_on or anthropic_on,
-        "provider": "openai" if openai_on else ("anthropic" if anthropic_on else "fallback"),
+        "llm": provider is not None,
+        "provider": provider or "fallback",
+        "model": selected_model_type(provider),
+        "available": available_providers(),  # 키가 채워진 프로바이더 전체
         "db": db.enabled(),
     }
 
@@ -164,6 +166,34 @@ def enroll(req: EnrollRequest):
 
 
 # ── RAG 챗봇 (개인화) ────────────────────────────────────────────────────────
+# 요인별 '보험료 상승/하강률(%)'과 방향(위험↑/위험↓)을 고객에게 보여준다.
+# 확률(R_i)·스코어카드 원점수·수식은 노출하지 않고, 엔진이 계산한 % 만 넘긴다.
+# 소득·거주지에서 나오는 '가구 배경'은 민감정보라 표에서 제외한다.
+_FACTOR_DISPLAY = {
+    "재수 의향": "재수 의향",
+    "목표 격차": "목표 격차",
+    "성적 변동성": "성적 변동성",
+    "성적 추세": "성적 추세",
+}
+_SENSITIVE_FACTORS = {"가구 배경"}
+
+
+def _rate_rows(rates: dict) -> list[tuple[str, float]]:
+    """{요인: 상승/하강률%} → 민감 요인을 뺀 (표시명, %) 목록. 절대값 큰 순."""
+    rows = [(_FACTOR_DISPLAY[k], v) for k, v in rates.items()
+            if k not in _SENSITIVE_FACTORS and k in _FACTOR_DISPLAY]
+    return sorted(rows, key=lambda kv: -abs(kv[1]))
+
+
+def _rate_table(rates: dict) -> str:
+    """요인·상승/하강률·방향 3열 표의 데이터 줄을 프롬프트에 실을 문자열로 만든다."""
+    def direction(v: float) -> str:
+        return "위험 ↑" if v > 0 else "위험 ↓" if v < 0 else "중립 —"
+
+    return "\n".join(f"    | {name} | {v:+.1f}% | {direction(v)} |"
+                     for name, v in _rate_rows(rates))
+
+
 def _student_context(student_id: str) -> str:
     try:
         prof = _build_profile(student_id)
@@ -171,27 +201,33 @@ def _student_context(student_id: str) -> str:
             return ""
         s = prof["student"]
         p = prof["pricing"]
-        weak = prof["analysis"]["weak_subjects"][:2]
-        weak_str = ", ".join(f"{w['subject']}(변동성 {w['volatility']})" for w in weak)
-        pts = p.get("score_points", {})
-        pts_str = ", ".join(f"{k} {v:+.2f}" for k, v in pts.items())
+        weak_str = ", ".join(w["subject"] for w in prof["analysis"]["weak_subjects"][:2])
+        # 확률·원점수·수식은 싣지 않되, 요인별 보험료 상승/하강률(%)·방향은 표로 넘긴다.
+        rate_block = _rate_table(p.get("factor_rates", {}))
         return (
-            "\n[상담 대상 학생의 확정 산정값 — 아래 수치·로직은 우리 계리 엔진이 계산한 것이니 그대로 인용해 개인화 설명하세요. 새 숫자를 지어내지 마세요]\n"
+            "\n[상담 대상 학생의 확정 산정값 — 우리 계리 엔진이 계산한 값이니 그대로 인용하세요. 새 숫자를 지어내지 마세요]\n"
             f"- 이름: {s['name']} ({s.get('school','')}, 목표 {s.get('target_univ','')})\n"
             f"- 가입 상품(티어): {p['tier']}  → 보장금 경증 {p['cover_mild']:,}원 / 중증 {p['cover_sev']:,}원\n"
-            f"- 이번 달 월 보험료: {p['monthly_premium']:,}원 (연 영업보험료 {p['gross_annual']:,}원 ÷ 33개월)\n"
-            "\n[보험료 산정 로직 — 이 구조로 설명하세요]\n"
-            "① 위험확률은 2항 구조입니다: P(사고)=P(급락)×P(재수|급락).\n"
-            "   - 급락 임계: 경증 −2.5σ<z≤−2.0σ, 중증 z≤−2.5σ (수능 백분위가 예측 밴드 하단을 벗어난 정도)\n"
-            f"   - 이 학생의 개인 재수확률 R_i = {p['R']:.2f} (스코어카드로 산출, 포트폴리오 평균 0.27)\n"
-            f"   - 개인 사고확률: 경증 {p['risk_mild']*100:.2f}% + 중증 {p['risk_sev']*100:.2f}% = 총 {p['risk_prob']*100:.2f}%\n"
-            f"② R_i 를 올린/내린 요인(스코어카드 점수, +일수록 위험↑): {pts_str}\n"
-            f"   - 특히 성적 변동성이 큰 취약 과목: {weak_str} (같은 불운에도 성적이 더 크게 흔들림)\n"
-            "③ 보험료 = (기대손실 × (1+안전할증 0.24) + 정액운영비 9,950원) ÷ (1 − 제휴수수료 0.12 − 변동비 0.03)\n"
-            "   - 기대손실 = 경증사고확률×경증보장 + 중증사고확률×중증보장\n"
-            "   - 인강 임베디드(B2B2C) 채널이라 사업비가 낮아 요율이 저렴합니다.\n"
+            f"- 이번 달 월 보험료: {p['monthly_premium']:,}원 (납입 33개월)\n"
             f"- 종합 예상 수능 백분위: {prof['analysis']['composite']['predicted']}\n"
-            "설명 시: 결론(월 보험료) → 왜 이 금액인지(R_i와 그걸 만든 요인) → 낮추려면(변동성 안정) 순으로, 따뜻하고 쉽게.\n"
+            f"- 성적 기복이 큰 과목: {weak_str}\n"
+            "\n[보험료에 영향을 준 요인 — 아래 표의 요인·보험료 영향·방향만 그대로 쓰세요. 없는 요인·수치를 새로 만들지 마세요]\n"
+            "    | 요인 | 보험료 영향 | 방향 |\n"
+            "    | --- | --- | --- |\n"
+            f"{rate_block}\n"
+            "  (위 '보험료 영향'은 '그 요인이 없었다면 대비' 계산값 — 이 계산 방식·주의는 내부용이니\n"
+            "   절대 화면에 옮겨 쓰지 마세요. 수치와 방향만 보여줍니다.)\n"
+            "\n[설명 지침]\n"
+            "- 금액을 물으면 월 보험료와 보장금액을 2열 표로 제시합니다.\n"
+            "- '왜 이 금액인가'를 물으면 위 요인 표를 '요인 | 보험료 영향 | 방향' 3열 그대로 옮기세요.\n"
+            "  '보험료 영향'은 +8% 처럼 부호와 % 를 포함해 그대로, 방향은 위험↑ / 위험↓ 로 적습니다.\n"
+            "  '보험료 영향'의 계산 방식이나 '요인끼리 정확히 합산되지 않는다' 같은 설명은 붙이지 마세요.\n"
+            "  개인 재수확률(R_i)·사고확률·급락확률 같은 확률 수치·명칭과 스코어카드 원점수·공식·계수·기호(σ, z)는\n"
+            "  어떤 형태로도 쓰지 마세요(컴플라이언스 규칙 5).\n"
+            "- 이전 답변에서 안 보여준 요인을 새로 물으면, '오타/실수가 있었다'는 식으로 지어내 정정·사과하지 마세요.\n"
+            "  앞서 안 보인 건 질문 범위가 좁았을 뿐이니, 그냥 이번 질문에 맞는 요인을 담담하게 새로 안내하면 됩니다.\n"
+            "- 소득·거주지·가정 환경·가구 배경은 산정 요인으로 언급하지 마세요(민감정보). 표에도 넣지 않습니다.\n"
+            "- 낮추는 방법을 물으면 위 '성적 기복이 큰 과목'이 안정되면 낮아질 수 있다고 안내합니다.\n"
         )
     except Exception:  # noqa: BLE001
         return ""
@@ -223,7 +259,12 @@ def chat(req: ChatRequest):
 
         ctx = _student_context(req.student_id) if req.student_id else ""
         out = answer_question(req.message, req.history or [], student_context=ctx)
-        return {"answer": out["answer"], "sources": out.get("sources", []), "llm": out.get("llm", False)}
+        # provider/error 를 그대로 흘려보낸다 — 폴백이 일어났을 때 원인을 알 수 있어야 한다.
+        return {
+            "answer": out["answer"], "sources": out.get("sources", []), "llm": out.get("llm", False),
+            "suggestions": out.get("suggestions", []),
+            "provider": out.get("provider"), "error": out.get("error"),
+        }
     except Exception as e:  # noqa: BLE001
         return {"answer": f"오류가 발생했습니다: {e}", "sources": [], "llm": False}
 

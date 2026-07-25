@@ -318,7 +318,9 @@ class Component extends React.Component {
       const data = await res.json();
       if (reqId !== this._llmReq) return;
       const pages = [...new Set((data.sources || []).map(s => s.page))];
-      this.setState(st => ({ llmMessages: [...st.llmMessages, { role: 'ai', text: data.answer || '답변을 가져오지 못했어요.', pages }], llmLoading: false }));
+      // suggestions: 백엔드가 답변 끝 [다음질문] 블록에서 뽑아준 추천 질문 (버튼으로 표시)
+      const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+      this.setState(st => ({ llmMessages: [...st.llmMessages, { role: 'ai', text: data.answer || '답변을 가져오지 못했어요.', pages, suggestions }], llmLoading: false }));
     } catch (e) {
       if (reqId !== this._llmReq) return;
       const fb = this.llmQA[q];
@@ -656,6 +658,7 @@ class Component extends React.Component {
       llmInput: s.llmInput,
       onLlmInput: e => this.setState({ llmInput: e.target.value }),
       submitLlm: () => { const q = (this.state.llmInput || '').trim(); if (q) this.askLLM(q); },
+      askLlm: (q) => this.askLLM(q),   // 추천 질문 버튼용
 
       myIs: { main: s.myScreen === 'main', statusDetail: s.myScreen === 'statusDetail', gradeHistory: s.myScreen === 'gradeHistory', scan: s.myScreen === 'scan', analyzing: s.myScreen === 'analyzing', result: s.myScreen === 'result', appeal: s.myScreen === 'appeal', payment: s.myScreen === 'payment', address: s.myScreen === 'address', notifSettings: s.myScreen === 'notifSettings', terms: s.myScreen === 'terms' },
       goStatusDetail: () => this.setState({ myScreen: 'statusDetail' }),
@@ -1993,6 +1996,22 @@ class Component extends React.Component {
                                   </React.Fragment>
                                 ))}
                                 <span style={S("font-size:8.5px;color:#9AA6A0")}>· 클릭하면 원문 보기</span>
+                              </div>
+                            </>)}
+                            {/* 다음 질문 추천 — 마지막 답변에만 노출, 누르면 그 질문으로 대화가 이어진다 */}
+                            {(m.suggestions && m.suggestions.length > 0 && $index === (vm.llmMessages || []).length - 1 && !vm.llmLoading) && (<>
+                              <div style={S("margin-top:10px;background:#F6FBF8;border:1px solid #CFE7DA;border-radius:12px;padding:9px 10px")}>
+                                <div style={S("font-size:9.5px;font-weight:800;color:#0B8F58;margin-bottom:7px")}>💬 이어서 물어보기</div>
+                                <div style={S("display:flex;flex-direction:column;gap:6px")}>
+                                  {m.suggestions.map((sq, si) => (
+                                    <React.Fragment key={si}>
+                                      <div onClick={() => vm.askLlm(sq)} style={S("background:#fff;border:1px solid #CFE7DA;border-radius:9px;padding:8px 10px;font-size:10.5px;font-weight:600;color:#1B5E43;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px")}>
+                                        <span style={S("word-break:keep-all")}>{sq}</span>
+                                        <span style={S("flex:none;font-size:11px;color:#0B8F58")}>›</span>
+                                      </div>
+                                    </React.Fragment>
+                                  ))}
+                                </div>
                               </div>
                             </>)}
                           </div>

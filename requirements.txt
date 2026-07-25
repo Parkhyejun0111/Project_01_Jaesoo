@@ -6,3 +6,6 @@
 # RAG 로컬 실행은: uv sync --extra rag
 fastapi>=0.115.0
 uvicorn>=0.34.0
+python-dotenv>=1.0
+python-multipart>=0.0.20
+psycopg[binary]>=3.2

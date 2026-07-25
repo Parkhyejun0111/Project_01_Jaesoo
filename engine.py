@@ -107,6 +107,13 @@ def analyze(scores: dict) -> dict:
 
 
 # ── 개인 재수확률 R_i (스코어카드) ──────────────────────────────────────────
+_SCORE_INTERCEPT = -0.979  # 평균 프로필 → R≈0.273 로 앵커
+
+
+def _R_from_logit(x: float) -> float:
+    return round(max(0.10, min(0.95, 1 / (1 + math.exp(-x)))), 4)
+
+
 def scorecard_R(analysis: dict, enrollment: dict | None) -> tuple[float, dict]:
     """성적 변동성/추세 + 청약서 요율문항 → 개인 재수확률 R_i, 점수 기여 내역."""
     subs = analysis.get("subjects", {})
@@ -125,10 +132,8 @@ def scorecard_R(analysis: dict, enrollment: dict | None) -> tuple[float, dict]:
         "성적 추세": 0.30 if trend_avg < -0.5 else -0.30 if trend_avg > 0.5 else 0.0,
         "가구 배경": round((income - 3) * 0.10 + (0.15 if region == "서울 학군지" else 0.0), 3),
     }
-    a = -0.979  # 평균 프로필 → R≈0.273 로 앵커
-    x = a + sum(pts.values())
-    R = 1 / (1 + math.exp(-x))
-    return round(max(0.10, min(0.95, R)), 4), pts
+    x = _SCORE_INTERCEPT + sum(pts.values())
+    return _R_from_logit(x), pts
 
 
 def price_for_tier(R: float, tier_name: str, months: int = MONTHS_BASE) -> dict:
@@ -146,6 +151,20 @@ def price_for_tier(R: float, tier_name: str, months: int = MONTHS_BASE) -> dict:
         "risk_mild": round(r_mild, 5), "risk_sev": round(r_sev, 5), "risk_total": round(r_mild + r_sev, 5),
         "expected_loss": round(el), "gross_annual": gross, "monthly_premium": monthly,
     }
+
+
+def factor_premium_rates(pts: dict, tier_name: str, months: int = MONTHS_BASE) -> dict:
+    """각 요인이 월 보험료에 준 상승/하강률(%).
+       그 요인의 기여를 뺐을(=중립) 때의 보험료 대비 실제 보험료의 증감률.
+       확률·점수·수식을 노출하지 않고 '보험료가 몇 % 오르내렸는지'만 설명하기 위한 값.
+       요인들이 비선형(로짓)이라 각 %가 정확히 합산되지는 않는다(요인별 단독 기여치)."""
+    x = _SCORE_INTERCEPT + sum(pts.values())
+    base = price_for_tier(_R_from_logit(x), tier_name, months)["monthly_premium"]
+    rates: dict[str, float] = {}
+    for k, v in pts.items():
+        prem_wo = price_for_tier(_R_from_logit(x - v), tier_name, months)["monthly_premium"]
+        rates[k] = round((base - prem_wo) / prem_wo * 100, 1) if prem_wo else 0.0
+    return rates
 
 
 def tier_table(R: float | None = None) -> list[dict]:
@@ -170,13 +189,15 @@ def price(analysis: dict, enrollment: dict | None) -> dict:
     # 설명용 기여도(정규화)
     tot = sum(abs(v) for v in pts.values()) or 1
     contrib = {k: round(abs(v) / tot, 3) for k, v in pts.items()}
+    # 고객 안내용: 요인별 보험료 상승/하강률(%) — 원점수·확률 대신 이 값만 노출한다.
+    factor_rates = factor_premium_rates(pts, tier)
     return {
         "tier": tier, "risk_prob": round(p["risk_total"], 4), "R": R,
         "monthly_premium": p["monthly_premium"], "gross_annual": p["gross_annual"],
         "expected_loss": p["expected_loss"], "coverage": p["cover_sev"],
         "cover_mild": p["cover_mild"], "cover_sev": p["cover_sev"],
         "risk_mild": p["risk_mild"], "risk_sev": p["risk_sev"],
-        "score_points": pts, "contributions": contrib,
+        "score_points": pts, "contributions": contrib, "factor_rates": factor_rates,
     }
 
 

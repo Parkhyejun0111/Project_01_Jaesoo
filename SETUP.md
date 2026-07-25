@@ -9,6 +9,37 @@
 
 ---
 
+## ⚡ 이미 설치를 마쳤다면 — 다시 실행할 때
+
+설치·키 설정은 처음 한 번만 하면 됩니다. **두 번째부터는 아래 두 줄이 전부입니다.**
+
+```powershell
+# 터미널 ① 백엔드
+cd Project_01_Jaesoo
+.\run-backend.ps1                           # 8000부터 사용 가능한 포트를 자동 선택
+```
+
+```powershell
+# 터미널 ② 프론트엔드
+cd Project_01_Jaesoo\frontend
+npm run dev
+```
+
+- 접속: **http://localhost:5173/** (웹 화면) · **http://localhost:5173/app** (모바일 앱 화면)
+- 끄기: 각 터미널에서 **Ctrl+C**
+- 백엔드 포트가 `8000`이 아니면 실행 화면에 표시되는 Swagger 주소를 사용하세요.
+- PowerShell 실행 정책 오류가 나면 `powershell -ExecutionPolicy Bypass -File .\run-backend.ps1`로 실행하세요.
+
+> 코드를 고쳤을 때
+> - **파이썬**(`main.py`·`engine.py`·`rag_light.py`) → 백엔드를 **재시작**해야 반영됩니다.
+>   자주 고칠 거면 `--reload` 를 붙이면 자동 재시작됩니다.
+> - **화면**(`App.jsx`) → 저장만 하면 브라우저에 즉시 반영. 재시작 불필요.
+> - **`.env`** → 서버가 뜰 때 한 번만 읽으므로 백엔드 재시작 필요.
+
+아래는 **처음 한 번** 하는 설치 과정입니다.
+
+---
+
 ## 1) 백엔드 (AI 챗봇) — 터미널 ①
 
 ```bash
@@ -49,12 +80,41 @@ npm run dev
 
 ---
 
+## AI 모델 바꾸기
+
+챗봇이 쓸 모델은 `.env` 의 **`LLM_PROVIDER` 한 줄**로 정합니다. 바꾼 뒤 백엔드를 재시작하세요.
+
+```bash
+LLM_PROVIDER=openai      # openai | anthropic | deepseek | grok | gemini | auto
+```
+
+| 값 | 필요한 키 | 비고 |
+|---|---|---|
+| `openai` | `OPENAI_API_KEY` | 유료 |
+| `gemini` | `GEMINI_API_KEY` | **무료 티어 있음** (https://aistudio.google.com/apikey) |
+| `anthropic` | `LLM_API_KEY` | 유료 |
+| `deepseek` | `DEEPSEEK_API_KEY` | 유료 (크레딧 없으면 402) |
+| `grok` | `GROK_API_KEY` | 콘솔에서 데이터 공유를 켜면 무료 크레딧 |
+| `auto` | — | 키가 있는 것 중 위 순서대로 자동 선택 |
+
+지금 무엇이 쓰이는지는 http://localhost:8000/api/health 에서 확인합니다.
+
+```json
+{"status":"ok","llm":true,"provider":"openai","model":"openai:gpt-4o","available":["openai","gemini"],"db":true}
+```
+
+- `provider` = 지금 실제로 쓰는 회사, `model` = 실제 모델명, `available` = 키가 채워진 회사 전체
+- `provider` 가 `fallback` 이면 쓸 수 있는 키가 없다는 뜻입니다.
+- LangSmith에서는 `openai_compatible_chat` 하위 실행에 실제 입력·출력 토큰과 비용이 기록됩니다.
+
 ## 자주 나는 문제
 
 - **챗봇이 "서버에 연결하지 못했어요"** → 터미널 ①(백엔드 :8000)이 켜져 있는지 확인.
 - **`python3` 명령이 없다** → Windows는 보통 `python`, macOS는 `python3` 입니다.
 - **포트가 이미 쓰인다** → 다른 프로그램이 5173/8000을 쓰는 중. 그 프로그램을 끄거나 포트를 바꾸세요.
-- **AI 답변이 밋밋하다** → `.env` 에 유효한 `OPENAI_API_KEY` 가 있는지 확인.
+- **AI 답변이 밋밋하다 (약관 발췌만 나온다)** → LLM 호출이 실패해 폴백된 상태입니다.
+  `/api/chat` 응답의 `error` 필드에 이유가 담겨 옵니다. 크레딧 부족(402/403)이 흔한 원인이에요.
+- **코드를 고쳤는데 그대로다** → 파이썬은 백엔드 재시작이 필요합니다(위 ⚡ 항목 참고).
 
 ## 참고
 - 화면(대시보드·돈워리·성적분석 등)은 백엔드 없이도 대부분 보입니다.

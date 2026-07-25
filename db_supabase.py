@@ -41,6 +41,11 @@ def _connect():
     return conn
 
 
+def connect():
+    """Return a configured connection for modules sharing this Supabase DB."""
+    return _connect()
+
+
 SCHEMA = """
 create table if not exists students (
   student_id  text primary key,

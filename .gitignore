@@ -19,6 +19,8 @@ chroma_jaesoo_graph/
 
 # Generated outputs
 outputs/
+uploads/
+.data/
 
 # Editor/agent local settings
 .claude/
