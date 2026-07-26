@@ -442,10 +442,39 @@ function TopBar({
   );
 }
 
-function BrandTabHeader({ onNotification, hasUnread = false }: { onNotification: () => void; hasUnread?: boolean }) {
+/**
+ * 탭 화면(성적분석·돈워리·마이) 공통 상단바.
+ *
+ * · tone="green" 이면 성적분석 결과에서 쓰던 그린 바를 쓴다 — 돈워리 계산 화면도 같이 맞춘다.
+ * · onBack 을 주면 로고 왼쪽에 도입 화면으로 돌아가는 버튼이 붙는다.
+ *   (탭을 옮겼다 와도 상태가 남아 있어 처음 화면으로 되돌아갈 길이 없었다)
+ * · 로고는 화면마다 50/40 으로 달랐는데 작은 쪽(40)으로 통일한다.
+ */
+function BrandTabHeader({
+  onNotification,
+  hasUnread = false,
+  tone = "plain",
+  onBack,
+  backLabel,
+}: {
+  onNotification: () => void;
+  hasUnread?: boolean;
+  tone?: "plain" | "green";
+  onBack?: () => void;
+  backLabel?: string;
+}) {
+  const green = tone === "green";
   return (
-    <header className="brand-tab-header">
-      <img src="/logo-final-dark.png" alt="재수없수" />
+    <header className={green ? "grades-brand-header" : "brand-tab-header"}>
+      <div className="tab-header-left">
+        {onBack && (
+          <button type="button" className="tab-back" onClick={onBack} aria-label={backLabel ?? "처음 화면으로"}>
+            <ChevronLeft size={18} />
+            <span>{backLabel ?? "처음 화면"}</span>
+          </button>
+        )}
+        <img src={green ? "/logo-final-white.png" : "/logo-final-dark.png"} alt="재수없수" />
+      </div>
       <button className="icon-button" onClick={onNotification} aria-label="알림 열기">
         <Bell size={20} />
         {hasUnread && <span className="notification-dot" />}
@@ -786,6 +815,8 @@ function Chat({
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const asked = useRef(false);
+  // 근거 약관은 새 탭 전체화면 대신 이 화면 위 팝업으로 연다
+  const [policyView, setPolicyView] = useState<{ anchor: string; title: string } | null>(null);
 
   // 'NO' 만 브랜드 그린으로 강조하므로 앞머리는 JSX 로 두고 꼬리만 문자열로 잡는다.
   const welcomeMessageTail =
@@ -868,9 +899,13 @@ function Chat({
                   <div className="chat-sources">
                     <span className="chat-sources-label">근거 약관</span>
                     {turn.sources.map((src) => (
-                      <a key={src.anchor} href={policyLink(src.anchor)} target="_blank" rel="noreferrer">
+                      <button
+                        key={src.anchor}
+                        type="button"
+                        onClick={() => setPolicyView({ anchor: src.anchor, title: src.title })}
+                      >
                         {src.title}
-                      </a>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -908,6 +943,13 @@ function Chat({
             event.currentTarget.style.height = "auto";
             event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 120)}px`;
           }}
+          onKeyDown={(event) => {
+            // 엔터로 바로 보낸다. 줄바꿈이 필요하면 Shift+Enter.
+            // (한글 조합 중 엔터는 글자 확정용이라 isComposing 일 때는 흘려보낸다)
+            if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+            event.preventDefault();
+            send();
+          }}
           placeholder="노재수에게 물어보세요"
           aria-label="AI 질문"
           disabled={busy}
@@ -916,6 +958,78 @@ function Chat({
           <ArrowUp size={19} strokeWidth={2.2} />
         </button>
       </form>
+
+      {policyView && (
+        <PolicyPopup
+          anchor={policyView.anchor}
+          title={policyView.title}
+          onClose={() => setPolicyView(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * 근거 약관 팝업 — 새 탭 전체화면 대신 화면 위에 겹쳐 띄운다.
+ * 약관 문서는 같은 오리진이라 iframe 안에 글자 크기를 줄이는 스타일을 넣을 수 있다.
+ */
+function PolicyPopup({
+  anchor,
+  title,
+  onClose,
+}: {
+  anchor: string;
+  title: string;
+  onClose: () => void;
+}) {
+  const frame = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="policy-popup-backdrop" role="dialog" aria-modal="true" aria-label={`약관 ${title}`} onClick={onClose}>
+      <div className="policy-popup" onClick={(e) => e.stopPropagation()}>
+        <header className="policy-popup-head">
+          <div>
+            <span>근거 약관</span>
+            <strong>{title}</strong>
+          </div>
+          <button type="button" onClick={onClose} aria-label="약관 팝업 닫기">
+            <X size={18} />
+          </button>
+        </header>
+        <iframe
+          ref={frame}
+          className="policy-popup-frame"
+          src={policyLink(anchor)}
+          title={`약관 원문 — ${title}`}
+          onLoad={() => {
+            const doc = frame.current?.contentDocument;
+            if (!doc) return;
+            const style = doc.createElement("style");
+            // 팝업 폭에 맞게 전체를 줄인다. 문서가 px 로 크기를 잡고 있어
+            // font-size 만 낮추면 제목·표가 그대로라 zoom 을 함께 쓴다.
+            style.textContent = `
+              html { zoom: 0.82; background: #fff; }
+              body { font-size: 14px; }
+              .document { padding: 14px 12px 28px; }
+            `;
+            doc.head.appendChild(style);
+          }}
+        />
+        <footer className="policy-popup-foot">
+          <a href={policyLink(anchor)} target="_blank" rel="noreferrer">
+            전체 화면으로 열기 ↗
+          </a>
+        </footer>
+      </div>
     </div>
   );
 }
@@ -1232,10 +1346,24 @@ function GradeFlow({
     return <GradeLoading onDone={() => setScreen("result")} />;
   }
 
-  return <Grades onNotification={onNotification} hasUnread={hasUnread} />;
+  return (
+    <Grades
+      onNotification={onNotification}
+      hasUnread={hasUnread}
+      onBackToIntro={() => setScreen("intro")}
+    />
+  );
 }
 
-function Grades({ onNotification, hasUnread }: { onNotification: () => void; hasUnread: boolean }) {
+function Grades({
+  onNotification,
+  hasUnread,
+  onBackToIntro,
+}: {
+  onNotification: () => void;
+  hasUnread: boolean;
+  onBackToIntro: () => void;
+}) {
   const [segment, setSegment] = useState<"trend" | "weak">("trend");
   const [selected, setSelected] = useState<"전체" | Subject>("전체");
   const [expandedTrend, setExpandedTrend] = useState(false);
@@ -1275,13 +1403,13 @@ function Grades({ onNotification, hasUnread }: { onNotification: () => void; has
 
   return (
     <div className="screen page-with-nav grades-screen">
-      <section className="grades-brand-header">
-        <img src="/logo-final-white.png" alt="재수없수" />
-        <button className="icon-button" onClick={onNotification} aria-label="알림 열기">
-          <Bell size={20} />
-          {hasUnread && <span className="notification-dot" />}
-        </button>
-      </section>
+      <BrandTabHeader
+        tone="green"
+        onNotification={onNotification}
+        hasUnread={hasUnread}
+        onBack={onBackToIntro}
+        backLabel="성적분석 홈"
+      />
       <main className="grades-content">
         <div className="segment-control" role="tablist" aria-label="성적 분석 보기">
           <button className={segment === "trend" ? "active" : ""} onClick={() => setSegment("trend")}>
@@ -1684,7 +1812,13 @@ function Converter({
   if (screen === "result") {
     return (
       <div className="screen page-with-nav converter-flow-screen">
-        <TopBar onNotification={onNotification} hasUnread={hasUnread} />
+        <BrandTabHeader
+          tone="green"
+          onNotification={onNotification}
+          hasUnread={hasUnread}
+          onBack={() => setScreen("intro")}
+          backLabel="돈워리 홈"
+        />
         <main className="converter-detail converter-result-page">
           <section className="converter-result-total">
             <span>1년 동안 발생하는 재수 비용은 얼마일까요?</span>
@@ -1815,11 +1949,12 @@ function Converter({
 
   return (
     <div className="screen page-with-nav converter-flow-screen">
-      <TopBar
-        back={isInput ? undefined : () => setScreen("input")}
-        backLabel="이전 화면"
+      <BrandTabHeader
+        tone="green"
         onNotification={onNotification}
         hasUnread={hasUnread}
+        onBack={isInput ? () => setScreen("intro") : () => setScreen("input")}
+        backLabel={isInput ? "돈워리 홈" : "이전 화면"}
       />
       <main className={`converter-detail converter-form ${isInput ? "input-step" : "cost-step"}`}>
         {isInput ? (

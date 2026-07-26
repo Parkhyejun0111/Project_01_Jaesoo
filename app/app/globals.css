@@ -1765,6 +1765,9 @@ body::-webkit-scrollbar,
 .chat-loading-runner {
   width: 174px;
   height: 48px;
+  /* .messages 가 flex column 이라 기본 flex-shrink 로는 대화가 쌓이는 순간
+     (2번째 질문부터) 높이가 0 으로 눌려 로딩 표시가 보이지 않았다. */
+  flex: 0 0 48px;
   position: relative;
   overflow: hidden;
   background: transparent;
@@ -1886,7 +1889,8 @@ body::-webkit-scrollbar,
 
 .chat-input textarea:focus,
 .chat-input textarea:focus-visible {
-  outline-color: #38bdf8;
+  /* 테마에 없던 하늘색 대신 브랜드 그린으로 */
+  outline-color: var(--brand-green);
 }
 
 .chat-input textarea::-webkit-scrollbar {
@@ -2023,12 +2027,6 @@ body::-webkit-scrollbar,
   border-radius: 0 0 24px 24px;
 }
 
-.grades-brand-header > img {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-}
-
 .grades-brand-header .icon-button {
   color: #fff;
 }
@@ -2043,14 +2041,52 @@ body::-webkit-scrollbar,
   background: #fff;
 }
 
-.brand-tab-header > img {
-  width: 50px;
-  height: 50px;
+.brand-tab-header .icon-button {
+  color: var(--brand-green-dark);
+}
+
+/* 탭 상단바 공통 — 로고 크기는 화면마다 50/40 으로 갈렸는데 작은 쪽으로 통일한다 */
+.tab-header-left {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.grades-brand-header img,
+.brand-tab-header img {
+  width: 40px;
+  height: 40px;
+  flex: none;
   object-fit: contain;
 }
 
-.brand-tab-header .icon-button {
+/* 도입(첫) 화면으로 돌아가는 버튼 */
+.tab-back {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 10px 0 6px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: var(--radius-pill, 999px);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tab-back:active {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.brand-tab-header .tab-back {
+  border-color: var(--color-border);
   color: var(--brand-green-dark);
+  background: var(--color-brand-soft);
 }
 
 .page-header {
@@ -6077,7 +6113,9 @@ input.claim-input::placeholder {
   width: 100%;
 }
 
-.chat-sources a {
+.chat-sources a,
+.chat-sources button {
+  font-family: inherit;
   font-size: 11px;
   font-weight: 600;
   color: var(--color-brand-deep);
@@ -6086,10 +6124,101 @@ input.claim-input::placeholder {
   border-radius: var(--radius-pill);
   padding: 5px 10px;
   text-decoration: none;
+  cursor: pointer;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ── 근거 약관 팝업 ─────────────────────────────────────────────────────── */
+.policy-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: rgba(9, 30, 22, 0.42);
+  backdrop-filter: blur(2px);
+  animation: policy-popup-fade 180ms var(--ease-standard, ease-out) both;
+}
+
+.policy-popup {
+  width: 100%;
+  max-width: 520px;
+  height: 86svh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  border-radius: 20px 20px 0 0;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 -10px 40px rgba(2, 40, 27, 0.28);
+  animation: policy-popup-rise 220ms var(--ease-standard, ease-out) both;
+}
+
+@keyframes policy-popup-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes policy-popup-rise { from { transform: translateY(18px); } to { transform: none; } }
+
+.policy-popup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.policy-popup-head span {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--brand-green-dark);
+  letter-spacing: 0.02em;
+}
+
+.policy-popup-head strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-text-strong, #12241d);
+  letter-spacing: -0.02em;
+}
+
+.policy-popup-head button {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: #fff;
+  color: #5c6b64;
+  cursor: pointer;
+}
+
+.policy-popup-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.policy-popup-foot {
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.policy-popup-foot a {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-green-dark);
+  text-decoration: none;
 }
 
 .chat-sources a:hover,

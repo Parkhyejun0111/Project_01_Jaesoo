@@ -530,6 +530,10 @@ class Component extends React.Component {
             payBackEntry: payBackEntry || (st.payBackEntry || 'landing'),
             apply: shouldResetApply ? this.resetApplyForm() : st.apply,
           };
+        }, () => {
+          // 화면을 바꿔도 스크롤 위치가 남아 있어, 랜딩 중간에서 넘어가면
+          // 새 화면도 중간부터 보였다. 새 화면은 항상 맨 위에서 시작한다.
+          try { window.scrollTo(0, 0); } catch (e) { /* SSR·구형 브라우저 */ }
         });
       },
       navWeb: () => { try { window.history.pushState({}, '', '/'); } catch (e) {} this.setState({ entry: 'landing' }); },
@@ -812,22 +816,17 @@ class Component extends React.Component {
               </div>
               </div>
 
-              {/* ④ 패스 혜택 밴드 — 흰 배경이라 위아래 경계선으로 띠를 구분한다 */}
+              {/* ④ 패스 혜택 밴드 — 웹 전용. 앱에서는 히어로 바로 아래에 강사 라인업이 오도록 뺀다 */}
+              {!app && (
               <div style={S("width:100%;background:#fff;border-top:1px solid #ECEEF1;border-bottom:1px solid #ECEEF1")}>
-                <div style={S(A(
-                  "max-width:1160px;margin:0 auto;padding:20px;display:flex;align-items:stretch;justify-content:center;gap:clamp(14px,2.4vw,30px);flex-wrap:wrap",
-                  "margin:0 auto;padding:14px 16px;display:grid;grid-template-columns:1fr;gap:12px",
-                ))}>
+                <div style={S("max-width:1160px;margin:0 auto;padding:20px;display:flex;align-items:stretch;justify-content:center;gap:clamp(14px,2.4vw,30px);flex-wrap:wrap")}>
                   {[
                     ['play','전 강좌 무제한','12개월 동안 횟수 제한 없이'],
                     ['book','교재 무료 배송','패스 전용 교재 3권 포함'],
                     ['chart','주간 학습 리포트','진도·취약 단원 자동 정리'],
                     ['refund','7일 내 100% 환불','수강 시작 전이면 조건 없이'],
                   ].map((b,bi)=>(<React.Fragment key={bi}>
-                    <div style={S(A(
-                      `display:flex;align-items:center;gap:11px;flex:0 1 auto;min-width:0;padding-left:clamp(14px,2.4vw,30px);border-left:${bi===0?'0':'1px solid #ECEEF1'}`,
-                      "display:flex;align-items:center;gap:9px;min-width:0",
-                    ))}>
+                    <div style={S(`display:flex;align-items:center;gap:11px;flex:0 1 auto;min-width:0;padding-left:clamp(14px,2.4vw,30px);border-left:${bi===0?'0':'1px solid #ECEEF1'}`)}>
                       <span style={S("width:34px;height:34px;border-radius:10px;flex:none;background:#EEF3FF;display:flex;align-items:center;justify-content:center")}>{this.uiIcon(b[0], 19, '#2B4FE8')}</span>
                       <div style={S("min-width:0")}>
                         <div style={S("font-size:14px;font-weight:800;color:#16181D;letter-spacing:-0.3px;word-break:keep-all")}>{b[1]}</div>
@@ -837,6 +836,7 @@ class Component extends React.Component {
                   </React.Fragment>))}
                 </div>
               </div>
+              )}
 
               {/* ⑤ 대표 강사 라인업 — 앱에서는 6열 그리드 대신 스와이프 캐러셀 */}
               <div style={S(A(
@@ -1032,9 +1032,10 @@ class Component extends React.Component {
                 <div style={S("display:flex;flex-direction:column;gap:14px;margin-top:22px")}>
                   {this.instructors.map((t, ti) => (
                     <React.Fragment key={ti}>
-                      <section style={S("border:1px solid #EAECEF;border-radius:18px;background:#fff;overflow:hidden")}>
+                      {/* 카드끼리 구분되도록 과목 색을 옅게 깐다 (연했을 때 경계가 안 보였다) */}
+                      <section style={S(`border:1px solid ${t.c}33;border-radius:18px;background:${t.c}0A;overflow:hidden`)}>
                         {/* 상단 — 사진 + 이름·과목 */}
-                        <div style={S(`display:flex;align-items:stretch;gap:14px;padding:16px;background:linear-gradient(180deg,${t.c}0F,#fff)`)}>
+                        <div style={S(`display:flex;align-items:stretch;gap:14px;padding:16px;background:linear-gradient(180deg,${t.c}30,${t.c}0A)`)}>
                           <div style={S(`width:${app ? '92px' : '110px'};height:${app ? '112px' : '132px'};flex:none;border-radius:14px;background:#F1F0EE;overflow:hidden;display:flex;align-items:flex-end;justify-content:center`)}>
                             <img src={t.img} alt={`${t.n} 선생님`}
                                  style={S("width:100%;height:100%;object-fit:cover;object-position:top center")} />
@@ -1053,7 +1054,7 @@ class Component extends React.Component {
                         </div>
 
                         {/* 본문 — 강의 스타일 · 이력 · 대표 강좌 */}
-                        <div style={S("padding:2px 16px 16px")}>
+                        <div style={S("padding:2px 16px 16px;background:#fff")}>
                           <p style={S("font-size:13.5px;color:#2E323A;line-height:1.75;font-weight:600;word-break:keep-all;margin-top:12px")}>
                             {t.style}
                           </p>

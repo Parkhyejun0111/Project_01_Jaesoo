@@ -1,6 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+
+/**
+ * 입력칸을 누르면 iOS 사파리가 글자 크기 16px 미만인 필드에 자동으로 줌인한다.
+ * 앱처럼 배율이 고정돼야 하므로 확대를 막고, 키보드가 올라올 때는 배율 대신
+ * 레이아웃이 줄어들도록(resizes-content) 둔다.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+  themeColor: "#0cb474",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
