@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowRight,
   ArrowUp,
@@ -26,6 +26,7 @@ import {
   GraduationCap,
   Home,
   Info,
+  Lightbulb,
   LoaderCircle,
   LockKeyhole,
   LogOut,
@@ -74,6 +75,26 @@ type ConverterScreen = "intro" | "input" | "cost" | "loading" | "result";
 type GradeScreen = "intro" | "loading" | "result";
 type CanvasTone = "cream-white" | "gray-white";
 
+// TODO: 아래 studentProfile/policyInfo/paymentMethod는 로그인한 사용자의 DB 조회 결과로 교체될 임시 목데이터입니다.
+const studentProfile = {
+  name: "김지민",
+  grade: "고3",
+};
+
+const policyInfo = {
+  productName: "재수종합학원 안심 플랜",
+  tier: "스탠다드",
+  joinedDate: new Date(2026, 2, 2),
+  coverageCapManwon: 1400,
+  paymentDueDay: 12,
+};
+
+const paymentMethod = {
+  provider: "신한카드",
+  ownerType: "개인",
+  last4: "4821",
+};
+
 const claimPhaseInfo: Record<
   ClaimPhase,
   {
@@ -97,7 +118,7 @@ const claimPhaseInfo: Record<
     bannerTitle: "청구는 아직 준비 중이에요",
     bannerText: "수능 이후 1차 청구가 열려요. 그때 알림으로 알려드릴게요.",
     paidAmount: "0원",
-    remainingAmount: "1,404만원",
+    remainingAmount: `${policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원`,
     progress: 0,
     ctaLabel: "청구 준비 중",
     ctaEnabled: false,
@@ -115,7 +136,7 @@ const claimPhaseInfo: Record<
     bannerTitle: "1차 청구 준비 중이에요",
     bannerText: "수능이 끝났어요. 1차 청구는 7월 1일부터 열려요.",
     paidAmount: "0원",
-    remainingAmount: "1,404만원",
+    remainingAmount: `${policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원`,
     progress: 0,
     ctaLabel: "아직 접수 기간이 아니에요",
     ctaEnabled: false,
@@ -133,7 +154,7 @@ const claimPhaseInfo: Record<
     bannerTitle: "1차 청구가 열렸어요",
     bannerText: "7월 31일까지 접수할 수 있어요. 영수증만 올리면 자동으로 검증돼요.",
     paidAmount: "0원",
-    remainingAmount: "1,404만원",
+    remainingAmount: `${policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원`,
     progress: 0,
     ctaLabel: "청구 시작하기",
     ctaEnabled: true,
@@ -151,7 +172,7 @@ const claimPhaseInfo: Record<
     bannerTitle: "2차 청구 준비 중이에요",
     bannerText: "1차 지급이 끝났어요. 2차 청구는 12월 1일부터 열려요.",
     paidAmount: "364만원",
-    remainingAmount: "1,040만원",
+    remainingAmount: `${(policyInfo.coverageCapManwon - 364).toLocaleString("ko-KR")}만원`,
     progress: 26,
     ctaLabel: "아직 접수 기간이 아니에요",
     ctaEnabled: false,
@@ -169,7 +190,7 @@ const claimPhaseInfo: Record<
     bannerTitle: "2차 청구가 열렸어요",
     bannerText: "12월 31일까지 접수할 수 있어요. 영수증만 올리면 자동으로 검증돼요.",
     paidAmount: "364만원",
-    remainingAmount: "1,040만원",
+    remainingAmount: `${(policyInfo.coverageCapManwon - 364).toLocaleString("ko-KR")}만원`,
     progress: 26,
     ctaLabel: "청구 시작하기",
     ctaEnabled: true,
@@ -225,7 +246,7 @@ const eligibilityInfo: Record<
     dropSigma: "-1.92σ",
     mildThreshold: "-1.75σ 이하",
     severeThreshold: "-2.25σ 이하",
-    coverageLimit: "702만원",
+    coverageLimit: `${Math.round(policyInfo.coverageCapManwon / 2).toLocaleString("ko-KR")}만원`,
     claimWindow: "7월 1일 ~ 7월 31일",
   },
   severe: {
@@ -239,11 +260,12 @@ const eligibilityInfo: Record<
     dropSigma: "-2.41σ",
     mildThreshold: "-1.75σ 이하",
     severeThreshold: "-2.25σ 이하",
-    coverageLimit: "1,404만원",
+    coverageLimit: `${policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원`,
     claimWindow: "7월 1일 ~ 7월 31일",
   },
 };
 
+// TODO: 모의고사 성적(subjects/percentileTrend/gradeHistory/gradeSubjectHistory)은 학생별 DB 조회 결과로 교체될 임시 목데이터입니다.
 const subjects = {
   국어: { color: "#F5604E", values: [55, 58, 61, 60, 64, 66, 70, 73] },
   수학: { color: "#13BCAD", values: [52, 57, 63, 60, 65, 69, 75, 68] },
@@ -254,15 +276,59 @@ const subjects = {
 type Subject = keyof typeof subjects;
 const examLabels = ["9월", "11월", "2월", "6월", "9월", "11월", "3월", "수능"];
 
-function Brand({ inverse = false }: { inverse?: boolean }) {
-  return (
-    <span className={`brand-wordmark ${inverse ? "inverse" : ""}`} aria-label="재수없수">
-      재수
-      <br />
-      없수
-    </span>
-  );
-}
+const percentileTrend = {
+  values: [52, 54, 60, 61, 58, 62, 63, 68, 65, 63],
+  labels: ["11월", "11월", "2월", "6월", "9월", "12월", "3월", "6월", "9월", "수능"],
+};
+const latestPercentile = percentileTrend.values[percentileTrend.values.length - 1];
+const percentileRangeLow = latestPercentile - 7;
+const percentileRangeHigh = latestPercentile + 7;
+const percentileDropThreshold = latestPercentile - 15;
+
+const gradeCutoffs = [96, 89, 77, 60, 40, 23, 11, 4];
+const percentileToGrade = (percentile: number) => {
+  for (let grade = 0; grade < gradeCutoffs.length; grade++) {
+    if (percentile >= gradeCutoffs[grade]) return grade + 1;
+  }
+  return 9;
+};
+const averageGrade =
+  (Object.keys(subjects) as Subject[]).reduce((sum, name) => {
+    const values = subjects[name].values;
+    return sum + percentileToGrade(values[values.length - 1]);
+  }, 0) / (Object.keys(subjects) as Subject[]).length;
+
+type StabilityTone = "positive" | "warning" | "danger";
+const stabilityTier = (score: number): { label: string; tone: StabilityTone } => {
+  if (score >= 60) return { label: "안정", tone: "positive" };
+  if (score >= 45) return { label: "보통", tone: "warning" };
+  return { label: "보완", tone: "danger" };
+};
+const stabilityRingColor: Record<StabilityTone, string> = {
+  positive: "var(--brand-green)",
+  warning: "#f2a93b",
+  danger: "#f0533f",
+};
+
+const premiumPlan = {
+  monthlyAmount: 42000,
+  nextDueDate: new Date(2026, 6, 12),
+  // TODO: 약관 연동 시 실제 재산정일로 교체
+  renewalDate: new Date(2026, 7, 1),
+};
+
+const formatMonthDay = (date: Date) => `${date.getMonth() + 1}월 ${date.getDate()}일`;
+const formatISODate = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+const formatDotDate = (date: Date) =>
+  `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")}`;
+const daysUntil = (date: Date) => {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
+};
 
 function Clover({ className = "" }: { className?: string }) {
   return (
@@ -293,7 +359,7 @@ function Splash({ onContinue }: { onContinue: () => void }) {
     <button className="splash-screen" onClick={onContinue} aria-label="로그인 화면으로 이동">
       <Clover className="splash-clover one" />
       <Clover className="splash-clover two" />
-      <Brand inverse />
+      <img className="splash-logo" src="/logo-final-white.png" alt="재수없수" />
       <span className="splash-dots" aria-hidden="true">
         <i />
         <i />
@@ -329,10 +395,6 @@ function Login({ onLogin }: { onLogin: () => void }) {
         </label>
         <button className="primary-button" type="submit">
           로그인
-        </button>
-        <button className="text-button" type="button">
-          <ChevronLeft size={15} />
-          인강 홈으로
         </button>
       </form>
     </main>
@@ -378,7 +440,7 @@ function TopBar({
           {backLabel ?? "이전 화면"}
         </button>
       ) : (
-        <Brand />
+        <img className="top-bar-logo" src="/logo-final-dark.png" alt="재수없수" />
       )}
       {onNotification && (
         <button className="icon-button" onClick={onNotification} aria-label="알림 열기">
@@ -459,14 +521,14 @@ function HomeMain({
         <Clover className="home-clover two" />
         <div className="home-hero-top">
           <span className="avatar" aria-hidden="true">
-            김
+            {studentProfile.name.charAt(0)}
           </span>
           <button className="icon-button" onClick={onNotification} aria-label="알림 열기">
             <Bell size={20} />
             {hasUnread && <span className="notification-dot" />}
           </button>
         </div>
-        <p className="home-greeting">안녕하세요, 김지민 학생 학부모님!</p>
+        <p className="home-greeting">안녕하세요, {studentProfile.name} 학생 학부모님!</p>
         <div className="home-ai-copy">
           <Mascot size="lg" />
           <p>
@@ -532,16 +594,16 @@ function HomeMain({
                 <WalletCards size={20} />
               </span>
               <span>현재 월 보험료</span>
-              <strong>42,000원</strong>
-              <small>7월 12일 납입 예정</small>
+              <strong>{premiumPlan.monthlyAmount.toLocaleString("ko-KR")}원</strong>
+              <small>{formatMonthDay(premiumPlan.nextDueDate)} 납입 예정</small>
             </article>
             <article className="metric-card dday-card">
               <span className="metric-icon lime">
                 <CalendarDays size={20} />
               </span>
               <span>보험료 재산정까지</span>
-              <strong>D-17</strong>
-              <small>2026-08-01</small>
+              <strong>D-{daysUntil(premiumPlan.renewalDate)}</strong>
+              <small>{formatISODate(premiumPlan.renewalDate)}</small>
             </article>
           </div>
         )}
@@ -623,16 +685,16 @@ function PremiumDetail({ screen, back, go }: { screen: HomeScreen; back: () => v
           <>
             <section className="white-card policy-card">
               <span className="status-badge">보장 중</span>
-              <h2>재수종합학원 안심 플랜</h2>
-              <p>가입일 2026.03.02 · 스탠다드</p>
+              <h2>{policyInfo.productName}</h2>
+              <p>가입일 {formatDotDate(policyInfo.joinedDate)} · {policyInfo.tier}</p>
               <div className="policy-values">
                 <span>
                   <small>보장 한도</small>
-                  <strong>1,404만원</strong>
+                  <strong>{policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원</strong>
                 </span>
                 <span>
                   <small>납입일</small>
-                  <strong>매월 12일</strong>
+                  <strong>매월 {policyInfo.paymentDueDay}일</strong>
                 </span>
               </div>
             </section>
@@ -659,7 +721,7 @@ function Chat({
   initialQuestion: string;
 }) {
   type ChatMessage = { who: "ai" | "me"; text: string; target?: string; status?: "loading" | "typing" | "complete" };
-  const welcomeMessage = "안녕하세요! 저는 재수없수 AI 도우미 노재수예요.\n\n약관과 보험료 산정 근거를 실제 약관 문서에 근거해 설명해드릴게요. 아래 추천 질문을 누르거나, 궁금한 점을 직접 입력해 물어보세요.";
+  const welcomeMessageTail = "재수예요.\n\n약관과 보험료 산정 근거를 실제 약관 문서에 근거해 설명해드릴게요. 아래 추천 질문을 누르거나, 궁금한 점을 직접 입력해 물어보세요.";
   const [messages, setMessages] = useState<ChatMessage[]>(
     initialQuestion
       ? [
@@ -743,7 +805,10 @@ function Chat({
       <div className="messages">
         <div className="message-row ai">
           <Mascot size="sm" />
-          <div className="message ai chat-welcome">{welcomeMessage}</div>
+          <div className="message ai chat-welcome">
+            안녕하세요! 저는 재수없수 AI 도우미 <span className="chat-welcome-no">NO</span>
+            {welcomeMessageTail}
+          </div>
         </div>
         <section className="chat-recommendations" aria-label="추천 질문">
           <span>추천 질문</span>
@@ -802,8 +867,7 @@ function Chat({
 }
 
 function PercentileChart() {
-  const values = [52, 54, 60, 61, 58, 62, 63, 68, 65, 63];
-  const labels = ["11월", "11월", "2월", "6월", "9월", "12월", "3월", "6월", "9월", "수능"];
+  const { values, labels } = percentileTrend;
   const width = 360;
   const height = 218;
   const left = 30;
@@ -829,7 +893,7 @@ function PercentileChart() {
   const [predictionEndX, predictionEndY] = point(values[values.length - 1], values.length - 1);
   const observedArea = `${observedPath} L ${predictionStartX} ${height - bottom} L ${left} ${height - bottom} Z`;
   const predictionBand = `${predictionStartX},${predictionStartY - 3} ${predictionEndX},${predictionEndY - 12} ${predictionEndX},${predictionEndY + 12} ${predictionStartX},${predictionStartY + 3}`;
-  const [, thresholdY] = point(48, 0);
+  const [, thresholdY] = point(percentileDropThreshold, 0);
   const thresholdStartX = width - right - 88;
 
   return (
@@ -873,10 +937,10 @@ function PercentileChart() {
         })}
         <line x1={thresholdStartX} x2={width - right} y1={thresholdY} y2={thresholdY} className="threshold-line" />
         <text x={width - right} y={thresholdY - 6} textAnchor="end" className="threshold-label">
-          보장 기준선 48점
+          보장 기준선 {percentileDropThreshold}점
         </text>
         <text x={width - right} y={point(values[values.length - 1], values.length - 1)[1] - 11} textAnchor="end" className="score-end-label">
-          63
+          {latestPercentile}
         </text>
         {labels.map((label, index) => {
           const [x] = point(values[index], index);
@@ -1047,6 +1111,16 @@ function GradeFlow({
 function Grades({ onNotification, hasUnread }: { onNotification: () => void; hasUnread: boolean }) {
   const [segment, setSegment] = useState<"trend" | "weak">("trend");
   const [selected, setSelected] = useState<"전체" | Subject>("전체");
+  const [expandedTrend, setExpandedTrend] = useState(false);
+  const trendMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!expandedTrend) return;
+    const timer = window.setTimeout(() => {
+      trendMoreRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 170);
+    return () => window.clearTimeout(timer);
+  }, [expandedTrend]);
 
   return (
     <div className="screen page-with-nav grades-screen">
@@ -1075,8 +1149,8 @@ function Grades({ onNotification, hasUnread }: { onNotification: () => void; has
                   <div className="score-heading-top">
                     <span className="eyebrow">수능 예상 점수</span>
                     <h2>
-                      백분위 <b>63</b>
-                      <small>예상 범위 56~70</small>
+                      백분위 <b>{latestPercentile}</b>
+                      <small>예상 범위 {percentileRangeLow}~{percentileRangeHigh}</small>
                     </h2>
                   </div>
                   <p>
@@ -1086,37 +1160,57 @@ function Grades({ onNotification, hasUnread }: { onNotification: () => void; has
                 <PercentileChart />
               </section>
               <section className="score-explainer">
-                빨간 선(48점)은 평소보다 15점 이상 떨어진 &apos;불운&apos;을 판단하는 기준선입니다.
-                점수가 이 선 아래로 내려가 재수하게 되면 보험에서 비용을 보장합니다.
+                <b>빨간 선({percentileDropThreshold}점)은</b> 평소보다 15점 이상 떨어진 &apos;불운&apos;을 판단하는 기준선입니다.
+                점수가 이 선 아래로 내려가 재수하게 되면 <b>보험에서 비용을 보장</b>합니다.
               </section>
             </div>
 
-            <div className="subject-card-stack">
-              <section className="white-card subject-card">
-                <div className="subject-title-row">
-                  <span className="eyebrow">과목별 성적 추이</span>
-                  <strong>평균 2.15등급</strong>
+            <button
+              type="button"
+              className="stability-expand-toggle trend-expand-toggle"
+              aria-expanded={expandedTrend}
+              onClick={() => setExpandedTrend((current) => !current)}
+            >
+              {expandedTrend ? "접기" : "전체보기"}
+              <ChevronDown size={14} className={expandedTrend ? "flip" : ""} />
+            </button>
+
+            <div className={`trend-more${expandedTrend ? " expanded" : ""}`} ref={trendMoreRef}>
+              <div>
+                <div className="subject-card-stack">
+                  <section className="white-card subject-card">
+                    <div className="subject-title-row">
+                      <span className="eyebrow">과목별 성적 추이</span>
+                      <strong>평균 {averageGrade.toFixed(2)}등급</strong>
+                    </div>
+                    <p className="subject-trend-note">
+                      백분위는 높을수록 좋아요 · 판정 대상 국어·수학·영어·탐구
+                    </p>
+                    <div className="subject-filters" aria-label="그래프 과목 필터">
+                      {(["전체", ...Object.keys(subjects)] as ("전체" | Subject)[]).map((subject) => (
+                        <button
+                          key={subject}
+                          className={selected === subject ? "active" : ""}
+                          onClick={() => setSelected(subject)}
+                        >
+                          {subject !== "전체" && (
+                            <i className="subject-filter-dot" style={{ background: subjects[subject].color }} />
+                          )}
+                          {subject}
+                        </button>
+                      ))}
+                    </div>
+                    <Chart selected={selected} />
+                  </section>
+                  <section className="grade-effect-card">
+                    <strong>고3 성적이 내려간 것처럼 보여도 걱정마세요.</strong>
+                    <p>
+                      고3 성적하락은 실력 저하가 아닌 재수생 유입 때문이며, 위 예상 점수는 이를 감안하여
+                      계산되었습니다.
+                    </p>
+                  </section>
                 </div>
-                <div className="subject-filters" aria-label="그래프 과목 필터">
-                  {(["전체", ...Object.keys(subjects)] as ("전체" | Subject)[]).map((subject) => (
-                    <button
-                      key={subject}
-                      className={selected === subject ? "active" : ""}
-                      onClick={() => setSelected(subject)}
-                    >
-                      {subject}
-                    </button>
-                  ))}
-                </div>
-                <Chart selected={selected} />
-              </section>
-              <section className="grade-effect-card">
-                <strong>고3 성적이 내려간 것처럼 보여도 걱정마세요.</strong>
-                <p>
-                  고3 성적하락은 실력 저하가 아닌 재수생 유입 때문이며, 위 예상 점수는 이를 감안하여
-                  계산되었습니다.
-                </p>
-              </section>
+              </div>
             </div>
           </>
         ) : (
@@ -1129,117 +1223,185 @@ function Grades({ onNotification, hasUnread }: { onNotification: () => void; has
 
 function WeakSubjects() {
   const [prioritySlide, setPrioritySlide] = useState(0);
+  const [expandedStability, setExpandedStability] = useState(false);
   const prioritySliderRef = useRef<HTMLDivElement>(null);
-  const rows = [
-    ["국어", 56, "#F5604E", "보통"],
-    ["수학", 52, "#13BCAD", "보통"],
-    ["영어", 48, "#3B5998", "보완"],
-    ["탐구", 65, "#FFC83B", "높음"],
+  const stabilityMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!expandedStability) return;
+    const timer = window.setTimeout(() => {
+      stabilityMoreRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 170);
+    return () => window.clearTimeout(timer);
+  }, [expandedStability]);
+  const rows: [string, number, string][] = [
+    ["국어", 56, "#F5604E"],
+    ["수학", 52, "#13BCAD"],
+    ["영어", 48, "#3B5998"],
+    ["탐구", 65, "#FFC83B"],
   ];
+  const stabilityScore = 55;
+  const overallTier = stabilityTier(stabilityScore);
+  const priorityCopy: Record<string, string> = {
+    국어: "꾸준한 흐름을 유지하면서 취약 유형을 보완해보아요.",
+    수학: "아직 점수 향상 여지가 있어요. 기본기를 차근차근 쌓아가요.",
+    영어: "수능 당일 변수를 줄이기 위해 점수 향상보다 성적 기복을 잡는 데 집중해보아요.",
+    탐구: "안정적인 흐름이니 지금 페이스를 유지하며 심화 학습을 더해보아요.",
+  };
+  const priorityIcons = [BookOpenCheck, TrendingUp];
+  const sortedByStability = [...rows].sort((a, b) => a[1] - b[1]);
+  const weakestSubject = sortedByStability[0][0];
+  const priorityPair = sortedByStability.slice(0, 2);
   return (
     <>
       <section className="white-card stability-card">
         <div className="card-heading">
           <span className="eyebrow">안정성 점수</span>
-          <span className="warning-badge">보통</span>
+          <span className={`warning-badge tone-${overallTier.tone}`}>{overallTier.label}</span>
         </div>
         <div className="stability-summary">
-          <div className="stability-donut" role="img" aria-label="안정성 점수 55">
+          <div
+            className="stability-donut"
+            role="img"
+            aria-label={`안정성 점수 ${stabilityScore}`}
+            style={{
+              background: `conic-gradient(${stabilityRingColor[overallTier.tone]} 0% ${stabilityScore}%, #e3e8e5 ${stabilityScore}% 100%)`,
+            }}
+          >
             <span>
-              <strong>55</strong>
+              <strong>{stabilityScore}</strong>
             </span>
           </div>
           <p>
-            영어 과목의 등락이 가장 커요. 기준선보다 안정도가 낮아 집중 보완을 추천해요.
+            <b>{weakestSubject} 과목</b>의 등락이 가장 커요. 기준선보다 안정도가 낮아 집중 보완을 추천해요.
           </p>
         </div>
       </section>
       <section className="white-card subject-stability">
         <div className="card-heading">
-          <div>
-            <span className="eyebrow">과목별 안정성</span>
-            <h2>흔들림이 적을수록 좋아요</h2>
-          </div>
+          <span className="eyebrow">과목별 안정성</span>
+          <h2>흔들림이 적을수록 좋아요</h2>
         </div>
-        {rows.map(([name, score, color, label]) => (
-          <div className="stability-row" key={String(name)}>
-            <strong>{name}</strong>
-            <div className="report-bar">
-              <span style={{ width: `${score}%`, background: color }} />
+        {rows.map(([name, score, color]) => {
+          const tier = stabilityTier(score);
+          return (
+            <div className="stability-row" key={name}>
+              <strong>{name}</strong>
+              <div className="report-bar">
+                <span style={{ width: `${score}%`, background: color }} />
+              </div>
+              <b style={{ color }}>{score}</b>
+              <em>{tier.label}</em>
             </div>
-            <b style={{ color }}>{score}</b>
-            <em>{label}</em>
-          </div>
-        ))}
+          );
+        })}
+        <p className="stability-footnote">
+          백분위 변동폭(σ)을 100점 기준 환산한 참고 지표로, 급락 판정과는 무관해요.
+        </p>
       </section>
-      <section className="white-card position-card">
-        <span className="eyebrow">과목 포지션 한눈에 보기</span>
-        <h2>영어 안정성을 먼저 챙겨요</h2>
-        <div className="position-matrix">
-          <span className="matrix-label steady">
-            <Flag size={14} /> 차근차근
-          </span>
-          <span className="matrix-label strong">
-            <Dumbbell size={14} /> 강점
-          </span>
-          <span className="matrix-label first">
-            <Siren size={14} /> 먼저 챙김
-          </span>
-          <span className="matrix-label variable">
-            <TriangleAlert size={14} /> 당일 변수
-          </span>
-          <i className="q-dot math">수학</i>
-          <i className="q-dot korean">국어</i>
-          <i className="q-dot english">영어</i>
-          <i className="q-dot inquiry">탐구</i>
-          <span className="matrix-axis axis-y">안정성 높음</span>
-          <span className="matrix-axis axis-x">점수 높음</span>
-        </div>
-      </section>
-      <section className="focus-priority-section" aria-labelledby="focus-priority-title">
-        <span className="eyebrow">추천 학습 방향</span>
-        <h2 id="focus-priority-title">집중 보완 우선순위</h2>
-        <div
-          className="focus-priority-slider"
-          ref={prioritySliderRef}
-          onScroll={(event) => {
-            const { scrollLeft, clientWidth } = event.currentTarget;
-            setPrioritySlide(scrollLeft > Math.max(24, (clientWidth - 22) / 2) ? 1 : 0);
-          }}
-          aria-label="집중 보완 우선순위 카드. 옆으로 밀어 다음 카드를 확인하세요."
-        >
-          <div
-            className="focus-priority-track"
-            aria-live="polite"
-          >
-            <article className="focus-priority-card primary" aria-hidden={prioritySlide !== 0}>
-              <div className="focus-priority-copy">
-                <strong>1순위 <span>영어</span></strong>
-                <p>
-                  수능 당일 변수를 줄이기 위해 점수 향상보다 성적 기복을 잡는 데 집중해보아요.
-                </p>
-              </div>
-              <span className="focus-priority-icon" aria-hidden="true">
-                <BookOpenCheck size={29} />
+      <button
+        type="button"
+        className="stability-expand-toggle"
+        aria-expanded={expandedStability}
+        onClick={() => setExpandedStability((current) => !current)}
+      >
+        {expandedStability ? "접기" : "전체보기"}
+        <ChevronDown size={14} className={expandedStability ? "flip" : ""} />
+      </button>
+      <div className={`stability-more${expandedStability ? " expanded" : ""}`} ref={stabilityMoreRef}>
+        <div>
+          <section className="white-card position-card">
+            <span className="eyebrow">과목 포지션 한눈에 보기</span>
+            <div className="position-matrix">
+              <span className="matrix-label steady">
+                <Flag size={14} /> 차근차근
               </span>
-            </article>
-            <article className="focus-priority-card secondary" aria-hidden={prioritySlide !== 1}>
-              <div className="focus-priority-copy">
-                <strong>2순위 <span>수학</span></strong>
-                <p>
-                  아직 점수 향상 여지가 있어요. 기본기를 차근차근 쌓아가요.
-                </p>
-              </div>
-              <span className="focus-priority-icon" aria-hidden="true">
-                <TrendingUp size={29} />
+              <span className="matrix-label strong">
+                <Dumbbell size={14} /> 강점
               </span>
-            </article>
-          </div>
+              <span className="matrix-label first">
+                <Siren size={14} /> 먼저 챙김
+              </span>
+              <span className="matrix-label variable">
+                <TriangleAlert size={14} /> 당일 변수
+              </span>
+              <i className="q-dot math">수학</i>
+              <i className="q-dot korean">국어</i>
+              <i className="q-dot english">영어</i>
+              <i className="q-dot inquiry">탐구</i>
+              <span className="matrix-axis axis-y">안정성 높음</span>
+              <span className="matrix-axis axis-x">점수 높음</span>
+            </div>
+          </section>
+          <section className="focus-priority-section" aria-labelledby="focus-priority-title">
+            <div className="card-heading">
+              <span className="eyebrow">추천 학습 방향</span>
+              <h2 id="focus-priority-title">집중 보완 우선순위</h2>
+            </div>
+            <div
+              className="focus-priority-slider"
+              ref={prioritySliderRef}
+              onScroll={(event) => {
+                const { scrollLeft, clientWidth } = event.currentTarget;
+                setPrioritySlide(scrollLeft > Math.max(24, (clientWidth - 22) / 2) ? 1 : 0);
+              }}
+              aria-label="집중 보완 우선순위 카드. 옆으로 밀어 다음 카드를 확인하세요."
+            >
+              <div
+                className="focus-priority-track"
+                aria-live="polite"
+              >
+                {priorityPair.map(([name, , color], index) => {
+                  const Icon = priorityIcons[index];
+                  return (
+                    <article
+                      className="focus-priority-card"
+                      key={name}
+                      aria-hidden={prioritySlide !== index}
+                      style={{ "--priority-accent": color } as CSSProperties}
+                    >
+                      <div className="focus-priority-copy">
+                        <strong>{index + 1}순위 <span>{name}</span></strong>
+                        <p>{priorityCopy[name]}</p>
+                      </div>
+                      <span className="focus-priority-icon" aria-hidden="true">
+                        <Icon size={29} />
+                      </span>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
     </>
   );
 }
+
+const academyCostTable: Record<string, number> = {
+  "독학재수(독서실·인강)": 35833,
+  "단과 통학": 585833,
+  "재수종합학원": 1910000,
+  "기숙학원": 3600000,
+};
+
+const academyDescription: Record<string, string> = {
+  "독학재수(독서실·인강)": "메가스터디·대성마이맥 등 인강 패스 비용 기준 (독서실+인강)",
+  "단과 통학": "유명 강사 현강 + 동네 보습학원 수강료·교재비 평균",
+  "재수종합학원": "메이저 재종합반 5개사 평균 (시대인재·강남대성 등)",
+  "기숙학원": "메가스터디·시대인재·강남대성 등 기숙학원 5개사 평균",
+};
+
+const regionMultiplier: Record<string, number> = {
+  "서울 학군지": 1.15,
+  "서울 비학군지": 1.05,
+  "수도권": 1,
+  "지방": 0.9,
+};
+
+const savingsFallbackAmount = 180;
+const incomeFallbackAmount = 660;
 
 function Converter({
   screen,
@@ -1260,10 +1422,20 @@ function Converter({
     academy: "재수종합학원",
     region: "수도권",
   });
-  const comparisonAmount = 2292;
+  const savingsIsFallback = converterChoices.savings === "선택안함";
+  const incomeIsFallback = converterChoices.income === "선택안함";
+  const retirementUnset = converterChoices.retirement === "선택안함";
+  const childrenIsFallback = converterChoices.children === "선택안함";
+  const childrenHidesTuition = childrenIsFallback || converterChoices.children === "1명";
 
-  const coveredAmount = Math.min(1400, comparisonAmount);
+  const monthlyCostWon = academyCostTable[converterChoices.academy] * (regionMultiplier[converterChoices.region] ?? 1);
+  const baseTenMonthWon = monthlyCostWon * 10;
+  const monthlyCostManwon = Math.round(monthlyCostWon / 10000);
+  const comparisonAmount = Math.round(baseTenMonthWon / 10000);
+
+  const coveredAmount = Math.min(policyInfo.coverageCapManwon, comparisonAmount);
   const finalAmount = Math.max(comparisonAmount - coveredAmount, 0);
+  const coveragePercent = comparisonAmount > 0 ? Math.round((coveredAmount / comparisonAmount) * 100) : 0;
   const formattedComparison = comparisonAmount.toLocaleString("ko-KR");
   const savingsMonths = (comparisonAmount / 191).toFixed(1);
   const tuitionTerms = (comparisonAmount / 347).toFixed(1);
@@ -1285,7 +1457,7 @@ function Converter({
       <div className="screen page-with-nav converter-intro">
         <BrandTabHeader onNotification={onNotification} hasUnread={hasUnread} />
         <main>
-          <span className="eyebrow">돈워리 계산기</span>
+          <span className="eyebrow">돈(Money) 걱정은 뚝! Don't Worry</span>
           <h1>
             재수 비용,
             <br />
@@ -1333,7 +1505,7 @@ function Converter({
   if (screen === "result") {
     return (
       <div className="screen page-with-nav converter-flow-screen">
-        <TopBar back={() => setScreen("cost")} backLabel="뒤로가기" onNotification={onNotification} hasUnread={hasUnread} />
+        <TopBar onNotification={onNotification} hasUnread={hasUnread} />
         <main className="converter-detail converter-result-page">
           <section className="converter-result-total">
             <span>1년 동안 발생하는 재수 비용은 얼마일까요?</span>
@@ -1352,7 +1524,10 @@ function Converter({
             <article className="saving">
               <div className="equivalent-summary">
                 <span><WalletCards size={22} /></span>
-                <div><strong>우리 집 월 저축액</strong></div>
+                <div>
+                  <strong>우리 집 월 저축액</strong>
+                  {savingsIsFallback && <em className="equivalent-fallback-tag">평균 가구 기준</em>}
+                </div>
                 <b>{savingsMonths}<small>개월분</small></b>
               </div>
               <div className="equivalent-detail">
@@ -1362,36 +1537,43 @@ function Converter({
                 <code>{formattedComparison}만원 ÷ 월 191만원</code>
               </div>
             </article>
-            <article className="tuition">
-              <div className="equivalent-summary">
-                <span><GraduationCap size={23} /></span>
-                <div><strong>동생 대학 등록금</strong></div>
-                <b>{tuitionTerms}<small>학기분</small></b>
-              </div>
-              <div className="equivalent-detail">
-                <p>이만큼 대학교를 다닐 수 있는 학기예요.</p>
-              </div>
-              <div className="equivalent-formula">
-                <code>{formattedComparison}만원 ÷ 학기당 347만원</code>
-              </div>
-            </article>
-            <article className="retirement">
-              <div className="equivalent-summary">
-                <span><Flag size={22} /></span>
-                <div><strong>노후 자금 목표 대비</strong></div>
-                <b>{retirementPercent}<small>%</small></b>
-              </div>
-              <div className="equivalent-detail">
-                <p>노후 목표액에서 차지하는 비중이에요.</p>
-              </div>
-              <div className="equivalent-formula">
-                <code>{formattedComparison}만원 ÷ 목표 38,200만원</code>
-              </div>
-            </article>
+            {!childrenHidesTuition && (
+              <article className="tuition">
+                <div className="equivalent-summary">
+                  <span><GraduationCap size={23} /></span>
+                  <div><strong>동생 대학 등록금</strong></div>
+                  <b>{tuitionTerms}<small>학기분</small></b>
+                </div>
+                <div className="equivalent-detail">
+                  <p>이만큼 대학교를 다닐 수 있는 학기예요.</p>
+                </div>
+                <div className="equivalent-formula">
+                  <code>{formattedComparison}만원 ÷ 학기당 347만원</code>
+                </div>
+              </article>
+            )}
+            {!retirementUnset && (
+              <article className="retirement">
+                <div className="equivalent-summary">
+                  <span><Flag size={22} /></span>
+                  <div><strong>노후 자금 목표 대비</strong></div>
+                  <b>{retirementPercent}<small>%</small></b>
+                </div>
+                <div className="equivalent-detail">
+                  <p>노후 목표액에서 차지하는 비중이에요.</p>
+                </div>
+                <div className="equivalent-formula">
+                  <code>{formattedComparison}만원 ÷ 목표 38,200만원</code>
+                </div>
+              </article>
+            )}
             <article className="income">
               <div className="equivalent-summary">
                 <span><CreditCard size={22} /></span>
-                <div><strong>우리 집 월 소득</strong></div>
+                <div>
+                  <strong>우리 집 월 소득</strong>
+                  {incomeIsFallback && <em className="equivalent-fallback-tag">평균 가구 기준</em>}
+                </div>
                 <b>{incomeMonths}<small>개월치</small></b>
               </div>
               <div className="equivalent-detail">
@@ -1404,13 +1586,28 @@ function Converter({
           </div>
 
           <div className="converter-coverage-note">
-            <h2><mark>{formattedComparison}만원</mark>, 재수없수를 통해 보장을 받으면 얼마일까요?</h2>
-            <p>보장을 받은 후 지불하실 재수비용이에요.</p>
-            <ul className="converter-coverage-detail">
-              <li>현재 스탠다드 상품 기준 최대 보장금을 적용시,</li>
-              <li className="highlight">{coveredAmount.toLocaleString("ko-KR")}만원 보장</li>
-              <li>최종적인 재수 비용은 {finalAmount.toLocaleString("ko-KR")}만원 입니다</li>
-            </ul>
+            <h2><mark>{formattedComparison}만원</mark>, 어떻게 줄어들까요?</h2>
+            <p>예상 비용부터 최종 준비 금액까지 단계별로 확인하세요.</p>
+            <div className="converter-coverage-steps">
+              <div className="coverage-step">
+                <strong>{formattedComparison}만원</strong>
+                <span>예상 비용</span>
+              </div>
+              <span className="coverage-operator" aria-hidden="true">–</span>
+              <div className="coverage-step">
+                <strong>{coveredAmount.toLocaleString("ko-KR")}만원</strong>
+                <span>최대 보장</span>
+              </div>
+              <span className="coverage-operator" aria-hidden="true">=</span>
+              <div className="coverage-step final">
+                <strong>{finalAmount.toLocaleString("ko-KR")}만원</strong>
+                <span>최종 준비</span>
+              </div>
+            </div>
+            <p className="converter-coverage-callout">
+              <Lightbulb size={15} className="converter-coverage-callout-icon" aria-hidden="true" />
+              보장을 적용하면 전체 예상 비용의 약 {coveragePercent}%를 덜 준비해도 됩니다.
+            </p>
           </div>
 
           <button
@@ -1440,8 +1637,8 @@ function Converter({
   return (
     <div className="screen page-with-nav converter-flow-screen">
       <TopBar
-        back={() => setScreen(isInput ? "intro" : "input")}
-        backLabel="뒤로가기"
+        back={isInput ? undefined : () => setScreen("input")}
+        backLabel="이전 화면"
         onNotification={onNotification}
         hasUnread={hasUnread}
       />
@@ -1460,6 +1657,7 @@ function Converter({
               selected={converterChoices.savings}
               onChange={(value) => updateConverterChoice("savings", value)}
               columns={3}
+              note={`${savingsFallbackAmount}만 원 기준값 적용 · '평균 가구 기준' 라벨 표시`}
             />
             <FormChoice
               title="자녀 수"
@@ -1468,6 +1666,7 @@ function Converter({
               selected={converterChoices.children}
               onChange={(value) => updateConverterChoice("children", value)}
               columns={4}
+              note="1명으로 간주, '동생 대학 등록금' 카드 미표시"
             />
             <FormChoice
               title="노후 자금 목표액"
@@ -1476,6 +1675,7 @@ function Converter({
               selected={converterChoices.retirement}
               onChange={(value) => updateConverterChoice("retirement", value)}
               columns={3}
+              note="'노후 자금 목표 대비' 카드가 표시되지 않아요"
             />
             <FormChoice
               title="월 가처분 소득"
@@ -1484,6 +1684,7 @@ function Converter({
               selected={converterChoices.income}
               onChange={(value) => updateConverterChoice("income", value)}
               columns={3}
+              note={`${incomeFallbackAmount}만 원 기준값 적용 · '평균 가구 기준' 라벨 표시`}
             />
             <button className="primary-button" onClick={() => setScreen("cost")}>
               다음
@@ -1512,13 +1713,13 @@ function Converter({
             <section className="converter-cost-summary">
               <div>
                 <span>월 평균 비용</span>
-                <strong>191만원</strong>
+                <strong>{monthlyCostManwon.toLocaleString("ko-KR")}만원</strong>
               </div>
-              <p>메이저 재종합반 5개사 평균(시대인재·강남대성 등)</p>
+              <p>{academyDescription[converterChoices.academy]}</p>
               <hr />
               <div className="total">
-                <span>12개월 누적 연간 총액</span>
-                <strong>2,292만원</strong>
+                <span>10개월 누적 총액</span>
+                <strong>{formattedComparison}만원</strong>
               </div>
             </section>
             <button className="primary-button" onClick={() => setScreen("loading")}>
@@ -1538,6 +1739,7 @@ function FormChoice({
   selected,
   onChange,
   columns = 3,
+  note,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -1545,15 +1747,22 @@ function FormChoice({
   selected: string;
   onChange: (value: string) => void;
   columns?: 2 | 3 | 4;
+  note?: string;
 }) {
+  const isSkipOption = (option: string) => option === "선택안함";
   return (
     <fieldset className="choice-field">
-      <legend><span aria-hidden="true">{icon}</span>{title}</legend>
+      <legend>
+        <span className="choice-field-title">
+          <span aria-hidden="true">{icon}</span>
+          {title}
+        </span>
+      </legend>
       <div className={`choice-grid columns-${columns}`}>
         {options.map((option) => (
           <button
             type="button"
-            className={`${selected === option ? "active" : ""} ${option === "선택안함" ? "no-selection" : ""}`.trim()}
+            className={`${selected === option ? "active" : ""} ${isSkipOption(option) ? "no-selection" : ""}`.trim()}
             key={option}
             onClick={() => onChange(option)}
             aria-pressed={selected === option}
@@ -1562,6 +1771,7 @@ function FormChoice({
           </button>
         ))}
       </div>
+      {note && isSkipOption(selected) && <p className="choice-field-note">{note}</p>}
     </fieldset>
   );
 }
@@ -1582,7 +1792,12 @@ function RegionChoice({
 
   return (
     <fieldset className="choice-field region-choice">
-      <legend><span aria-hidden="true"><MapPin size={18} /></span>우리 동네 시세에 맞게 조정</legend>
+      <legend>
+        <span className="choice-field-title">
+          <span aria-hidden="true"><MapPin size={18} /></span>
+          우리 동네 시세에 맞게 조정
+        </span>
+      </legend>
       <p>지역마다 학원 시세가 달라요. 우리 동네를 골라주세요.</p>
       <div className="region-grid">
         {regions.map(([name, detail]) => (
@@ -1597,7 +1812,6 @@ function RegionChoice({
           </button>
         ))}
       </div>
-      <small className="region-baseline">수도권 시세 기준 (전국 평균과 동일)</small>
     </fieldset>
   );
 }
@@ -1650,6 +1864,7 @@ const gradeSubjectHistory = [
   [["국어", "53점", "5등급", ""], ["수학", "56점", "5등급", ""], ["영어", "55점", "5등급", ""], ["탐구", "54점", "5등급", ""]],
 ];
 
+// TODO: 보험료 결제 내역은 학생별 DB 조회 결과로 교체될 임시 목데이터입니다.
 const paymentHistory = [
   ["2026년 7월", "45,000원"],
   ["2026년 6월", "45,000원"],
@@ -1820,9 +2035,9 @@ function MyDetailPage({
   const [methodRegistrationScenario, setMethodRegistrationScenario] = useState<"success" | "error">("success");
   const [pendingCard, setPendingCard] = useState<CardForm | null>(null);
   const [paymentMethods, setPaymentMethods] = useState([
-    { id: "4821", name: "신한카드 (개인)", lastFour: "4821", default: true },
+    { id: paymentMethod.last4, name: `${paymentMethod.provider} (${paymentMethod.ownerType})`, lastFour: paymentMethod.last4, default: true },
   ]);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("4821");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethod.last4);
   const [cardForm, setCardForm] = useState({ number: "", expiry: "", cvc: "", owner: "" });
   const isPaymentDetail = detail === "보험료 결제";
   const [paymentDataLoading, setPaymentDataLoading] = useState(isPaymentDetail);
@@ -2348,12 +2563,12 @@ function MyPage({
       <BrandTabHeader onNotification={onNotification} hasUnread={hasUnread} />
       <main className="mypage-content">
         <div className="profile">
-          <h1>김지민 학생 <em>고3</em></h1>
+          <h1>{studentProfile.name} 학생 <em>{studentProfile.grade}</em></h1>
         </div>
         <section className="membership-card" aria-label="가입 정보">
-          <div><small>가입 상품</small><strong>스탠다드</strong></div>
-          <div><small>보장 상한</small><strong>1,404만원</strong></div>
-          <div><small>가입일</small><strong>2026.03.02</strong></div>
+          <div><small>가입 상품</small><strong>{policyInfo.tier}</strong></div>
+          <div><small>보장 상한</small><strong>{policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원</strong></div>
+          <div><small>가입일</small><strong>{formatDotDate(policyInfo.joinedDate)}</strong></div>
         </section>
         <div className="grouped-menu">
           <section className="menu-card">
@@ -2396,7 +2611,7 @@ function ClaimFlow({
   close: () => void;
   phase: ClaimPhase;
 }) {
-  const [cardLast4, setCardLast4] = useState("4821");
+  const [cardLast4, setCardLast4] = useState(paymentMethod.last4);
   const [resultPreview, setResultPreview] = useState<ClaimResultVariant>("matched");
   const [eligibilityResult, setEligibilityResult] = useState<EligibilityResult>("none");
   const [appealFiled, setAppealFiled] = useState(false);
@@ -2505,7 +2720,7 @@ function ClaimFlow({
           </div>
           <div className="claim-kv-row">
             <span className="k">지급 예정액</span>
-            <span className="v positive">{isFirstRound ? "364만원" : "1,040만원"}</span>
+            <span className="v positive">{isFirstRound ? "364만원" : `${(policyInfo.coverageCapManwon - 364).toLocaleString("ko-KR")}만원`}</span>
           </div>
           <div className="claim-kv-row">
             <span className="k">예상 지급일</span>
@@ -2692,7 +2907,7 @@ function ClaimHome({
       )}
       {!showEligibilityCard && (
         <section className="claim-open-card">
-          <span className="eyebrow light">보장 자격 확정 · 중증 · 한도 1,404만원</span>
+          <span className="eyebrow light">보장 자격 확정 · 중증 · 한도 {policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원</span>
           <h2>{info.bannerTitle}</h2>
           <p>{info.bannerText}</p>
           <div className="claim-progress">
@@ -2961,7 +3176,7 @@ function ClaimCardStep({
       <section className="white-card claim-kv-card">
         <div className="claim-kv-row">
           <span className="k">카드사</span>
-          <span className="v">신한카드</span>
+          <span className="v">{paymentMethod.provider}</span>
         </div>
         <div className="claim-kv-row">
           <span className="k">카드번호 뒤 4자리</span>
@@ -2999,7 +3214,7 @@ function ClaimCardChange({ onSave }: { onSave: (last4: string) => void }) {
       <div className="claim-field">
         <label>카드사</label>
         <div className="claim-input">
-          신한카드 <ChevronDown size={15} />
+          {paymentMethod.provider} <ChevronDown size={15} />
         </div>
       </div>
       <div className="claim-field">
@@ -3029,14 +3244,14 @@ function ClaimCardChange({ onSave }: { onSave: (last4: string) => void }) {
       <section className="white-card claim-kv-card claim-kv-muted">
         <div className="claim-kv-row">
           <span className="k">기존 카드</span>
-          <span className="v muted-strike">신한 ●●●● 4821</span>
+          <span className="v muted-strike">{paymentMethod.provider} ●●●● {paymentMethod.last4}</span>
         </div>
         <div className="claim-kv-row">
           <span className="k">변경 후</span>
-          <span className="v">신한 ●●●● {last4 || "○○○○"}</span>
+          <span className="v">{paymentMethod.provider} ●●●● {last4 || "○○○○"}</span>
         </div>
       </section>
-      <button className="primary-button" onClick={() => onSave(last4 || "4821")} disabled={last4.length !== 4}>
+      <button className="primary-button" onClick={() => onSave(last4 || paymentMethod.last4)} disabled={last4.length !== 4}>
         카드 변경 저장
       </button>
     </main>
@@ -3300,7 +3515,7 @@ function ClaimResult({
           <FileText size={24} />
           <strong>카드사 이용내역 올리기</strong>
           <small>
-            신한카드 앱 › 이용내역 › 기간 조회 후 PDF 저장
+            {paymentMethod.provider} 앱 › 이용내역 › 기간 조회 후 PDF 저장
             <br />
             12월 24일까지 제출해 주세요
           </small>
@@ -3381,8 +3596,8 @@ function ClaimStatus() {
           <span style={{ width: "100%" }} />
         </div>
         <div className="claim-limit-caption">
-          <span>사용 1,404만원</span>
-          <span>한도 1,404만원</span>
+          <span>사용 {policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원</span>
+          <span>한도 {policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원</span>
         </div>
       </section>
       <section className="white-card">
@@ -3397,7 +3612,7 @@ function ClaimStatus() {
         <div className="claim-match-row">
           <div>
             <div className="label">2차 청구 · 2026.12.04</div>
-            <div className="value">1,040만원</div>
+            <div className="value">{(policyInfo.coverageCapManwon - 364).toLocaleString("ko-KR")}만원</div>
             <div className="sub">영수증 3건 · 정상 확인</div>
           </div>
           <span className="claim-tag warn">심사중</span>
@@ -3577,7 +3792,12 @@ export default function AppPage() {
               />
             ) : (
               <MyPage
-                onLogout={() => setStage("login")}
+                onLogout={() => {
+                  setStage("login");
+                  setTab("grades");
+                  setGradeScreen("intro");
+                  setClaimScreen(null);
+                }}
                 onNotification={openNotifications}
                 hasUnread={hasUnreadNotifications}
                 canvasTone={canvasTone}
