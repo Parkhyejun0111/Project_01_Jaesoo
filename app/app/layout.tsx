@@ -27,9 +27,21 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "재수없수 | 우리 아이 재수 안심 케어",
     description:
       "성적 분석, 재수 비용 계산, 보험금 청구를 한곳에서 돕는 보호자용 안심 서비스입니다.",
+    manifest: "/manifest.webmanifest",
     icons: {
       icon: "/favicon.svg",
       shortcut: "/favicon.svg",
+      apple: "/icon-192.png",
+    },
+    // 홈 화면에 추가했을 때 사파리 껍데기가 아니라 독립 실행으로 뜨게 하는 설정.
+    // statusBarStyle 이 black-translucent 여야 화면이 상태바(노치·다이나믹 아일랜드)
+    // 밑까지 깔리고 env(safe-area-inset-top) 이 실제 값을 준다. default 면 iOS 가
+    // 상태바를 불투명하게 따로 잡아 0 이 되고, 노치 배경을 늘리는 CSS 가 무력해진다.
+    // (iOS 16.4+ 는 manifest 의 display:standalone 도 함께 본다)
+    appleWebApp: {
+      capable: true,
+      title: "재수없수",
+      statusBarStyle: "black-translucent",
     },
     openGraph: {
       title: "재수없수 | 우리 아이 재수 안심 케어",

@@ -6479,9 +6479,28 @@ input.claim-input::placeholder {
 }
 
 /* ── 노치·다이나믹 아일랜드 영역 ─────────────────────────────────────────
-   viewport-fit=cover 라 화면이 노치 밑까지 깔린다. 각 화면의 첫 요소(상단바·
-   히어로)가 그만큼 위로 배경을 늘려, 노치 주변이 흰 띠로 끊기지 않게 한다.
-   노치가 없는 기기에서는 env() 가 0 이라 지금과 똑같이 보인다. */
+   홈 화면에 추가해 독립 실행으로 열 때만 화면이 상태바 밑까지 깔린다
+   (manifest + apple-mobile-web-app-capable + status-bar-style=black-translucent).
+   그때 각 화면의 첫 요소(히어로·상단바)가 safe-area-inset-top 만큼 배경을 위로
+   늘려 흰 띠를 없앤다. 사파리 탭으로 열거나 노치가 없는 기기에서는 env() 가 0 이라
+   지금과 똑같이 보인다.
+
+   black-translucent 는 상태바 글자를 항상 흰색으로 그린다. 상단바가 흰 화면
+   (성적분석·돈워리 도입, 마이, 챗봇)에서는 시계·배터리가 안 보이므로 노치 영역만은
+   어느 화면에서든 브랜드 그린으로 덮는다 — 그린 상단바 화면에서는 같은 색이라
+   이어져 보이고, 흰 상단바 화면에서는 색 있는 상태바로 읽힌다. */
+.app-shell::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  z-index: 60;
+  background: var(--brand-green);
+  pointer-events: none;
+}
+
 .home-main-hero {
   padding-top: calc(25px + env(safe-area-inset-top));
 }
