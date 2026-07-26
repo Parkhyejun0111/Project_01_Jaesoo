@@ -2330,6 +2330,7 @@ const paymentHistory = [
 ];
 
 type CardForm = {
+  provider: string;
   number: string;
   expiry: string;
   cvc: string;
@@ -2415,6 +2416,19 @@ function PaymentMethodFields({
   return (
     <div className="payment-field-grid">
       <label className="payment-field full">
+        <span>카드사</span>
+        <select
+          value={cardForm.provider}
+          onChange={(event) => setCardForm({ ...cardForm, provider: event.target.value })}
+        >
+          {cardProviders.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="payment-field full">
         <span>카드 번호</span>
         <input
           inputMode="numeric"
@@ -2493,7 +2507,7 @@ function MyDetailPage({
     { id: paymentMethod.last4, name: `${paymentMethod.provider} (${paymentMethod.ownerType})`, lastFour: paymentMethod.last4, default: true },
   ]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethod.last4);
-  const [cardForm, setCardForm] = useState({ number: "", expiry: "", cvc: "", owner: "" });
+  const [cardForm, setCardForm] = useState<CardForm>({ provider: cardProviders[0], number: "", expiry: "", cvc: "", owner: "" });
   const isPaymentDetail = detail === "보험료 결제";
   const [paymentDataLoading, setPaymentDataLoading] = useState(isPaymentDetail);
 
@@ -2526,10 +2540,10 @@ function MyDetailPage({
         return;
       }
       const lastFour = pendingCard.number.replace(/\D/g, "").slice(-4);
-      const newMethod = { id: `${lastFour}-${paymentMethods.length}`, name: `${pendingCard.owner} 카드`, lastFour, default: false };
+      const newMethod = { id: `${lastFour}-${paymentMethods.length}`, name: `${pendingCard.provider} (${pendingCard.owner})`, lastFour, default: false };
       setPaymentMethods((current) => [...current, newMethod]);
       setSelectedPaymentMethod(newMethod.id);
-      setCardForm({ number: "", expiry: "", cvc: "", owner: "" });
+      setCardForm({ provider: cardProviders[0], number: "", expiry: "", cvc: "", owner: "" });
       setPendingCard(null);
       setMethodSaveStatus("idle");
       setPaymentMethodView("list");
@@ -2789,7 +2803,7 @@ function MyDetailPage({
           <section className="payment-processing-view" role="status" aria-live="polite">
             <span><LoaderCircle className="spinner dark" size={43} /></span>
             <h1>보험료를 결제하고 있어요</h1>
-            <p>카드사 승인을 기다리고 있어요. 중복 결제를 막기 위해 화면을 닫지 말아 주세요.</p>
+            <p>중복 결제 방지를 위해 화면을 닫지 말아 주세요.</p>
             <div><LockKeyhole size={14} /> 안전하게 암호화해 처리 중이에요</div>
           </section>
         )}
@@ -4122,12 +4136,15 @@ const cardProviders = ["신한카드", "국민카드", "삼성카드", "현대�
 function ClaimCardChange({ onSave }: { onSave: (last4: string) => void }) {
   const [provider, setProvider] = useState(cardProviders[0]);
   const [number, setNumber] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvc, setCvc] = useState("");
   const [owner, setOwner] = useState("");
   const digits = number.replace(/\D/g, "");
-  const complete = digits.length === 16 && owner.trim().length > 1;
+  const complete = digits.length === 16 && expiry.length === 5 && cvc.length === 3 && owner.trim().length > 1;
 
   return (
     <main className="sub-page claim-step">
+      <span className="step-label">결제 카드 등록</span>
       <h1 className="claim-cardchange-title">재수비용을 결제한 카드를 등록해 주세요</h1>
       <div className="claim-note">변경한 카드는 이번 청구부터 바로 대조 기준이 됩니다.</div>
       <div className="claim-field">
@@ -4152,6 +4169,34 @@ function ClaimCardChange({ onSave }: { onSave: (last4: string) => void }) {
           placeholder="0000 0000 0000 0000"
           inputMode="numeric"
         />
+      </div>
+      <div className="claim-field-row">
+        <div className="claim-field">
+          <label>유효기간</label>
+          <input
+            className="claim-input"
+            value={expiry}
+            onChange={(event) => {
+              const next = event.target.value.replace(/\D/g, "").slice(0, 4);
+              setExpiry(next.length > 2 ? `${next.slice(0, 2)}/${next.slice(2)}` : next);
+            }}
+            placeholder="MM/YY"
+            inputMode="numeric"
+            autoComplete="cc-exp"
+          />
+        </div>
+        <div className="claim-field">
+          <label>CVC</label>
+          <input
+            className="claim-input"
+            type="password"
+            value={cvc}
+            onChange={(event) => setCvc(event.target.value.replace(/\D/g, "").slice(0, 3))}
+            placeholder="3자리"
+            inputMode="numeric"
+            autoComplete="cc-csc"
+          />
+        </div>
       </div>
       <div className="claim-field">
         <label>카드 명의자</label>
@@ -4220,12 +4265,12 @@ function ClaimUpload({
           />
         </label>
       </div>
-      <p className="claim-upload-hint">
-        JPG · PNG · PDF / 장당 10MB 이하 · 글씨가 잘리지 않게 전체가 나오도록 찍어주세요
-      </p>
+      <p className="claim-upload-hint">JPG·PNG·PDF · 장당 10MB 이하 · 잘리지 않게 촬영해주세요</p>
+      <div className="claim-receipt-divider" />
+      <h2 className="claim-receipt-subtitle">첨부한 영수증 목록</h2>
 
       {receipts.length > 0 && (
-        <section className="claim-receipt-list" aria-label="첨부한 영수증 목록">
+        <section className="claim-receipt-list">
           {receipts.map((receipt, index) => (
             <div className="claim-receipt-item" key={receipt.id}>
               <span className="claim-receipt-thumb">

@@ -475,7 +475,7 @@ body::-webkit-scrollbar,
 .splash-logo {
   position: relative;
   z-index: 2;
-  height: 48px;
+  height: 84px;
   width: auto;
 }
 
@@ -1111,7 +1111,7 @@ body::-webkit-scrollbar,
   justify-content: center;
   gap: 5px;
   padding: 0 9px;
-  border: 1px solid rgba(196, 249, 255, 0.54);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
   color: #ebfffa;
   background: rgba(7, 91, 63, 0.24);
@@ -1124,7 +1124,7 @@ body::-webkit-scrollbar,
 
 .hero-action:hover {
   transform: translateY(-2px);
-  border-color: #dffeff;
+  border-color: rgba(255, 255, 255, 0.25);
   background: rgba(196, 249, 255, 0.21);
 }
 
@@ -4614,7 +4614,8 @@ body::-webkit-scrollbar,
   font-weight: 800;
 }
 
-.payment-field input {
+.payment-field input,
+.payment-field select {
   width: 100%;
   min-height: 48px;
   padding: 0 13px;
@@ -4623,10 +4624,12 @@ body::-webkit-scrollbar,
   color: var(--ink);
   background: #fbfdfc;
   font-size: 13px;
+  font-family: inherit;
   outline: 0;
 }
 
-.payment-field input:focus {
+.payment-field input:focus,
+.payment-field select:focus {
   border-color: var(--brand-green);
   box-shadow: 0 0 0 3px rgba(12, 180, 116, 0.12);
 }
@@ -5598,6 +5601,17 @@ body::-webkit-scrollbar,
   margin-top: 14px;
 }
 
+.claim-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.claim-field-row .claim-field {
+  margin-top: 0;
+}
+
 .claim-field + .primary-button,
 .claim-field + .secondary-button,
 .claim-field + .white-button,
@@ -5744,8 +5758,25 @@ input.claim-input::placeholder {
 .claim-step > p.claim-upload-hint {
   margin: 10px 0 0;
   color: var(--muted);
-  font-size: 11px;
-  line-height: 1.6;
+  font-size: 10.5px;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.claim-receipt-divider {
+  height: 1px;
+  margin: 14px 0 12px;
+  border-top: 1px solid var(--line);
+}
+
+.claim-receipt-subtitle {
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .claim-drop svg {
@@ -5820,6 +5851,7 @@ input.claim-input::placeholder {
 
 .claim-camera-frame {
   flex: 1;
+  min-height: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -5912,8 +5944,12 @@ input.claim-input::placeholder {
 }
 
 .claim-receipt-info small {
+  display: block;
+  overflow: hidden;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: 9.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .claim-receipt-actions {
@@ -5941,7 +5977,10 @@ input.claim-input::placeholder {
 .claim-camera-guide {
   position: relative;
   overflow: hidden;
-  width: 92%;
+  flex: 1;
+  min-height: 0;
+  width: auto;
+  max-width: 92%;
   aspect-ratio: 3 / 4;
   border: 2px dashed rgba(255, 255, 255, 0.5);
   border-radius: 18px;
