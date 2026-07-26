@@ -1,15 +1,30 @@
 # Vercel 배포
 
-같은 저장소(`Final_01` 브랜치)로 **3개 프로젝트**를 만듭니다. Root Directory 만 다릅니다.
+같은 저장소(`Final_02` 브랜치)로 **4개 프로젝트**를 만듭니다. Root Directory 만 다릅니다.
 
 | 프로젝트 | Root Directory | Framework | 결과 |
 |---|---|---|---|
 | `jaesoo-api` | `api` | Other | FastAPI (Python 서버리스 함수) |
-| `jaesoo-web` | `web` | Vite | 인강 임베디드 가입 웹 |
+| `jaesoo-web` | `web` | Vite | 인강 임베디드 가입 웹 (데스크톱) |
+| `jaesoo-webapp` | `webapp` | Vite | 같은 웹의 앱(모바일) 화면 |
 | `jaesoo-app` | `app` | Next.js | 보호자용 모바일 앱 |
 
-> **순서가 중요합니다.** 웹·앱이 백엔드 주소를 빌드 시점에 박으므로
-> **api 를 먼저 배포**해 URL 을 얻은 뒤 web·app 을 배포하세요.
+> **순서가 중요합니다.** 웹·웹앱·앱이 백엔드 주소를 빌드 시점에 박으므로
+> **api 를 먼저 배포**해 URL 을 얻은 뒤 나머지를 배포하세요.
+
+> ⚠️ **Root Directory 가 설정된 프로젝트는 저장소 루트에서 배포합니다.**
+> `vercel --cwd web` 처럼 하위 폴더를 지정하면 경로가 `web/web` 으로 겹쳐
+> 실패하고, api 는 `vercel.json` 을 못 찾아 **배포가 깨집니다**(실제로 한 번
+> 프로덕션이 500 으로 내려갔습니다). 프로젝트 지정은 환경변수로 합니다.
+>
+> ```bash
+> cd ~/dev/jaesoo-insurance
+> VERCEL_ORG_ID=<orgId> VERCEL_PROJECT_ID=<projectId> \
+>   ./node_modules/.bin/vercel --prod --yes
+> ```
+>
+> `orgId`·`projectId` 는 각 폴더의 `.vercel/project.json` 에 있습니다.
+> 루트에서 그냥 `vercel` 을 치면 **새 프로젝트가 만들어지니** 주의하세요.
 
 ---
 
@@ -62,6 +77,24 @@ Vercel Storage 에서 Blob 을 만들어 프로젝트에 연결하면 `BLOB_READ
 | `VITE_APP_URL` | 3) 에서 얻을 app 도메인 — 처음엔 비워 두고 나중에 채운 뒤 재배포 |
 
 > **Vite 환경변수는 빌드 시점에 번들에 박힙니다.** 값을 바꾸면 반드시 재배포해야 합니다.
+
+---
+
+## 2-1) webapp — 웹의 앱 화면
+
+- **Root Directory**: `webapp`
+- **Framework Preset**: Vite
+
+화면 코드는 `web/src/App.jsx` 한 벌을 그대로 쓰고 `appMode` 로 레이아웃만 바꿉니다
+(자세한 내용은 `webapp/README.md`). 정적 자산도 `web/public` 을 공유하므로
+**Root Directory 밖의 파일이 필요합니다.** 설치·빌드 오류가 나면
+Settings → Build & Development → *Include source files outside of the Root Directory* 를 켜세요.
+
+### 환경변수
+| 키 | 값 |
+|---|---|
+| `VITE_API_URL` | 1) 에서 얻은 api 도메인 |
+| `VITE_APP_URL` | 3) 에서 얻은 app 도메인 |
 
 ---
 

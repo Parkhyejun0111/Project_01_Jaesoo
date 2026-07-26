@@ -8,6 +8,7 @@ jaesoo-insurance/
 ├─ api/                  FastAPI 백엔드 (요율 엔진 · 약관 RAG · 영수증 검증)
 │  └─ policy/            약관 HTML — 단일 진실. 프론트는 빌드 시 사본을 받는다
 ├─ web/                  인강 임베디드 가입 웹 (Vite + React 18)
+├─ webapp/               같은 웹의 앱(모바일) 화면 — web/src/App.jsx 를 appMode 로 재사용
 ├─ app/                  보호자용 모바일 앱 (Next 16 + React 19)
 ├─ packages/api-client/  웹·앱 공유 API 클라이언트
 ├─ scripts/              약관 동기화 · 자산 점검
@@ -35,7 +36,14 @@ npm install          # 저장소 루트에서 한 번 (워크스페이스)
 npm run dev:web
 ```
 
-### 3) 앱 (http://localhost:3000)
+### 3) 웹앱 — 웹의 앱 화면 (http://localhost:5174)
+```bash
+npm run dev:webapp
+```
+`web` 과 같은 화면 코드를 폰 폭에 맞춰 배치한 별도 배포본입니다. 자세한 내용은
+[webapp/README.md](webapp/README.md).
+
+### 4) 앱 (http://localhost:3000)
 ```bash
 npm run dev:app
 ```
@@ -127,15 +135,18 @@ cd api && ./.venv/bin/python -m pytest -q      # 242개
 cd app && npx tsc --noEmit && npm run build
 ```
 
-## 배포 (Vercel 3 프로젝트, 같은 저장소)
+## 배포 (Vercel 4 프로젝트, 같은 저장소)
 
 | 프로젝트 | Root Directory | 필수 환경변수 |
 |---|---|---|
 | api | `api` | `LLM_PROVIDER`·키, `SUPABASE_DB_*`, **`RECEIPT_STORAGE`** |
 | web | `web` | `VITE_API_URL`, `VITE_APP_URL` |
+| webapp | `webapp` | `VITE_API_URL`, `VITE_APP_URL` |
 | app | `app` | `NEXT_PUBLIC_API_URL` |
 
 **주의**
+- Root Directory 가 설정돼 있으므로 CLI 배포는 **저장소 루트에서** `VERCEL_PROJECT_ID`
+  환경변수로 대상을 지정합니다. `vercel --cwd <폴더>` 는 경로가 겹쳐 깨집니다([DEPLOY.md](DEPLOY.md)).
 - Vite 환경변수는 **빌드 시점에 박힙니다.** 배포 전에 반드시 설정하세요.
 - `RECEIPT_STORAGE=local` 로 두면 Vercel 에서 청구 플로우가 동작하지 않습니다.
   Functions 는 요청 간 디스크가 유지되지 않으므로 `vercel-blob` 또는 `supabase` 를 쓰세요.

@@ -90,3 +90,91 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* ══ 앱 모드 (webapp 빌드) ══════════════════════════════════════════════
+   같은 App.jsx 를 폰 폭에서 쓰기 위한 레이아웃 보정.
+   레이아웃이 갈리는 곳은 App.jsx 가 appMode 로 분기하고, 여기서는 인라인
+   스타일로 표현할 수 없는 것(스크롤 스냅·고정 탭바·hover 제거)만 맡는다.
+   카드 폭은 인라인 값을 이겨야 해서 !important 를 쓴다. */
+.app-mode .app-topbar {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* 헤더 아래 메뉴 줄 — 줄바꿈 대신 가로 스크롤 */
+.app-mode .app-navchips {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.app-mode .app-navchips::-webkit-scrollbar { display: none; }
+
+/* 가로 나열 섹션(강사·후기) — 눌려서 찌그러지는 대신 스와이프 캐러셀로 */
+.app-mode .app-rail {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 16px 12px;
+}
+.app-mode .app-rail::-webkit-scrollbar { display: none; }
+.app-mode .app-rail > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+.app-mode .app-rail-instructors > * {
+  width: 62vw;
+  max-width: 240px;
+  height: 280px !important;
+}
+.app-mode .app-rail-reviews > * {
+  width: 80vw;
+  max-width: 330px;
+  min-width: 0;
+  white-space: normal;
+}
+/* 터치 화면에서 hover 리프트는 눌린 뒤에도 남아 어색하다 */
+.app-mode .hov-lift:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* 하단 탭바 */
+.app-mode .app-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-top: 1px solid #ECEEF1;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.app-mode .app-tabbar button {
+  appearance: none;
+  border: 0;
+  background: none;
+  height: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  color: #9AA0AB;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.app-mode .app-tabbar button.active {
+  color: #2B4FE8;
+}
+.app-mode .app-tabbar button:active {
+  background: #F3F5F8;
+}

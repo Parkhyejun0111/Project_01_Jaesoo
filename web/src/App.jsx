@@ -318,6 +318,9 @@ class Component extends React.Component {
       // 문서 바로가기
       fileText: (<><path d="M13 3.5H7A1.8 1.8 0 0 0 5.2 5.3v13.4A1.8 1.8 0 0 0 7 20.5h10a1.8 1.8 0 0 0 1.8-1.8V9.3z" /><path d="M13 3.5V9h5.5" /><path d="M8.5 12.5h7M8.5 15.5h7M8.5 9.5h2.5" /></>),
       search: (<><circle cx="10.5" cy="10.5" r="6" /><path d="M15 15l4.5 4.5" /></>),
+      // 앱 하단 탭바
+      home: (<><path d="M4 10.5L12 4l8 6.5" /><path d="M6 9.7V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.7" /><path d="M10 20v-5.2h4V20" /></>),
+      user: (<><circle cx="12" cy="8.4" r="3.6" /><path d="M5 20c.6-3.7 3.5-5.6 7-5.6s6.4 1.9 7 5.6" /></>),
       // 공감 말풍선 옆 — 걱정하는 학부모/학생 얼굴(라인 스타일, 브랜드 톤)
       worry: (<><circle cx="12" cy="12" r="9" /><path d="M8.2 9.1l2 0.9" /><path d="M15.8 9.1l-2 0.9" /><circle cx="9.4" cy="12.1" r="0.7" fill={stroke} stroke="none" /><circle cx="14.6" cy="12.1" r="0.7" fill={stroke} stroke="none" /><path d="M9.5 16.1Q12 14.4 14.5 16.1" /></>),
       // 웹툰식 걱정 얼굴 — 큰 눈 + 처진 눈썹 + 살짝 찡그린 입 + 땀방울
@@ -588,13 +591,18 @@ class Component extends React.Component {
 
   render() {
     const vm = this.renderVals();
+    // 앱 모드(webapp 빌드) — 같은 화면을 폰 폭에 맞춰 배치한다.
+    // 인라인 스타일은 CSS 로 못 덮으므로 레이아웃이 갈리는 곳만 여기서 분기한다.
+    const app = Boolean(this.props.appMode);
+    const A = (webCss, appCss) => (app ? appCss : webCss);
     return (
-      <div style={S("min-height:100dvh;display:flex;justify-content:center;background:#fff")}>
+      <div className={app ? "app-mode" : undefined} style={S("min-height:100dvh;display:flex;justify-content:center;background:#fff")}>
         <div style={S("width:100%;min-height:100dvh;background:#fff;position:relative;display:flex;flex-direction:column")}>
           {/* ── 인강 데스크톱 웹페이지 (첫 화면 · 웹) ── */}
           {(!['apply','done','insurance'].includes(vm.entry) && !(vm.payBackEntry === 'insurance' && ['terms'].includes(vm.entry))) && (<>
             <div style={S("background:#fff;display:flex;flex-direction:column;width:100%")}>
-              {/* ① 상단 유틸리티 바 */}
+              {/* ① 상단 유틸리티 바 — 앱에서는 자리만 먹어 감춘다 */}
+              {!app && (
               <div style={S("width:100%;background:#1A1C22;color:#B9BEC9")}>
                 <div style={S("max-width:1160px;margin:0 auto;height:34px;padding:0 20px;display:flex;align-items:center;justify-content:flex-end;font-size:11.5px")}>
                   {[['고객센터',null],['학습Q&A',null],['수강권 등록',null],['회원가입',null],['로그인',null]].map((it,i)=>(
@@ -605,27 +613,50 @@ class Component extends React.Component {
                   ))}
                 </div>
               </div>
-              {/* ② 헤더 · 글로벌 내비 (sticky) */}
-              <div style={S("width:100%;background:#fff;border-bottom:1px solid #ECEEF1;position:sticky;top:0;z-index:8")}>
-                <div style={S("max-width:1160px;margin:0 auto;min-height:66px;padding:10px 20px;display:flex;align-items:center;gap:clamp(12px,2vw,26px);flex-wrap:wrap")}>
+              )}
+              {/* ② 헤더 · 글로벌 내비 (sticky).
+                  앱에서는 한 줄에 다 못 들어가므로 로고+검색 / 메뉴 두 줄로 쪼갠다. */}
+              <div className={app ? "app-topbar" : undefined} style={S("width:100%;background:#fff;border-bottom:1px solid #ECEEF1;position:sticky;top:0;z-index:8")}>
+                <div style={S(A(
+                  "max-width:1160px;margin:0 auto;min-height:66px;padding:10px 20px;display:flex;align-items:center;gap:clamp(12px,2vw,26px);flex-wrap:wrap",
+                  "margin:0 auto;padding:8px 16px 0;display:flex;align-items:center;gap:10px",
+                ))}>
                   <div style={S("display:flex;align-items:center;gap:8px;cursor:pointer;flex:none")} onClick={vm.navWeb}>
                     <span style={S("width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#2B4FE8,#3F6BFF);color:#fff;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none")}>M</span>
-                    <span style={S("font-size:20px;font-weight:900;color:#1A1C22;letter-spacing:-0.6px;white-space:nowrap")}>메가에듀<span style={S("color:#2B4FE8")}>패스</span></span>
+                    <span style={S(A(
+                      "font-size:20px;font-weight:900;color:#1A1C22;letter-spacing:-0.6px;white-space:nowrap",
+                      "font-size:18px;font-weight:900;color:#1A1C22;letter-spacing:-0.6px;white-space:nowrap",
+                    ))}>메가에듀<span style={S("color:#2B4FE8")}>패스</span></span>
                   </div>
-                  {/* 좁은 화면에서는 메뉴가 줄바꿈 대신 가로 스크롤 */}
+                  {/* 웹: 메뉴를 로고 옆에. 앱: 아래 줄로 내린다 */}
+                  {!app && (
                   <div style={S("flex:1 1 240px;min-width:0;display:flex;align-items:center;gap:clamp(12px,1.8vw,24px);overflow-x:auto")}>
                     {['인강','교재','모의고사','학습관리','입시정보','합격수기'].map((m,mi)=>(<React.Fragment key={mi}><span className="hov-link" style={S(`font-size:14.5px;font-weight:700;cursor:pointer;white-space:nowrap;flex:none;color:${mi===0?'#2B4FE8':'#3A3E46'}`)}>{m}</span></React.Fragment>))}
                   </div>
-                  <div style={S("display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;background:#F3F5F8;border-radius:20px;flex:0 1 200px;min-width:44px;overflow:hidden")}>
+                  )}
+                  <div style={S(A(
+                    "display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;background:#F3F5F8;border-radius:20px;flex:0 1 200px;min-width:44px;overflow:hidden",
+                    "display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;background:#F3F5F8;border-radius:20px;flex:1 1 auto;min-width:0;overflow:hidden;margin-left:auto",
+                  ))}>
                     <span style={S("flex:none;display:flex")}>{this.uiIcon('search', 15, '#9AA0AB')}</span>
                     <span style={S("font-size:12.5px;color:#9AA0AB;white-space:nowrap")}>강좌·교재 검색</span>
                   </div>
                 </div>
+                {app && (
+                  <div className="app-navchips">
+                    {['인강','교재','모의고사','학습관리','입시정보','합격수기'].map((m,mi)=>(
+                      <span key={mi} style={S(`font-size:14px;font-weight:700;white-space:nowrap;flex:none;color:${mi===0?'#2B4FE8':'#3A3E46'}`)}>{m}</span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* ③ 히어로 배너 — 8초마다 자동 전환 (0: 인강 얼리버드 / 1: 임베디드 보험).
                   전체폭 띠가 아니라 라운드 카드로 띄워, 넘어가는 두 화면을 하나의 캐러셀로 읽히게 한다. */}
-              <div style={S("width:100%;box-sizing:border-box;display:flex;justify-content:center;padding:clamp(14px,2vw,24px) 20px clamp(26px,3.4vw,38px);background:#fff")}>
+              <div style={S(A(
+                "width:100%;box-sizing:border-box;display:flex;justify-content:center;padding:clamp(14px,2vw,24px) 20px clamp(26px,3.4vw,38px);background:#fff",
+                "width:100%;box-sizing:border-box;display:flex;justify-content:center;padding:12px 14px 22px;background:#fff",
+              ))}>
               <div
                 style={S(`width:100%;max-width:1440px;position:relative;box-sizing:border-box;overflow:hidden;border-radius:clamp(20px,2.6vw,28px);transition:background .9s ease,box-shadow .9s ease,border-color .9s ease;background:${vm.heroSlide === 0
                   ? 'radial-gradient(1100px 460px at 78% 0%,#FFFFFF 0%,#DCF0E5 46%,#BCE0CD 100%)'
@@ -720,14 +751,20 @@ class Component extends React.Component {
 
               {/* ④ 패스 혜택 밴드 — 흰 배경이라 위아래 경계선으로 띠를 구분한다 */}
               <div style={S("width:100%;background:#fff;border-top:1px solid #ECEEF1;border-bottom:1px solid #ECEEF1")}>
-                <div style={S("max-width:1160px;margin:0 auto;padding:20px;display:flex;align-items:stretch;justify-content:center;gap:clamp(14px,2.4vw,30px);flex-wrap:wrap")}>
+                <div style={S(A(
+                  "max-width:1160px;margin:0 auto;padding:20px;display:flex;align-items:stretch;justify-content:center;gap:clamp(14px,2.4vw,30px);flex-wrap:wrap",
+                  "margin:0 auto;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px 10px",
+                ))}>
                   {[
                     ['play','전 강좌 무제한','12개월 동안 횟수 제한 없이'],
                     ['book','교재 무료 배송','패스 전용 교재 3권 포함'],
                     ['chart','주간 학습 리포트','진도·취약 단원 자동 정리'],
                     ['refund','7일 내 100% 환불','수강 시작 전이면 조건 없이'],
                   ].map((b,bi)=>(<React.Fragment key={bi}>
-                    <div style={S(`display:flex;align-items:center;gap:11px;flex:0 1 auto;min-width:0;padding-left:clamp(14px,2.4vw,30px);border-left:${bi===0?'0':'1px solid #ECEEF1'}`)}>
+                    <div style={S(A(
+                      `display:flex;align-items:center;gap:11px;flex:0 1 auto;min-width:0;padding-left:clamp(14px,2.4vw,30px);border-left:${bi===0?'0':'1px solid #ECEEF1'}`,
+                      "display:flex;align-items:center;gap:9px;min-width:0",
+                    ))}>
                       <span style={S("width:34px;height:34px;border-radius:10px;flex:none;background:#EEF3FF;display:flex;align-items:center;justify-content:center")}>{this.uiIcon(b[0], 19, '#2B4FE8')}</span>
                       <div style={S("min-width:0")}>
                         <div style={S("font-size:14px;font-weight:800;color:#16181D;letter-spacing:-0.3px;word-break:keep-all")}>{b[1]}</div>
@@ -738,16 +775,26 @@ class Component extends React.Component {
                 </div>
               </div>
 
-              {/* ⑤ 대표 강사 라인업 */}
-              <div style={S("width:min(1760px,calc(100vw - 72px));margin:0 auto;padding:clamp(36px,5vw,52px) 0 20px;box-sizing:border-box")}>
-                <div style={S("display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px")}>
+              {/* ⑤ 대표 강사 라인업 — 앱에서는 6열 그리드 대신 스와이프 캐러셀 */}
+              <div style={S(A(
+                "width:min(1760px,calc(100vw - 72px));margin:0 auto;padding:clamp(36px,5vw,52px) 0 20px;box-sizing:border-box",
+                "width:100%;margin:0 auto;padding:30px 0 16px;box-sizing:border-box",
+              ))}>
+                <div style={S(A(
+                  "display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px",
+                  "display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 16px",
+                ))}>
                   <div>
                     <div style={S("font-size:13px;font-weight:800;color:#2B4FE8")}>TOP INSTRUCTORS</div>
-                    <div style={S("font-size:clamp(21px,3vw,26px);font-weight:900;color:#16181D;letter-spacing:-1px;margin-top:6px")}>대표 강사 라인업</div>
+                    <div style={S(A(
+                      "font-size:clamp(21px,3vw,26px);font-weight:900;color:#16181D;letter-spacing:-1px;margin-top:6px",
+                      "font-size:21px;font-weight:900;color:#16181D;letter-spacing:-1px;margin-top:5px",
+                    ))}>대표 강사 라인업</div>
                   </div>
-                  <span className="hov-link" style={S("font-size:13px;color:#7A808B;cursor:pointer")}>전체 강사 보기 ›</span>
+                  <span className="hov-link" style={S("font-size:13px;color:#7A808B;cursor:pointer;white-space:nowrap")}>전체 강사 보기 ›</span>
                 </div>
-                <div style={S("display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px;margin-top:24px")}>
+                <div className={app ? "app-rail app-rail-instructors" : undefined}
+                     style={S(A("display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px;margin-top:24px", "margin-top:18px"))}>
                   {[
                     {n:'차미래',s:'국어',c:'#5B7CFA',icon:'book',tag:'국어의 기준을\n세우는\n미래 CLASS',img:'/instructors/cha-mirae-angled-clean.png'},
                     {n:'이윤서',s:'수학',c:'#0B8F58',icon:'graph',tag:'막힌 수학을\n뚫어내는\n윤서 ROUTE',img:'/instructors/yunseo-math-card-polished.png?v=3'},
@@ -786,13 +833,20 @@ class Component extends React.Component {
                 </div>
               </div>
 
-              {/* ⑧ 합격 후기 */}
-              <div style={S("max-width:1160px;margin:0 auto;padding:clamp(36px,5vw,52px) 20px 20px;width:100%;box-sizing:border-box")}>
+              {/* ⑧ 합격 후기 — 앱에서는 3열 그리드 대신 스와이프 캐러셀 */}
+              <div style={S(A(
+                "max-width:1160px;margin:0 auto;padding:clamp(36px,5vw,52px) 20px 20px;width:100%;box-sizing:border-box",
+                "margin:0 auto;padding:30px 0 16px;width:100%;box-sizing:border-box",
+              ))}>
                 <div style={S("text-align:center")}>
                   <div style={S("font-size:13px;font-weight:800;color:#2B4FE8")}>REVIEWS</div>
-                  <div style={S("font-size:clamp(21px,3vw,26px);font-weight:900;color:#16181D;letter-spacing:-1px;margin-top:6px")}>합격이 증명합니다</div>
+                  <div style={S(A(
+                    "font-size:clamp(21px,3vw,26px);font-weight:900;color:#16181D;letter-spacing:-1px;margin-top:6px",
+                    "font-size:21px;font-weight:900;color:#16181D;letter-spacing:-1px;margin-top:5px",
+                  ))}>합격이 증명합니다</div>
                 </div>
-                <div style={S("display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:28px")}>
+                <div className={app ? "app-rail app-rail-reviews" : undefined}
+                     style={S(A("display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:28px", "margin-top:20px"))}>
                   {[
                     {q:'차미래 선생님이 문학과 독서의 기준을 먼저 잡아주셔서, 지문마다 흔들리던 판단이 훨씬 또렷해졌어요.',
                      who:'정O서',univ:'고려대 국어국문학과',pass:'국어',from:74,to:95},
@@ -828,9 +882,15 @@ class Component extends React.Component {
               </div>
 
               {/* ⑩ 푸터 */}
-              <div style={S("width:100%;background:#fff;border-top:1px solid #E8EAEE;margin-top:48px;color:#5C626C")}>
+              <div style={S(A(
+                "width:100%;background:#fff;border-top:1px solid #E8EAEE;margin-top:48px;color:#5C626C",
+                "width:100%;background:#fff;border-top:1px solid #E8EAEE;margin-top:30px;color:#5C626C",
+              ))}>
                 <div style={S("border-bottom:1px solid #ECEFF3")}>
-                  <div style={S("max-width:1160px;margin:0 auto;padding:20px;display:flex;align-items:center;justify-content:center;gap:clamp(18px,3vw,34px);flex-wrap:wrap;font-size:13px;color:#4F5662")}>
+                  <div style={S(A(
+                    "max-width:1160px;margin:0 auto;padding:20px;display:flex;align-items:center;justify-content:center;gap:clamp(18px,3vw,34px);flex-wrap:wrap;font-size:13px;color:#4F5662",
+                    "margin:0 auto;padding:16px;display:flex;align-items:center;justify-content:center;gap:12px 16px;flex-wrap:wrap;font-size:12px;color:#4F5662",
+                  ))}>
                     {['회사소개','언론보도','사회공헌','찾아오는길','제휴·단체문의','강사모집','인재채용','이용약관'].map((l,li)=>(
                       <span key={li} className="hov-link" style={S("cursor:pointer;white-space:nowrap")}>{l}</span>
                     ))}
@@ -839,9 +899,18 @@ class Component extends React.Component {
                     <span className="hov-link" style={S("color:#2B4FE8;font-weight:800;cursor:pointer;white-space:nowrap")}>메가에듀패스 소개⌃</span>
                   </div>
                 </div>
-                <div style={S("max-width:1160px;margin:0 auto;padding:24px 20px 44px;display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap")}>
-                  <div style={S("font-size:22px;font-weight:900;color:#2B2F36;letter-spacing:-1.4px;line-height:1.15;min-width:170px")}>메가에듀교육(주)</div>
-                  <div style={S("flex:1;min-width:300px;font-size:12px;color:#4F5662;line-height:1.9;word-break:keep-all")}>
+                <div style={S(A(
+                  "max-width:1160px;margin:0 auto;padding:24px 20px 44px;display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap",
+                  "margin:0 auto;padding:18px 16px 28px;display:flex;flex-direction:column;align-items:flex-start;gap:10px",
+                ))}>
+                  <div style={S(A(
+                    "font-size:22px;font-weight:900;color:#2B2F36;letter-spacing:-1.4px;line-height:1.15;min-width:170px",
+                    "font-size:18px;font-weight:900;color:#2B2F36;letter-spacing:-1px;line-height:1.15",
+                  ))}>메가에듀교육(주)</div>
+                  <div style={S(A(
+                    "flex:1;min-width:300px;font-size:12px;color:#4F5662;line-height:1.9;word-break:keep-all",
+                    "font-size:11px;color:#7A808B;line-height:1.8;word-break:break-all",
+                  ))}>
                     06643 서울 서초구 효령로 321 메가에듀빌딩 메가에듀교육(주) · 대표이사: 홍길동 · 사업자등록번호: 780-87-00034<br/>
                     통신판매번호: 2026-서울서초-0678&nbsp;
                     <span className="hov-link" style={S("color:#2B4FE8;cursor:pointer;text-decoration:underline;text-underline-offset:2px")}>정보조회</span>
@@ -854,6 +923,23 @@ class Component extends React.Component {
                   </div>
                 </div>
               </div>
+              {/* 앱 하단 탭바 — 고정이라 푸터가 가려지지 않도록 같은 높이의 여백을 둔다 */}
+              {app && (<>
+                <div style={S("height:calc(58px + env(safe-area-inset-bottom))")} />
+                <nav className="app-tabbar" aria-label="주요 메뉴">
+                  {[
+                    { key: 'home', label: '홈', icon: 'home', onClick: vm.navWeb },
+                    { key: 'lecture', label: '인강', icon: 'play' },
+                    { key: 'insurance', label: '보험', icon: 'shieldCheck', onClick: () => vm.entryGo('insurance') },
+                    { key: 'my', label: 'MY', icon: 'user' },
+                  ].map((t) => (
+                    <button key={t.key} type="button" className={t.key === 'home' ? 'active' : undefined} onClick={t.onClick}>
+                      {this.uiIcon(t.icon, 21, t.key === 'home' ? '#2B4FE8' : '#9AA0AB')}
+                      <span>{t.label}</span>
+                    </button>
+                  ))}
+                </nav>
+              </>)}
             </div>
           </>)}
 
@@ -1347,7 +1433,11 @@ class Component extends React.Component {
                             ))}
                           </div>
                         </div>
-                        <div style={S("display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:12px")}>
+                        {/* 앱에서는 4열이면 '스탠다드'가 두 줄로 끊긴다 */}
+                        <div style={S(A(
+                          "display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:12px",
+                          "display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px",
+                        ))}>
                           {vm.tierRows.map((t, ti) => (
                             <div key={ti} onClick={()=>vm.setOnb({tier:t.tier})} style={S(`box-sizing:border-box;min-height:72px;border-radius:10px;border:1.5px solid ${vm.onbForm.tier===t.tier?'#0B7A4A':'#DDE5E0'};background:${vm.onbForm.tier===t.tier?'#F0FAF4':'#fff'};padding:9px 8px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between`)}>
                               <div style={S("display:flex;align-items:center;justify-content:space-between;gap:5px")}>
