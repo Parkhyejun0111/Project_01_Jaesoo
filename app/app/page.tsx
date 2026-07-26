@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SessionProvider, useSession } from "@/lib/session-context";
-import { useChat, useCostEstimate, useCostForms, useEligibility, useStudents } from "@/lib/hooks";
-import { useClaim } from "@/lib/claim";
+import { api } from "@jaesoo/api-client";
+import { useChat, useCostEstimate, useCostForms, useStudents } from "@/lib/hooks";
+import { toVariant, useClaim, type ClaimOCRResult } from "@/lib/claim";
 import {
   SUBJECT_COLOR,
   indexToX,
@@ -11,7 +12,6 @@ import {
   policyLink,
   shortRoundLabel,
   만원,
-  백분위,
   원,
   퍼센트,
 } from "@/lib/format";
@@ -19,7 +19,6 @@ import {
   ArrowRight,
   ArrowUp,
   ArrowUpRight,
-  BadgeCheck,
   BarChart3,
   Bell,
   BookOpenCheck,
@@ -34,23 +33,18 @@ import {
   CircleCheck,
   Clock3,
   CreditCard,
-  FileChartColumn,
   FileText,
   Flag,
   GraduationCap,
   Home,
-  Info,
   Lightbulb,
   LoaderCircle,
   LockKeyhole,
   LogOut,
   MapPin,
-  MessageCircle,
   Plus,
   RefreshCcw,
   ShieldCheck,
-  SlidersHorizontal,
-  Sparkles,
   Sun,
   Dumbbell,
   Siren,
@@ -77,12 +71,18 @@ type ClaimScreen =
   | "status"
   | "eligibilityDetail"
   | "appeal"
+  | "appealDone"
   | "appealStatus"
   | "capture"
   | "scanning"
-  | "scanResult";
+  | "scanResult"
+  | "receiptQualityFail"
+  | "receiptContinue";
 type ClaimResultVariant = "matched" | "review" | "proof" | "rejected";
 type EligibilityResult = "none" | "mild" | "severe";
+type QualityScenario = "ok" | "blurry" | "dark" | "cropped" | "small_text" | "duplicate";
+type ReceiptSource = "capture" | "file";
+type ReceiptItem = { id: string; source: ReceiptSource; file: File; documentId?: number };
 type CaptureContext = "receipt" | "proof";
 type ClaimPhase = "preExam" | "postExam" | "period1" | "between" | "period2";
 type ConverterScreen = "intro" | "input" | "cost" | "loading" | "result";
@@ -109,34 +109,93 @@ const paymentMethod = {
   last4: "4821",
 };
 
-const claimPhaseInfo: Record<
-  ClaimPhase,
-  {
-    toggleLabel: string;
-    homeHeadline: string;
-    bannerTitle: string;
-    bannerText: string;
-    paidAmount: string;
-    remainingAmount: string;
-    progress: number;
-    ctaLabel: string;
-    ctaEnabled: boolean;
-    historySub: string;
-    introHeading: string;
-    introTimeline: { title: string; text: string; state: "active" | "current" | "" }[];
-  }
-> = {
+// 청구 1단계(등록 카드 확인)에서 불러오는, 보험료 납입에 실제로 쓰인 카드들.
+// TODO: 결제수단 DB 연동 시 학생별 납입 카드 목록 조회 결과로 교체.
+const premiumPaymentCards = [
+  { provider: "신한카드", last4: "4821", owner: "김○○ (학부모)", status: "활성 · 사용 가능" },
+  { provider: "국민카드", last4: "9910", owner: "김○○ (학부모)", status: "활성 · 사용 가능" },
+];
+
+const qualityIssueCopy: Record<Exclude<QualityScenario, "ok">, string> = {
+  blurry: "사진이 흔들렸어요. 다시 촬영해 주세요.",
+  dark: "사진이 너무 어두워요. 밝은 곳에서 다시 촬영해 주세요.",
+  cropped: "영수증의 결제금액 부분이 잘렸어요. 다시 촬영해 주세요.",
+  small_text: "글씨가 너무 작게 나왔어요. 가까이서 다시 촬영해 주세요.",
+  duplicate: "이미 등록한 영수증과 같아요. 다른 영수증을 촬영해 주세요.",
+};
+
+// ── 청구 계정 (보장 한도·기지급·잔여) ───────────────────────────────────────
+// 한도·보장금은 세션 프로필(가입정보 → 계리 엔진 산출값)에서 오고, 지급 이력은
+// 아직 청구 DB 조회가 없어 시연 단계(phase)에 따라 한도 비율로 파생한다.
+// TODO(청구 연동): 지급 이력이 DB에 쌓이면 useClaimAccount 안의 firstPaidManwon
+//   파생만 GET /api/claims/{id} · /api/claims/{id}/verification 결과로 교체하면 된다.
+//   화면들은 전부 이 훅만 바라보므로 다른 곳은 손댈 필요가 없다.
+type ClaimAccount = {
+  /** 총 보장 한도 (중증 보장금, 만원) */
+  capManwon: number;
+  /** 경증 보장금 (만원) */
+  mildCapManwon: number;
+  /** 1차 청구 지급액 (만원) */
+  firstPaidManwon: number;
+  /** 2차 청구 지급(예정)액 (만원) */
+  secondPaidManwon: number;
+  tier: string;
+};
+
+// 1차 청구 = 1개월치 학원비 실비 시나리오 — 지급 이력 DB가 없는 동안의 데모 비율
+const FIRST_CLAIM_DEMO_RATIO = 0.26;
+
+function useClaimAccount(): ClaimAccount {
+  const { profile } = useSession();
+  const pricing = profile.data?.pricing ?? null;
+  return useMemo(() => {
+    const capManwon = pricing ? Math.round(pricing.cover_severe / 10_000) : policyInfo.coverageCapManwon;
+    const mildCapManwon = pricing
+      ? Math.round(pricing.cover_mild / 10_000)
+      : Math.round(policyInfo.coverageCapManwon / 2);
+    const firstPaidManwon = Math.round(capManwon * FIRST_CLAIM_DEMO_RATIO);
+    return {
+      capManwon,
+      mildCapManwon,
+      firstPaidManwon,
+      secondPaidManwon: capManwon - firstPaidManwon,
+      tier: pricing?.tier ?? policyInfo.tier,
+    };
+  }, [pricing]);
+}
+
+const 만원표기 = (n: number) => `${n.toLocaleString("ko-KR")}만원`;
+
+type ClaimPhaseCopy = {
+  toggleLabel: string;
+  homeHeadline: string;
+  bannerTitle: string;
+  bannerText: string;
+  paidAmount: string;
+  remainingAmount: string;
+  progress: number;
+  ctaLabel: string;
+  ctaEnabled: boolean;
+  historySub: string;
+  introHeading: string;
+  introTimeline: { title: string; text: string; state: "active" | "current" | "" }[];
+};
+
+function buildClaimPhaseInfo(account: ClaimAccount): Record<ClaimPhase, ClaimPhaseCopy> {
+  const cap = account.capManwon;
+  const first = account.firstPaidManwon;
+  return {
   preExam: {
     toggleLabel: "수능 전",
     homeHeadline: "수능 전이에요, 성적 관리에 집중해보세요",
     bannerTitle: "청구는 아직 준비 중이에요",
     bannerText: "수능 이후 1차 청구가 열려요. 그때 알림으로 알려드릴게요.",
     paidAmount: "0원",
-    remainingAmount: `${policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원`,
+    remainingAmount: 만원표기(cap),
     progress: 0,
     ctaLabel: "청구 준비 중",
     ctaEnabled: false,
-    historySub: "청구 내역 없음",
+    historySub: "청구 기간이 아직 열리지 않았어요",
     introHeading: "1차 청구, 아직 준비 중이에요",
     introTimeline: [
       { title: "수능", text: "성적 확정 · 보장 자격이 정해져요", state: "" },
@@ -146,15 +205,15 @@ const claimPhaseInfo: Record<
   },
   postExam: {
     toggleLabel: "수능 후",
-    homeHeadline: "수능 종료 · 1차 청구 준비 중이에요",
+    homeHeadline: "수능 종료 · 보장 자격을 확인하세요",
     bannerTitle: "1차 청구 준비 중이에요",
     bannerText: "수능이 끝났어요. 1차 청구는 7월 1일부터 열려요.",
     paidAmount: "0원",
-    remainingAmount: `${policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원`,
+    remainingAmount: 만원표기(cap),
     progress: 0,
     ctaLabel: "아직 접수 기간이 아니에요",
     ctaEnabled: false,
-    historySub: "청구 내역 없음",
+    historySub: "1차 청구 접수를 기다리고 있어요",
     introHeading: "1차 청구, 곧 열려요",
     introTimeline: [
       { title: "수능 · 종료", text: "성적 확정 · 보장 자격 확인 완료", state: "active" },
@@ -168,11 +227,11 @@ const claimPhaseInfo: Record<
     bannerTitle: "1차 청구가 열렸어요",
     bannerText: "7월 31일까지 접수할 수 있어요. 영수증만 올리면 자동으로 검증돼요.",
     paidAmount: "0원",
-    remainingAmount: `${policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원`,
+    remainingAmount: 만원표기(cap),
     progress: 0,
     ctaLabel: "청구 시작하기",
     ctaEnabled: true,
-    historySub: "청구 내역 없음",
+    historySub: "아직 접수한 청구가 없어요",
     introHeading: "1차 청구, 두 단계면 끝나요",
     introTimeline: [
       { title: "1차 청구 · 접수 가능", text: "2026.07.01 ~ 07.31 · 1개월치 학원비 영수증 필요", state: "current" },
@@ -185,59 +244,116 @@ const claimPhaseInfo: Record<
     homeHeadline: "1차 지급 완료 · 2차 청구 준비 중이에요",
     bannerTitle: "2차 청구 준비 중이에요",
     bannerText: "1차 지급이 끝났어요. 2차 청구는 12월 1일부터 열려요.",
-    paidAmount: "364만원",
-    remainingAmount: `${(policyInfo.coverageCapManwon - 364).toLocaleString("ko-KR")}만원`,
-    progress: 26,
+    paidAmount: 만원표기(first),
+    remainingAmount: 만원표기(cap - first),
+    progress: Math.round((first / cap) * 100),
     ctaLabel: "아직 접수 기간이 아니에요",
     ctaEnabled: false,
-    historySub: "1차 지급완료 · 364만원",
+    historySub: `1차 지급완료 · ${만원표기(first)}`,
     introHeading: "2차 청구, 곧 열려요",
     introTimeline: [
-      { title: "1차 청구 · 지급완료", text: "2026.06.30 접수 · 364만원 · 영수증 대조 결과 정상", state: "active" },
+      { title: "1차 청구 · 지급완료", text: `2026.06.30 접수 · ${만원표기(first)} · 영수증 대조 결과 정상`, state: "active" },
       { title: "2차 청구 · 접수 예정", text: "2026.12.01 ~ 12.31 · 6개월치 학원비 영수증 필요", state: "" },
       { title: "보장 종료", text: "2차 지급 후 계약이 끝나요", state: "" },
     ],
   },
   period2: {
     toggleLabel: "2차 청구 기간",
-    homeHeadline: "수능이 끝났어요, 지금 청구를 시작해보세요",
+    homeHeadline: "2차 청구가 열렸어요. 지금 시작해보세요.",
     bannerTitle: "2차 청구가 열렸어요",
     bannerText: "12월 31일까지 접수할 수 있어요. 영수증만 올리면 자동으로 검증돼요.",
-    paidAmount: "364만원",
-    remainingAmount: `${(policyInfo.coverageCapManwon - 364).toLocaleString("ko-KR")}만원`,
-    progress: 26,
+    paidAmount: 만원표기(first),
+    remainingAmount: 만원표기(cap - first),
+    progress: Math.round((first / cap) * 100),
     ctaLabel: "청구 시작하기",
     ctaEnabled: true,
-    historySub: "1차 지급완료 · 364만원",
+    historySub: `1차 지급완료 · ${만원표기(first)}`,
     introHeading: "2차 청구, 두 단계면 끝나요",
     introTimeline: [
-      { title: "1차 청구 · 지급완료", text: "2026.06.30 접수 · 364만원 · 영수증 대조 결과 정상", state: "active" },
+      { title: "1차 청구 · 지급완료", text: `2026.06.30 접수 · ${만원표기(first)} · 영수증 대조 결과 정상`, state: "active" },
       { title: "2차 청구 · 접수 가능", text: "2026.12.01 ~ 12.31 · 6개월치 학원비 영수증 필요", state: "current" },
       { title: "보장 종료", text: "2차 지급 후 계약이 끝나요", state: "" },
     ],
   },
+  };
+}
+
+type EligibilityCopy = {
+  determinedAt: string;
+  isEligible: boolean;
+  tierLabel: string;
+  title: string;
+  desc: string;
+  expectedGrade: string;
+  actualGrade: string;
+  dropSigma: string;
+  mildThreshold: string;
+  severeThreshold: string;
+  coverageLimit: string;
+  claimWindow: string;
 };
 
-// 판정 결과별 안내 문구. **수치는 여기 두지 않는다** — 등급·임계·보장한도는
-// 백엔드 engine.eligibility() 가 약관 별표3 기준으로 계산해 내려준다.
-// (이전 판에는 −1.75σ/−2.25σ, 보장한도 등이 화면에 하드코딩돼 있었다)
-const eligibilityCopy: Record<EligibilityResult, { tierLabel: string; title: string; desc: string }> = {
+// 판정 수치(등급·σ)는 수능 성적 입력 후 /api/student/{id}/eligibility 로 교체 예정.
+// 보장 한도만 가입정보(티어별 보장금)를 먼저 반영한다.
+function buildEligibilityInfo(account: ClaimAccount): Record<EligibilityResult, EligibilityCopy> {
+  return {
   none: {
+    determinedAt: "2026.12.04",
+    isEligible: false,
     tierLabel: "비대상",
     title: "이번엔 보장 대상이 아니에요",
     desc: "예상 성적 대비 하락폭이 경증 기준에 닿지 않았어요. 성적이 크게 떨어지지 않았다는 뜻이에요.",
+    expectedGrade: "2.41등급",
+    actualGrade: "3.19등급",
+    dropSigma: "-1.12σ",
+    mildThreshold: "-1.75σ 이하",
+    severeThreshold: "-2.25σ 이하",
+    coverageLimit: "0원",
+    claimWindow: "7월 1일 ~ 7월 31일",
   },
   mild: {
+    determinedAt: "2026.12.04",
+    isEligible: true,
     tierLabel: "경증",
     title: "경증 보장 대상이에요",
     desc: "예상 성적 대비 하락폭이 경증 기준을 넘었어요. 1차 청구를 접수할 수 있어요.",
+    expectedGrade: "2.41등급",
+    actualGrade: "3.54등급",
+    dropSigma: "-1.92σ",
+    mildThreshold: "-1.75σ 이하",
+    severeThreshold: "-2.25σ 이하",
+    coverageLimit: 만원표기(account.mildCapManwon),
+    claimWindow: "7월 1일 ~ 7월 31일",
   },
   severe: {
+    determinedAt: "2026.12.04",
+    isEligible: true,
     tierLabel: "중증",
     title: "중증 보장 대상이에요",
     desc: "예상 성적 대비 하락폭이 중증 기준을 넘었어요. 1차 청구를 접수할 수 있어요.",
+    expectedGrade: "2.41등급",
+    actualGrade: "3.98등급",
+    dropSigma: "-2.41σ",
+    mildThreshold: "-1.75σ 이하",
+    severeThreshold: "-2.25σ 이하",
+    coverageLimit: 만원표기(account.capManwon),
+    claimWindow: "7월 1일 ~ 7월 31일",
   },
-};
+  };
+}
+
+/** 청구 화면 공용 데이터 — 가입정보(세션) 반영 한도·지급액 + 단계별 카피 */
+function useClaimInfo() {
+  const account = useClaimAccount();
+  return useMemo(
+    () => ({
+      account,
+      phaseInfo: buildClaimPhaseInfo(account),
+      eligibility: buildEligibilityInfo(account),
+    }),
+    [account],
+  );
+}
 
 // 판정 대상 과목 (약관 별표6 + engine.subject_weights). 색은 DESIGN.md 고정값이라
 // lib/format 의 SUBJECT_COLOR 한 곳에서만 정의한다.
@@ -501,10 +617,11 @@ function HeroAction({
 }
 
 function ClaimPhaseToggle({ phase, onCycle }: { phase: ClaimPhase; onCycle: () => void }) {
+  const { phaseInfo } = useClaimInfo();
   return (
     <button className="claim-phase-toggle" type="button" onClick={onCycle} aria-label="청구 진행 단계 미리보기 전환">
       <Clock3 size={17} aria-hidden="true" />
-      <span>{claimPhaseInfo[phase].toggleLabel}</span>
+      <span>{phaseInfo[phase].toggleLabel}</span>
     </button>
   );
 }
@@ -526,6 +643,7 @@ function HomeMain({
   claimPhase: ClaimPhase;
   onOpenClaim: () => void;
 }) {
+  const { phaseInfo } = useClaimInfo();
   const [question, setQuestion] = useState("");
   const { profile } = useSession();
   const pricing = profile.data?.pricing;
@@ -606,7 +724,7 @@ function HomeMain({
             </span>
             <span className="claim-feature-text">
               <small>보험금 청구</small>
-              <strong>{claimPhaseInfo[claimPhase].homeHeadline}</strong>
+              <strong>{phaseInfo[claimPhase].homeHeadline}</strong>
             </span>
           </button>
         ) : (
@@ -2948,76 +3066,131 @@ function ClaimFlow({
   close: () => void;
   phase: ClaimPhase;
 }) {
-  const { studentId } = useSession();
-  const claim = useClaim(studentId);
-  const [cardLast4, setCardLast4] = useState("4821");
+  const { account } = useClaimInfo();
+  const { studentId, profile } = useSession();
+  const claimApi = useClaim(studentId);
+  const [cardLast4, setCardLast4] = useState(paymentMethod.last4);
   const [resultPreview, setResultPreview] = useState<ClaimResultVariant>("matched");
   const [eligibilityResult, setEligibilityResult] = useState<EligibilityResult>("none");
   const [appealFiled, setAppealFiled] = useState(false);
   const [captureContext, setCaptureContext] = useState<CaptureContext>("receipt");
-  const [receiptCaptured, setReceiptCaptured] = useState(false);
   const [proofCaptured, setProofCaptured] = useState(false);
-
-  // 백엔드가 판정한 결과가 있으면 그것을 쓰고, 없으면 미리보기 토글 값을 쓴다.
-  // (백엔드 청구가 아직 없는 데모 상태에서도 화면 전체를 둘러볼 수 있어야 한다)
-  const resultVariant: ClaimResultVariant = claim.variant ?? resultPreview;
-
-  useEffect(() => {
-    if (screen !== "verifying") return;
-    let cancelled = false;
-    // 실제 청구가 있으면 검증 결과를 조회하고, 없으면 기존 연출 시간만 흘려보낸다
-    const run = async () => {
-      if (claim.claimId) await claim.refreshVerification(claim.claimId);
-      else await new Promise((r) => setTimeout(r, 1600));
-      if (!cancelled) setScreen("result");
-    };
-    run();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, setScreen, claim.claimId]);
+  // 영수증은 여러 장을 촬영/등록할 수 있어 목록으로 관리한다. 사진 품질은 실제
+  // 분석기가 없으니, 다음 촬영 결과를 무엇으로 볼지 사람이 미리 골라 시뮬레이션한다.
+  const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
+  const [qualityScenario] = useState<QualityScenario>("ok");
+  const [pendingReceiptSource, setPendingReceiptSource] = useState<ReceiptSource>("capture");
+  const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(null);
+  const [claimUploadError, setClaimUploadError] = useState<string | null>(null);
+  // 증빙 자료 확인(capture/scanResult)을 거쳐 돌아와도 이미 적어둔 내용이 남아있도록
+  // ClaimAppeal 이 아니라 여기(ClaimFlow)에서 들고 있는다 — ClaimAppeal 은 화면 전환마다
+  // 조건부로 마운트/언마운트되므로 로컬 state 로 두면 돌아올 때마다 비워진다.
+  const [appealReason, setAppealReason] = useState<"성적 반영 오류" | "기타">("성적 반영 오류");
+  const [appealDetail, setAppealDetail] = useState("");
+  // 실제 청구 이력 DB가 없으므로, 이번 세션에서 실제로 제출을 마쳤는지를 추적한다.
+  // between·period2 단계는 "1차는 이미 지급됐다"는 시나리오 전제이므로 항상 청구됨으로 본다.
+  const [submittedFirst, setSubmittedFirst] = useState(false);
+  const [submittedSecond, setSubmittedSecond] = useState(false);
+  const firstClaimed = phase === "between" || phase === "period2" || (phase === "period1" && submittedFirst);
+  const secondClaimed = phase === "period2" && submittedSecond;
 
   useEffect(() => {
     if (screen !== "scanning") return;
-    const timer = window.setTimeout(() => setScreen("scanResult"), 1200);
+    const timer = window.setTimeout(() => {
+      if (captureContext !== "receipt") {
+        setScreen("scanResult"); // 이의신청 증빙자료는 기존 단일 확인 흐름 그대로
+        return;
+      }
+      if (!pendingReceiptFile) {
+        setClaimUploadError("선택한 영수증 파일을 불러오지 못했어요. 다시 선택해 주세요.");
+        setScreen("step2");
+        return;
+      }
+      setReceipts((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-${current.length}`,
+          source: pendingReceiptSource,
+          file: pendingReceiptFile,
+        },
+      ]);
+      setPendingReceiptFile(null);
+      setScreen("receiptContinue");
+    }, 1200);
     return () => window.clearTimeout(timer);
-  }, [screen, setScreen]);
+  }, [screen, setScreen, captureContext, pendingReceiptFile, pendingReceiptSource]);
+
+  async function verifyReceipts() {
+    if (!studentId) {
+      setClaimUploadError("학생 정보가 없어 영수증을 전송할 수 없어요. 다시 로그인해 주세요.");
+      return;
+    }
+    if (receipts.length === 0) {
+      setClaimUploadError("먼저 영수증 사진 또는 파일을 추가해 주세요.");
+      return;
+    }
+
+    setClaimUploadError(null);
+    setScreen("verifying");
+
+    const student = profile.data?.student as Record<string, unknown> | undefined;
+    const rawUserId = student?.user_id;
+    const userId =
+      typeof rawUserId === "number" && Number.isInteger(rawUserId)
+        ? rawUserId
+        : Array.from(studentId).reduce((hash, character) => ((hash * 31 + character.charCodeAt(0)) >>> 0), 17) || 1;
+    const selectedCard = premiumPaymentCards.find((card) => card.last4 === cardLast4);
+    const cardId = await claimApi.ensureCard(
+      {
+        company: selectedCard?.provider ?? paymentMethod.provider,
+        last4: cardLast4,
+        holderName: String(student?.name ?? studentProfile.name),
+        relationship: "학부모",
+      },
+      userId,
+    );
+    if (!cardId) {
+      setClaimUploadError("등록 카드를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setScreen("step2");
+      return;
+    }
+
+    const claimId = await claimApi.createClaim(cardId, userId);
+    if (!claimId) {
+      setClaimUploadError("청구 정보를 만들지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setScreen("step2");
+      return;
+    }
+
+    let lastResult: Awaited<ReturnType<typeof claimApi.uploadReceipt>> = null;
+    for (const receipt of receipts) {
+      lastResult = await claimApi.uploadReceipt(claimId, receipt.file);
+      if (!lastResult) {
+        setClaimUploadError(`‘${receipt.file.name}’ 파일을 확인하지 못했어요. 파일 형식과 용량을 확인해 주세요.`);
+        setScreen("step2");
+        return;
+      }
+      if (lastResult.document?.id) {
+        setReceipts((current) =>
+          current.map((item) => (item.id === receipt.id ? { ...item, documentId: lastResult?.document?.id } : item)),
+        );
+      }
+    }
+
+    setResultPreview(toVariant(lastResult?.status, lastResult?.verification?.final_result) ?? "review");
+    setScreen("result");
+  }
 
   useEffect(() => {
     if (screen !== "submitting") return;
-    const timer = window.setTimeout(() => setScreen("done"), 1400);
+    const timer = window.setTimeout(() => {
+      const isFirstRound = phase === "preExam" || phase === "postExam" || phase === "period1";
+      if (isFirstRound) setSubmittedFirst(true);
+      else setSubmittedSecond(true);
+      setScreen("done");
+    }, 1400);
     return () => window.clearTimeout(timer);
-  }, [screen, setScreen]);
-
-  const [pickedFileName, setPickedFileName] = useState<string | null>(null);
-
-  /**
-   * 영수증 파일 선택 → 등록 카드 확인 → 청구 생성 → 업로드.
-   * 백엔드가 파일 검증·OCR·등록 카드 대조까지 한 번에 처리하고 결과를 돌려준다.
-   * 아직 청구가 없으면 이 시점에 만든다(사용자는 파일만 고르면 된다).
-   */
-  const handlePickReceipt = async (file: File) => {
-    setPickedFileName(file.name);
-    // 데모 사용자 번호 — 실서비스에서는 로그인 세션의 가입자 ID 를 쓴다
-    const demoUserId = 1;
-    let cardId = claim.cardId;
-    if (!cardId) {
-      cardId = await claim.ensureCard(
-        { company: "신한카드", last4: cardLast4, holderName: "보호자", relationship: "부모" },
-        demoUserId,
-      );
-    }
-    if (!cardId) return;
-    let claimId = claim.claimId;
-    if (!claimId) claimId = await claim.createClaim(cardId, demoUserId);
-    if (!claimId) return;
-    const uploaded = await claim.uploadReceipt(claimId, file);
-    if (uploaded) {
-      setReceiptCaptured(true);
-      setScreen("verifying");
-    }
-  };
+  }, [screen, setScreen, phase]);
 
   const backMap: Record<ClaimScreen, ClaimScreen | null> = {
     home: null,
@@ -3032,23 +3205,30 @@ function ClaimFlow({
     status: "home",
     eligibilityDetail: "home",
     appeal: "eligibilityDetail",
+    appealDone: null,
     appealStatus: "home",
     capture: null,
     scanning: null,
     scanResult: null,
+    receiptQualityFail: "step2",
+    receiptContinue: "step2",
   };
 
+  // 청구 진입 후 첫 화면(home)에서만 "홈"(앱 홈 탭으로 나가기)이고, 그 밖의 화면은
+  // 실제로 돌아가는 이전 화면의 이름을 그대로 쓴다 — "홈"은 앱 홈 탭 전용 라벨이다.
   const backLabel: Partial<Record<ClaimScreen, string>> = {
     home: "홈",
-    intro: "홈",
+    intro: "보험금 청구",
     step1: "청구 안내",
     cardChange: "카드 확인",
     step2: "카드 확인",
     result: "영수증 업로드",
-    status: "홈",
-    eligibilityDetail: "홈",
+    status: "보험금 청구",
+    eligibilityDetail: "보험금 청구",
     appeal: "보장 자격 상세",
-    appealStatus: "홈",
+    appealStatus: "보험금 청구",
+    receiptQualityFail: "영수증 업로드",
+    receiptContinue: "영수증 업로드",
   };
 
   const captureOrigin: ClaimScreen = captureContext === "proof" ? "appeal" : "step2";
@@ -3059,14 +3239,17 @@ function ClaimFlow({
 
   if (screen === "scanning") {
     return (
-      <div className="screen page-with-nav claim-verifying">
-        <div className="claim-spinner" />
-        <h1>서류를 스캔하고 있어요</h1>
-        <p>
-          글씨가 잘 보이는지 확인하고 있어요.
-          <br />
-          잠시만 기다려주세요.
-        </p>
+      <div className="screen page-with-nav claim-screen">
+        <TopBar />
+        <div className="claim-verifying claim-scanning-center">
+          <div className="claim-spinner" />
+          <h1>서류를 스캔하고 있어요</h1>
+          <p>
+            글씨가 잘 보이는지 확인하고 있어요.
+            <br />
+            잠시만 기다려주세요.
+          </p>
+        </div>
       </div>
     );
   }
@@ -3074,8 +3257,7 @@ function ClaimFlow({
   if (screen === "submitting") {
     return (
       <div className="screen claim-loading">
-        <Mascot size="lg" />
-        <LoaderCircle className="spinner" size={42} />
+        <div className="claim-spinner" aria-hidden="true" />
         <h1>청구 내용을 안전하게 제출하고 있어요</h1>
         <p>잠시만 기다려주세요. 창을 닫지 않아도 괜찮아요.</p>
       </div>
@@ -3085,7 +3267,7 @@ function ClaimFlow({
   if (screen === "done") {
     const isFirstRound = phase === "preExam" || phase === "postExam" || phase === "period1";
     return (
-      <div className="screen claim-done">
+      <div className="screen claim-done claim-done-plain">
         <span className="done-icon">
           <Check size={42} />
         </span>
@@ -3102,7 +3284,7 @@ function ClaimFlow({
           </div>
           <div className="claim-kv-row">
             <span className="k">지급 예정액</span>
-            <span className="v positive">{isFirstRound ? "364만원" : `${(policyInfo.coverageCapManwon - 364).toLocaleString("ko-KR")}만원`}</span>
+            <span className="v positive">{isFirstRound ? 만원표기(account.firstPaidManwon) : 만원표기(account.secondPaidManwon)}</span>
           </div>
           <div className="claim-kv-row">
             <span className="k">예상 지급일</span>
@@ -3112,18 +3294,43 @@ function ClaimFlow({
         <div className="claim-note claim-done-note">
           {isFirstRound ? "2차 청구는 1차로부터 6개월 뒤에 열려요." : "2차 지급이 끝나면 보장이 종료돼요. 더 청구할 건은 없습니다."}
         </div>
-        <button className="white-button" onClick={() => setScreen("status")}>
+        <button className="primary-button button-flat-primary" onClick={() => setScreen("status")}>
           진행 상황 보기
         </button>
-        <button className="ghost-button" onClick={close}>
+        <button className="secondary-button button-outline-secondary" onClick={close}>
           홈으로
         </button>
       </div>
     );
   }
 
+  if (screen === "appealDone") {
+    return (
+      <div className="screen claim-done claim-done-plain">
+        <span className="done-icon">
+          <Check size={42} />
+        </span>
+        <h1>이의 신청이 완료됐어요</h1>
+        <p>접수 후 5영업일 안에 결과를 알려드려요.</p>
+        <button className="primary-button button-flat-primary" onClick={() => setScreen("appealStatus")}>
+          이의신청 내역 보기
+        </button>
+        <button className="secondary-button button-outline-secondary" onClick={close}>
+          홈으로
+        </button>
+      </div>
+    );
+  }
+
+  // 이의신청 STEP 3(증빙 확인 후 재작성 화면)에서는 뒤로가기를 누르면 STEP 2(증빙 촬영)로 돌아간다
   const previous =
-    screen === "capture" ? captureOrigin : screen === "scanResult" ? "capture" : backMap[screen];
+    screen === "capture"
+      ? captureOrigin
+      : screen === "scanResult"
+        ? "capture"
+        : screen === "appeal" && proofCaptured
+          ? "capture"
+          : backMap[screen];
   const label =
     screen === "capture"
       ? captureContext === "proof"
@@ -3131,7 +3338,9 @@ function ClaimFlow({
         : "영수증 업로드"
       : screen === "scanResult"
         ? "사진 촬영"
-        : (backLabel[screen] ?? "이전 화면");
+        : screen === "appeal" && proofCaptured
+          ? "사진 촬영"
+          : (backLabel[screen] ?? "이전 화면");
 
   return (
     <div className="screen page-with-nav claim-screen">
@@ -3143,11 +3352,20 @@ function ClaimFlow({
           eligibilityResult={eligibilityResult}
           onChangeEligibilityResult={setEligibilityResult}
           appealFiled={appealFiled}
+          firstClaimed={firstClaimed}
+          secondClaimed={secondClaimed}
         />
       )}
       {screen === "intro" && <ClaimIntro onStart={() => setScreen("step1")} phase={phase} />}
       {screen === "step1" && (
-        <ClaimCardStep cardLast4={cardLast4} onConfirm={() => setScreen("step2")} onChangeCard={() => setScreen("cardChange")} />
+        <ClaimCardStep
+          cardLast4={cardLast4}
+          onConfirm={(last4) => {
+            setCardLast4(last4);
+            setScreen("step2");
+          }}
+          onChangeCard={() => setScreen("cardChange")}
+        />
       )}
       {screen === "cardChange" && (
         <ClaimCardChange
@@ -3159,51 +3377,91 @@ function ClaimFlow({
       )}
       {screen === "step2" && (
         <ClaimUpload
-          onUpload={() => setScreen("verifying")}
-          previewResult={resultPreview}
-          onChangePreviewResult={setResultPreview}
-          captured={receiptCaptured}
+          onUpload={verifyReceipts}
+          receipts={receipts}
+          error={claimUploadError}
           onCapture={() => {
             setCaptureContext("receipt");
+            setPendingReceiptSource("capture");
             setScreen("capture");
           }}
-          onPickFile={handlePickReceipt}
-          pickedName={pickedFileName}
-          uploading={claim.busy}
-          uploadError={claim.error}
+          onFileSelected={(file) => {
+            setCaptureContext("receipt");
+            setPendingReceiptSource("file");
+            setPendingReceiptFile(file);
+            setScreen("scanning");
+          }}
+          onRetakeReceipt={(id) => {
+            setReceipts((current) => current.filter((r) => r.id !== id));
+            setCaptureContext("receipt");
+            setPendingReceiptSource("capture");
+            setScreen("capture");
+          }}
+          onDeleteReceipt={(id) => setReceipts((current) => current.filter((r) => r.id !== id))}
         />
       )}
       {screen === "capture" && (
         <ClaimCapture
-          onCapture={() => setScreen("scanning")}
+          onCapture={(file) => {
+            setPendingReceiptSource("capture");
+            setPendingReceiptFile(file);
+            setScreen("scanning");
+          }}
+          receiptCount={receipts.length}
+        />
+      )}
+      {screen === "receiptQualityFail" && (
+        <ClaimReceiptQualityFail
+          scenario={qualityScenario}
+          onRetake={() => {
+            setPendingReceiptSource("capture");
+            setScreen("capture");
+          }}
+        />
+      )}
+      {screen === "receiptContinue" && (
+        <ClaimReceiptContinue
+          count={receipts.length}
+          onAddMore={() => {
+            setPendingReceiptSource("capture");
+            setScreen("capture");
+          }}
+          onDone={() => setScreen("step2")}
         />
       )}
       {screen === "scanResult" && (
         <ClaimScanResult
+          context={captureContext}
           onRetake={() => setScreen("capture")}
           onConfirm={() => {
-            if (captureContext === "proof") {
-              setProofCaptured(true);
-              setScreen("appeal");
-            } else {
-              setReceiptCaptured(true);
-              setScreen("step2");
-            }
+            // 이 화면은 이의신청 증빙자료 확인에서만 쓰인다 — 확인완료는 접수가 아니라
+            // STEP 3(확인 및 접수) 재작성 화면으로 돌아간다
+            setProofCaptured(true);
+            setScreen("appeal");
           }}
         />
       )}
       {screen === "result" && (
         <ClaimResult
-          variant={resultVariant}
-          cardLast4={claim.last4 || cardLast4}
-          reasons={claim.reasons}
+          variant={resultPreview}
+          cardLast4={cardLast4}
+          ocrResult={claimApi.ocrResult}
+          reasons={claimApi.reasons}
           onSubmit={() => setScreen("submitting")}
           onRetryUpload={() => setScreen("step2")}
           onChangeCard={() => setScreen("cardChange")}
           onViewStatus={() => setScreen("status")}
         />
       )}
-      {screen === "status" && <ClaimStatus />}
+      {screen === "status" && (
+        <ClaimStatus
+          phase={phase}
+          firstClaimed={firstClaimed}
+          secondClaimed={secondClaimed}
+          submittedReceipts={receipts}
+          onStartClaim={() => setScreen("intro")}
+        />
+      )}
       {screen === "eligibilityDetail" && (
         <ClaimEligibilityDetail result={eligibilityResult} onAppeal={() => setScreen("appeal")} />
       )}
@@ -3211,9 +3469,13 @@ function ClaimFlow({
         <ClaimAppeal
           onSubmit={() => {
             setAppealFiled(true);
-            setScreen("home");
+            setScreen("appealDone");
           }}
           captured={proofCaptured}
+          reason={appealReason}
+          onChangeReason={setAppealReason}
+          detail={appealDetail}
+          onChangeDetail={setAppealDetail}
           onCapture={() => {
             setCaptureContext("proof");
             setScreen("capture");
@@ -3231,51 +3493,54 @@ function ClaimHome({
   eligibilityResult,
   onChangeEligibilityResult,
   appealFiled,
+  firstClaimed,
+  secondClaimed,
 }: {
   setScreen: (screen: ClaimScreen) => void;
   phase: ClaimPhase;
   eligibilityResult: EligibilityResult;
   onChangeEligibilityResult: (result: EligibilityResult) => void;
   appealFiled: boolean;
+  firstClaimed: boolean;
+  secondClaimed: boolean;
 }) {
-  const info = claimPhaseInfo[phase];
-  const copy = eligibilityCopy[eligibilityResult];
+  const { account, phaseInfo, eligibility: eligibilityCopy } = useClaimInfo();
+  const info = phaseInfo[phase];
+  const eligibility = eligibilityCopy[eligibilityResult];
   const showEligibilityCard = phase === "postExam";
-
-  // 임계·보장한도·하락폭은 엔진이 계산한 값을 쓴다 (약관 별표3·별표4)
-  const { studentId, profile } = useSession();
-  const band = profile.data?.analysis?.band;
-  const sigmaOffset = eligibilityResult === "severe" ? 2.4 : eligibilityResult === "mild" ? 2.0 : 1.0;
-  const simulatedGrade =
-    band?.predicted_grade != null ? band.predicted_grade + sigmaOffset * band.sigma : undefined;
-  const { data: judged } = useEligibility(studentId, simulatedGrade);
-  const isEligible = judged?.status === "determined" ? Boolean(judged.eligible) : eligibilityResult !== "none";
+  // 세션에서 실제로 접수를 마쳤으면(백엔드 청구 이력이 아직 없어 로컬로만 추적) 문구를 갱신한다
+  const historySub =
+    phase === "period1" && firstClaimed
+      ? "1차 청구 심사중"
+      : phase === "period2" && secondClaimed
+        ? "2차 청구 심사중"
+        : info.historySub;
   return (
     <main className="sub-page">
       <span className="eyebrow">보험금 청구</span>
       <h1>필요할 때 든든하게 챙겨드려요</h1>
       {showEligibilityCard ? (
-        <section className={`claim-open-card ${isEligible ? "" : "not-eligible"}`}>
-          <span className="eyebrow light">보장 판정</span>
-          <h2>{copy.title}</h2>
+        <section className={`claim-open-card ${eligibility.isEligible ? "" : "not-eligible"}`}>
+          <span className="eyebrow light">보장 판정 완료 · {eligibility.determinedAt}</span>
+          <h2>{eligibility.title}</h2>
           <p>
-            {isEligible && judged?.coverage_limit
-              ? `보장 한도 ${만원(judged.coverage_limit)} 안에서 지급돼요.`
-              : copy.desc}
+            {eligibility.isEligible
+              ? `1차 청구 기간은 ${eligibility.claimWindow}이에요. 보장 한도 ${eligibility.coverageLimit} 안에서 지급돼요.`
+              : eligibility.desc}
           </p>
-          {!isEligible && (
+          {!eligibility.isEligible && (
             <div className="claim-eligibility-stats">
               <div>
-                <span>예상 성적 대비 하락폭</span>
-                <strong>{judged?.z != null ? `${judged.z.toFixed(2)}σ` : "—"}</strong>
+                <span className="claim-eligibility-stats-label">하락폭</span>
+                <strong>{eligibility.dropSigma}</strong>
               </div>
               <div>
                 <span>경증 기준</span>
-                <strong>{judged ? `${judged.mild_threshold_z}σ 이하` : "—"}</strong>
+                <strong>{eligibility.mildThreshold}</strong>
               </div>
               <div>
                 <span>중증 기준</span>
-                <strong>{judged ? `${judged.severe_threshold_z}σ 이하` : "—"}</strong>
+                <strong>{eligibility.severeThreshold}</strong>
               </div>
             </div>
           )}
@@ -3303,7 +3568,7 @@ function ClaimHome({
       )}
       {!showEligibilityCard && (
         <section className="claim-open-card">
-          <span className="eyebrow light">보장 자격 확정 · 중증 · 한도 {policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원</span>
+          <span className="eyebrow light">보장 자격 확정 · 중증 · 한도 {만원표기(account.capManwon)}</span>
           <h2>{info.bannerTitle}</h2>
           <p>{info.bannerText}</p>
           <div className="claim-progress">
@@ -3324,7 +3589,7 @@ function ClaimHome({
           </button>
         </section>
       )}
-      {showEligibilityCard && !isEligible && appealFiled && (
+      {showEligibilityCard && !eligibility.isEligible && appealFiled && (
         <button type="button" className="claim-lrow" onClick={() => setScreen("appealStatus")}>
           <span>
             <strong>이의 신청 진행 상황</strong>
@@ -3336,7 +3601,7 @@ function ClaimHome({
       <button type="button" className="claim-lrow" onClick={() => setScreen("status")}>
         <span>
           <strong>내 청구 내역</strong>
-          <small>{info.historySub}</small>
+          <small>{historySub}</small>
         </span>
         <ChevronRight size={17} />
       </button>
@@ -3351,106 +3616,47 @@ function ClaimEligibilityDetail({
   result: EligibilityResult;
   onAppeal: () => void;
 }) {
-  // 판정은 백엔드 engine.eligibility() 가 한다 (약관 별표3).
-  // `result` 는 데모용 시나리오 토글 — 실제 수능 등급이 확정되기 전까지 화면을
-  // 미리 보기 위한 값이고, 확정 판정이 오면 그것을 우선한다.
-  const { studentId, profile } = useSession();
-  const band = profile.data?.analysis?.band;
-
-  // 데모 시나리오: 예상 등급에서 지정한 σ 만큼 떨어진 상황을 가정해 서버에 물어본다
-  const sigmaOffset = result === "severe" ? 2.4 : result === "mild" ? 2.0 : 1.0;
-  // σ 는 등급 단위라 등급으로 시나리오를 만든 뒤 백엔드가 백분위로 환산해 돌려준다
-  const simulatedGrade =
-    band?.predicted_grade != null ? band.predicted_grade + sigmaOffset * band.sigma : undefined;
-  const { data, loading } = useEligibility(studentId, simulatedGrade);
-
-  if (loading || !data) {
-    return (
-      <main className="sub-page">
-        <span className="eyebrow">보장 자격 상세</span>
-        <h1>보장 자격 상세</h1>
-        <section className="white-card">판정 결과를 불러오는 중이에요…</section>
-      </main>
-    );
-  }
-
-  if (data.status === "insufficient_data") {
-    return (
-      <main className="sub-page">
-        <span className="eyebrow">보장 자격 상세</span>
-        <h1>아직 판정할 수 없어요</h1>
-        <section className="white-card">
-          <p>{data.message}</p>
-          <p className="card-note">
-            등록된 회차 {data.observed_rounds ?? 0}회 / 필요 {data.required_rounds ?? 5}회
-          </p>
-        </section>
-      </main>
-    );
-  }
-
-  const eligible = data.status === "determined" ? Boolean(data.eligible) : false;
-  const label =
-    data.status === "determined"
-      ? { none: "비대상", mild: "경증", severe: "중증" }[data.result ?? "none"]
-      : "판정 전";
-
+  const { eligibility } = useClaimInfo();
+  const info = eligibility[result];
   return (
     <main className="sub-page">
-      <span className="eyebrow">보장 자격 상세</span>
+      <span> </span>
       <h1>보장 자격 상세</h1>
-      <div className="claim-note">
-        판정은 예상 성적(밴드)과 실제 수능 성적의 차이를 표준편차 단위로 계산해 나옵니다.
-        백분위는 높을수록 좋아요.
-      </div>
-
-      <section className="white-card claim-kv-card">
+      <p className="claim-eligibility-lead">
+        예상 성적과 실제 성적의 차이를 표준편차로 계산해요.
+      </p>
+      <section className="white-card claim-kv-card claim-result-card">
         <div className="claim-kv-row">
           <span className="k">예상 성적(밴드 중심)</span>
-          <span className="v">{백분위(data.predicted_percentile)} 백분위</span>
+          <span className="v">{info.expectedGrade}</span>
         </div>
         <div className="claim-kv-row">
           <span className="k">실제 수능 성적</span>
-          <span className="v">{백분위(data.actual_percentile)} 백분위</span>
+          <span className="v">{info.actualGrade}</span>
         </div>
         <div className="claim-kv-row">
           <span className="k">하락폭</span>
-          <span className="v">{data.z != null ? `${data.z.toFixed(2)}σ` : "—"}</span>
+          <span className="v">{info.dropSigma}</span>
         </div>
         <div className="claim-kv-row">
           <span className="k">판정</span>
-          <span className={`v ${eligible ? "positive" : ""}`}>{label}</span>
+          <span className="v brand-green-text">{info.tierLabel}</span>
         </div>
-        {data.coverage_limit != null && (
-          <div className="claim-kv-row">
-            <span className="k">보장 한도</span>
-            <span className="v">{만원(data.coverage_limit)}</span>
-          </div>
-        )}
       </section>
-
-      <section className="white-card claim-kv-card">
-        <h2>기준선</h2>
-        <div className="claim-kv-row">
-          <span className="k">경증</span>
-          <span className="v">
-            {백분위(data.mild_threshold_percentile)} 백분위 미만 ({data.mild_threshold_z}σ)
-          </span>
+      <div className="claim-threshold-list claim-threshold-list-muted">
+        <div className="claim-threshold-row">
+          <TriangleAlert size={11} aria-hidden="true" />
+          <span>경증 기준선</span>
+          <strong>{info.mildThreshold}</strong>
         </div>
-        <div className="claim-kv-row">
-          <span className="k">중증</span>
-          <span className="v">
-            {백분위(data.severe_threshold_percentile)} 백분위 미만 ({data.severe_threshold_z}σ)
-          </span>
+        <div className="claim-threshold-row">
+          <Siren size={11} aria-hidden="true" />
+          <span>중증 기준선</span>
+          <strong>{info.severeThreshold}</strong>
         </div>
-        <p className="card-note">판정 대상 과목: {data.judged_subjects.join(" · ")}</p>
-        <a className="text-link" href={policyLink("별표3-성적-급락-판정-기준-제13조-제26조-연계")} target="_blank" rel="noreferrer">
-          약관 별표3 — 급락 판정 기준 <ArrowUpRight size={14} />
-        </a>
-      </section>
-
-      {!eligible && (
-        <button className="white-button" onClick={onAppeal}>
+      </div>
+      {!info.isEligible && (
+        <button className="primary-button button-flat-primary claim-appeal-cta" onClick={onAppeal}>
           이의 신청하기
         </button>
       )}
@@ -3462,24 +3668,39 @@ function ClaimAppeal({
   onSubmit,
   captured,
   onCapture,
+  reason,
+  onChangeReason,
+  detail,
+  onChangeDetail,
 }: {
   onSubmit: () => void;
   captured: boolean;
   onCapture: () => void;
+  reason: "성적 반영 오류" | "기타";
+  onChangeReason: (reason: "성적 반영 오류" | "기타") => void;
+  detail: string;
+  onChangeDetail: (detail: string) => void;
 }) {
-  const [reason, setReason] = useState<"성적 반영 오류" | "기타">("성적 반영 오류");
-  const [detail, setDetail] = useState("");
+  // 증빙 자료를 한 번 확인하고 돌아오면(STEP 3) 그제서야 접수 버튼이 열린다.
+  // reason/detail 은 부모(ClaimFlow)가 들고 있다 — 이 화면은 capture/scanResult 를
+  // 거칠 때마다 마운트가 풀렸다 다시 걸리므로, 로컬 state 로 두면 돌아올 때 비워진다.
   return (
     <main className="sub-page claim-step">
-      <h1>이의 신청</h1>
-      <div className="claim-note warn">
-        성적 자료가 잘못 반영됐다고 판단되면 신청해 주세요. 접수 후 5영업일 안에 결과를 알려드려요.
+      <div className="claim-steps">
+        <i className="on" />
+        <i className={captured ? "on" : ""} />
+        <i className={captured ? "on" : ""} />
       </div>
+      <span className="step-label">
+        {captured ? "STEP 3 / 3 · 확인 및 접수" : "STEP 1 / 3 · 이의 신청 작성"}
+      </span>
+      <h1>이의 신청</h1>
+      <p>성적 반영이 잘못됐다면 신청해 주세요 · 5영업일 내 안내</p>
       <div className="claim-field">
         <label>이의 사유</label>
         <div className="claim-seg">
           {(["성적 반영 오류", "기타"] as const).map((option) => (
-            <button key={option} type="button" className={reason === option ? "on" : ""} onClick={() => setReason(option)}>
+            <button key={option} type="button" className={reason === option ? "on" : ""} onClick={() => onChangeReason(option)}>
               {option}
             </button>
           ))}
@@ -3490,19 +3711,38 @@ function ClaimAppeal({
         <textarea
           className="claim-input claim-textarea"
           value={detail}
-          onChange={(event) => setDetail(event.target.value)}
+          onChange={(event) => onChangeDetail(event.target.value)}
           placeholder="어떤 부분이 잘못됐는지 적어주세요"
           rows={4}
         />
       </div>
-      <button type="button" className="claim-drop" onClick={onCapture}>
-        <FileText size={24} />
-        <strong>{captured ? "증빙 자료 첨부됨 · 다시 올리기" : "증빙 자료 올리기"}</strong>
-        <small>성적표 · 성적증명서</small>
-      </button>
-      <button className="primary-button" onClick={onSubmit} disabled={!detail.trim()}>
-        이의 신청 접수하기
-      </button>
+      {captured ? (
+        <>
+          <div className="claim-drop claim-drop-done">
+            <CircleCheck size={24} />
+            <strong>증빙자료 첨부 완료</strong>
+            <small>성적표 · 성적증명서</small>
+          </div>
+          <button type="button" className="claim-drop-add" onClick={onCapture}>
+            추가하기
+          </button>
+        </>
+      ) : (
+        <button type="button" className="claim-drop" onClick={onCapture}>
+          <FileText size={24} />
+          <strong>증빙 자료 올리기</strong>
+          <small>성적표 · 성적증명서</small>
+        </button>
+      )}
+      {captured && (
+        <button
+          className="primary-button button-flat-primary claim-appeal-submit"
+          onClick={onSubmit}
+          disabled={!detail.trim()}
+        >
+          이의 신청 접수하기
+        </button>
+      )}
     </main>
   );
 }
@@ -3532,35 +3772,235 @@ function ClaimAppealStatus() {
   );
 }
 
-function ClaimCapture({ onCapture }: { onCapture: () => void }) {
+function ClaimCapture({ onCapture, receiptCount = 0 }: { onCapture: (file: File) => void; receiptCount?: number }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [cameraState, setCameraState] = useState<"starting" | "ready" | "error">("starting");
+  const [cameraError, setCameraError] = useState("");
+  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function startCamera() {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      setCameraState("starting");
+      setCameraError("");
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraState("error");
+        setCameraError("이 브라우저에서는 실시간 카메라를 지원하지 않아요.");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: { ideal: facingMode },
+            width: { ideal: 1920 },
+            height: { ideal: 1440 },
+          },
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        setCameraState("ready");
+      } catch (error) {
+        if (cancelled) return;
+        const denied = error instanceof DOMException && error.name === "NotAllowedError";
+        setCameraState("error");
+        setCameraError(
+          denied
+            ? "카메라 권한이 허용되지 않았어요. 브라우저 설정에서 권한을 허용해 주세요."
+            : "카메라를 시작하지 못했어요. 다른 촬영 방법을 이용해 주세요.",
+        );
+      }
+    }
+
+    void startCamera();
+    return () => {
+      cancelled = true;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    };
+  }, [facingMode]);
+
+  function captureFrame() {
+    const video = videoRef.current;
+    if (!video || cameraState !== "ready" || video.videoWidth === 0 || video.videoHeight === 0) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      setCameraState("error");
+      setCameraError("촬영 이미지를 만들지 못했어요. 다시 시도해 주세요.");
+      return;
+    }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setCameraState("error");
+          setCameraError("촬영 이미지를 저장하지 못했어요. 다시 시도해 주세요.");
+          return;
+        }
+        onCapture(new File([blob], `receipt-${Date.now()}.jpg`, { type: "image/jpeg" }));
+      },
+      "image/jpeg",
+      0.92,
+    );
+  }
+
   return (
     <main className="claim-capture">
+      {receiptCount > 0 && <span className="claim-capture-count">영수증 {receiptCount}장 촬영됨</span>}
       <div className="claim-camera-frame">
-        <div className="claim-camera-guide" />
+        <div className="claim-camera-guide">
+          <video ref={videoRef} className="claim-camera-video" autoPlay muted playsInline aria-label="실시간 카메라 화면" />
+          {cameraState === "starting" && (
+            <div className="claim-camera-overlay">
+              <LoaderCircle className="spinner" size={30} />
+              <span>카메라를 준비하고 있어요</span>
+            </div>
+          )}
+          {cameraState === "error" && (
+            <div className="claim-camera-overlay claim-camera-error" role="alert">
+              <TriangleAlert size={28} />
+              <span>{cameraError}</span>
+              <label className="claim-camera-fallback">
+                사진 촬영 또는 선택
+                <input
+                  className="claim-file-input"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) onCapture(file);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+          )}
+        </div>
         <p>서류 전체가 프레임 안에 들어오게 맞춰주세요</p>
       </div>
-      <button type="button" className="claim-shutter" onClick={onCapture} aria-label="촬영하기">
-        <Camera size={26} />
+      <div className="claim-camera-controls">
+        <button
+          type="button"
+          className="claim-camera-switch"
+          onClick={() => setFacingMode((current) => (current === "environment" ? "user" : "environment"))}
+          aria-label="전면 또는 후면 카메라 전환"
+        >
+          <RefreshCcw size={20} />
+        </button>
+        <button
+          type="button"
+          className="claim-shutter"
+          onClick={captureFrame}
+          disabled={cameraState !== "ready"}
+          aria-label="촬영하기"
+        >
+          <Camera size={26} />
+        </button>
+        <span className="claim-camera-control-spacer" aria-hidden="true" />
+      </div>
+    </main>
+  );
+}
+
+function ClaimReceiptQualityFail({
+  scenario,
+  onRetake,
+}: {
+  scenario: QualityScenario;
+  onRetake: () => void;
+}) {
+  const message = scenario === "ok" ? "" : qualityIssueCopy[scenario];
+  return (
+    <main className="sub-page claim-quality-fail">
+      <span className="claim-quality-fail-icon">
+        <TriangleAlert size={26} />
+      </span>
+      <h1>사진을 다시 확인해 주세요</h1>
+      <p>{message}</p>
+      <button className="primary-button button-flat-primary" onClick={onRetake}>
+        다시 촬영하기
       </button>
     </main>
   );
 }
 
-function ClaimScanResult({ onRetake, onConfirm }: { onRetake: () => void; onConfirm: () => void }) {
+function ClaimReceiptContinue({
+  count,
+  onAddMore,
+  onDone,
+}: {
+  count: number;
+  onAddMore: () => void;
+  onDone: () => void;
+}) {
   return (
-    <main className="sub-page">
-      <span className="eyebrow">스캔 결과 확인</span>
+    <main className="sub-page claim-quality-fail">
+      <span className="claim-quality-fail-icon claim-quality-ok-icon">
+        <CircleCheck size={26} />
+      </span>
+      <h1>영수증 {count}장 촬영됨</h1>
+      <p>더 촬영할 영수증이 있으면 이어서 찍어주세요.</p>
+      <div className="claim-btn-stack">
+        <button className="primary-button button-flat-primary" onClick={onAddMore}>
+          한 장 더 촬영하기
+        </button>
+        <button className="secondary-button button-outline-secondary" onClick={onDone}>
+          촬영 완료
+        </button>
+      </div>
+    </main>
+  );
+}
+
+function ClaimScanResult({
+  context,
+  onRetake,
+  onConfirm,
+}: {
+  context: CaptureContext;
+  onRetake: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <main className={`sub-page${context === "proof" ? " claim-step" : ""}`}>
+      {context === "proof" ? (
+        <div className="claim-steps">
+          <i className="on" />
+          <i className="on" />
+          <i />
+        </div>
+      ) : (
+        <span className="eyebrow">스캔 결과 확인</span>
+      )}
+      {context === "proof" && <span className="step-label">STEP 2 / 3 · 증빙 자료 확인</span>}
       <h1>이 사진으로 사용할까요?</h1>
       <div className="claim-scan-preview">
         <FileText size={32} />
         <span>서류 이미지 미리보기</span>
       </div>
-      <div className="claim-note">글씨가 잘리지 않고 또렷하게 나왔는지 확인해주세요.</div>
       <div className="claim-btn-stack">
-        <button className="primary-button" onClick={onConfirm}>
-          이 사진 사용하기
+        <button className="primary-button button-flat-primary" onClick={onConfirm}>
+          {context === "proof" ? "확인완료" : "이 사진 사용하기"}
         </button>
-        <button className="secondary-button" onClick={onRetake}>
+        <button className="secondary-button button-outline-secondary" onClick={onRetake}>
           다시 찍기
         </button>
       </div>
@@ -3569,17 +4009,14 @@ function ClaimScanResult({ onRetake, onConfirm }: { onRetake: () => void; onConf
 }
 
 function ClaimIntro({ onStart, phase }: { onStart: () => void; phase: ClaimPhase }) {
-  const info = claimPhaseInfo[phase];
+  const { phaseInfo } = useClaimInfo();
+  const info = phaseInfo[phase];
   return (
     <main className="sub-page">
       <span className="eyebrow">청구 안내</span>
       <h1>{info.introHeading}</h1>
-      <div className="claim-note">
-        <b>청구는 두 번으로 끝나요.</b>
-        <br />
-        가입 1개월 뒤 1차, 그로부터 6개월 뒤 2차 학원비 영수증을 확인하면 보장이 마무리됩니다.
-      </div>
-      <section className="white-card">
+      <p className="claim-intro-lead">가입 1개월 뒤 1차, 6개월 뒤 2차로 총 두 번 청구해요.</p>
+      <section className="white-card claim-schedule-card">
         <h2>내 청구 일정</h2>
         <div className="status-timeline">
           {info.introTimeline.map((item) => (
@@ -3600,12 +4037,12 @@ function ClaimIntro({ onStart, phase }: { onStart: () => void; phase: ClaimPhase
           <span className="v">신한 ●●●● 4821</span>
         </div>
         <div className="claim-kv-row">
-          <span className="k">학원 카드 영수증</span>
+          <span className="k">학원 결제 영수증</span>
           <span className="v">사진 또는 PDF</span>
         </div>
       </section>
       <button className="primary-button" onClick={onStart}>
-        카드 확인하고 시작하기 <ArrowRight size={18} />
+        청구 시작하기
       </button>
     </main>
   );
@@ -3617,9 +4054,16 @@ function ClaimCardStep({
   onChangeCard,
 }: {
   cardLast4: string;
-  onConfirm: () => void;
+  onConfirm: (last4: string) => void;
   onChangeCard: () => void;
 }) {
+  // 새로 등록해서 목록에 없는 카드라면(ClaimCardChange 직후) 맨 위에 얹어 보여준다
+  const cards = useMemo(() => {
+    if (premiumPaymentCards.some((c) => c.last4 === cardLast4)) return premiumPaymentCards;
+    return [{ provider: "새로 등록한 카드", last4: cardLast4, owner: "김○○ (학부모)", status: "활성 · 사용 가능" }, ...premiumPaymentCards];
+  }, [cardLast4]);
+  const [selected, setSelected] = useState(cardLast4);
+
   return (
     <main className="sub-page claim-step">
       <div className="claim-steps">
@@ -3629,87 +4073,101 @@ function ClaimCardStep({
       </div>
       <span className="step-label">STEP 1 / 3 · 등록 카드 확인</span>
       <h1>이 카드로 결제한 게 맞나요?</h1>
-      <p>영수증의 카드 뒤 4자리가 아래 카드와 같아야 자동으로 통과돼요.</p>
-      <section className="white-card claim-kv-card">
-        <div className="claim-kv-row">
-          <span className="k">카드사</span>
-          <span className="v">{paymentMethod.provider}</span>
-        </div>
-        <div className="claim-kv-row">
-          <span className="k">카드번호 뒤 4자리</span>
-          <span className="v">●●●● {cardLast4}</span>
-        </div>
-        <div className="claim-kv-row">
-          <span className="k">카드 명의자</span>
-          <span className="v">김○○ (학부모)</span>
-        </div>
-        <div className="claim-kv-row">
-          <span className="k">상태</span>
-          <span className="v positive">활성 · 사용 가능</span>
-        </div>
-      </section>
-      <div className="claim-note warn">카드를 재발급·분실했다면 먼저 변경해 주세요. 변경 전 영수증을 올리면 불일치로 반려됩니다.</div>
-      <div className="claim-btn-stack">
-        <button className="primary-button" onClick={onConfirm}>
-          이 카드로 진행하기 <ArrowRight size={18} />
+      <p>보험료 납입에 사용한 카드를 먼저 불러왔어요.</p>
+      <div className="claim-card-list" role="radiogroup" aria-label="결제 카드 선택">
+        {cards.map((card) => (
+          <label
+            className={`claim-card-option white-card claim-kv-card${selected === card.last4 ? " active" : ""}`}
+            key={card.last4}
+          >
+            <input
+              type="radio"
+              name="claim-card"
+              checked={selected === card.last4}
+              onChange={() => setSelected(card.last4)}
+            />
+            <div className="claim-kv-row">
+              <span className="k">카드사</span>
+              <span className="v">{card.provider}</span>
+            </div>
+            <div className="claim-kv-row">
+              <span className="k">카드번호 뒤 4자리</span>
+              <span className="v">●●●● {card.last4}</span>
+            </div>
+            <div className="claim-kv-row">
+              <span className="k">카드 명의자</span>
+              <span className="v">{card.owner}</span>
+            </div>
+            <div className="claim-kv-row">
+              <span className="k">상태</span>
+              <span className="v positive">{card.status}</span>
+            </div>
+          </label>
+        ))}
+      </div>
+      <div className="claim-btn-stack claim-btn-stack-cardstep">
+        <button className="primary-button button-flat-primary" onClick={() => onConfirm(selected)}>
+          선택한 카드로 계속하기
         </button>
-        <button className="secondary-button" onClick={onChangeCard}>
-          등록 카드 변경
+        <button className="secondary-button button-outline-secondary" onClick={onChangeCard}>
+          결제 카드 등록하기
         </button>
       </div>
     </main>
   );
 }
 
+const cardProviders = ["신한카드", "국민카드", "삼성카드", "현대카드", "우리카드", "하나카드", "카카오뱅크"];
+
 function ClaimCardChange({ onSave }: { onSave: (last4: string) => void }) {
-  const [reason, setReason] = useState<"만료" | "분실" | "재발급">("분실");
-  const [last4, setLast4] = useState("");
+  const [provider, setProvider] = useState(cardProviders[0]);
+  const [number, setNumber] = useState("");
+  const [owner, setOwner] = useState("");
+  const digits = number.replace(/\D/g, "");
+  const complete = digits.length === 16 && owner.trim().length > 1;
+
   return (
     <main className="sub-page claim-step">
-      <h1>등록 카드 변경</h1>
+      <h1 className="claim-cardchange-title">재수비용을 결제한 카드를 등록해 주세요</h1>
       <div className="claim-note">변경한 카드는 이번 청구부터 바로 대조 기준이 됩니다.</div>
       <div className="claim-field">
         <label>카드사</label>
-        <div className="claim-input">
-          {paymentMethod.provider} <ChevronDown size={15} />
-        </div>
+        <select className="claim-input" value={provider} onChange={(event) => setProvider(event.target.value)}>
+          {cardProviders.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="claim-field">
-        <label>카드번호 뒤 4자리</label>
+        <label>카드번호</label>
         <input
           className="claim-input"
-          value={last4}
-          onChange={(event) => setLast4(event.target.value.replace(/\D/g, "").slice(0, 4))}
-          placeholder="숫자 4자리"
+          value={number}
+          onChange={(event) => {
+            const next = event.target.value.replace(/\D/g, "").slice(0, 16);
+            setNumber(next.replace(/(\d{4})(?=\d)/g, "$1 "));
+          }}
+          placeholder="0000 0000 0000 0000"
           inputMode="numeric"
         />
       </div>
       <div className="claim-field">
         <label>카드 명의자</label>
-        <div className="claim-input">김○○</div>
+        <input
+          className="claim-input"
+          value={owner}
+          onChange={(event) => setOwner(event.target.value.slice(0, 20))}
+          placeholder="이름을 입력해 주세요"
+        />
       </div>
-      <div className="claim-field">
-        <label>변경 사유</label>
-        <div className="claim-seg">
-          {(["만료", "분실", "재발급"] as const).map((option) => (
-            <button key={option} type="button" className={reason === option ? "on" : ""} onClick={() => setReason(option)}>
-              {option}
-            </button>
-          ))}
-        </div>
-      </div>
-      <section className="white-card claim-kv-card claim-kv-muted">
-        <div className="claim-kv-row">
-          <span className="k">기존 카드</span>
-          <span className="v muted-strike">{paymentMethod.provider} ●●●● {paymentMethod.last4}</span>
-        </div>
-        <div className="claim-kv-row">
-          <span className="k">변경 후</span>
-          <span className="v">{paymentMethod.provider} ●●●● {last4 || "○○○○"}</span>
-        </div>
-      </section>
-      <button className="primary-button" onClick={() => onSave(last4 || paymentMethod.last4)} disabled={last4.length !== 4}>
-        카드 변경 저장
+      <button
+        className="primary-button button-flat-primary"
+        onClick={() => onSave(digits.slice(-4))}
+        disabled={!complete}
+      >
+        카드 등록하기
       </button>
     </main>
   );
@@ -3717,97 +4175,84 @@ function ClaimCardChange({ onSave }: { onSave: (last4: string) => void }) {
 
 function ClaimUpload({
   onUpload,
-  previewResult,
-  onChangePreviewResult,
-  captured,
+  receipts,
+  error,
   onCapture,
-  onPickFile,
-  pickedName,
-  uploading,
-  uploadError,
+  onFileSelected,
+  onRetakeReceipt,
+  onDeleteReceipt,
 }: {
-  onUpload: () => void;
-  previewResult: ClaimResultVariant;
-  onChangePreviewResult: (variant: ClaimResultVariant) => void;
-  captured: boolean;
+  onUpload: () => void | Promise<void>;
+  receipts: ReceiptItem[];
+  error: string | null;
   onCapture: () => void;
-  /** 실제 파일 업로드 — 고르면 백엔드가 검증·OCR·대조까지 처리한다 */
-  onPickFile: (file: File) => void;
-  pickedName: string | null;
-  uploading: boolean;
-  uploadError: string | null;
+  onFileSelected: (file: File) => void;
+  onRetakeReceipt: (id: string) => void;
+  onDeleteReceipt: (id: string) => void;
 }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const previewLabels: Record<ClaimResultVariant, string> = {
-    matched: "일치",
-    review: "확인",
-    proof: "서류",
-    rejected: "불일치",
-  };
   return (
-    <main className="sub-page claim-step">
+    <main className="sub-page claim-step claim-upload-step">
       <div className="claim-steps">
         <i className="on" />
         <i className="on" />
         <i />
       </div>
       <span className="step-label">STEP 2 / 3 · 영수증 업로드</span>
-      <h1>학원 카드 영수증을 올려주세요</h1>
+      <h1>재수비용 영수증을 첨부해 주세요</h1>
       <p>7~12월 결제분이 필요해요. 여러 장이면 모두 올려도 됩니다.</p>
-      <div className="claim-drop-group">
-        <button type="button" className="claim-drop" onClick={onCapture}>
-          <Camera size={26} />
-          <strong>{captured ? "촬영 완료 · 다시 찍기" : "사진 찍기"}</strong>
-          <small>글씨가 잘리지 않게 전체가 나오도록 찍어주세요</small>
+      <div className="claim-upload-options">
+        <button type="button" className="claim-drop claim-drop-half" onClick={onCapture}>
+          <Camera size={24} />
+          <strong>사진 찍기</strong>
         </button>
-        <button
-          type="button"
-          className="claim-drop secondary"
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-        >
+        <label className="claim-drop claim-drop-half">
           <FileText size={24} />
-          <strong>{pickedName ? `선택됨 · ${pickedName}` : "파일 선택"}</strong>
-          <small>JPG · PNG · PDF / 장당 10MB 이하</small>
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/jpeg,image/png,application/pdf"
-          hidden
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) onPickFile(file);
-            event.target.value = "";
-          }}
-        />
+          <strong>파일 선택</strong>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            className="claim-file-input"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) onFileSelected(file);
+              event.target.value = "";
+            }}
+          />
+        </label>
       </div>
-      {uploadError && <p className="claim-upload-error">{uploadError}</p>}
-      <section className="white-card">
-        <h2>영수증에서 읽는 항목</h2>
-        <div className="claim-chips">
-          {["카드 뒤 4자리", "카드사", "학원명", "사업자등록번호", "결제금액", "결제일", "승인번호", "결제수단"].map((chip) => (
-            <span key={chip}>{chip}</span>
+      <p className="claim-upload-hint">
+        JPG · PNG · PDF / 장당 10MB 이하 · 글씨가 잘리지 않게 전체가 나오도록 찍어주세요
+      </p>
+
+      {receipts.length > 0 && (
+        <section className="claim-receipt-list" aria-label="첨부한 영수증 목록">
+          {receipts.map((receipt, index) => (
+            <div className="claim-receipt-item" key={receipt.id}>
+              <span className="claim-receipt-thumb">
+                <FileText size={18} />
+              </span>
+              <div className="claim-receipt-info">
+                <strong>영수증 {index + 1}</strong>
+                <small>
+                  {receipt.file.name} · {receipt.source === "capture" ? "촬영됨" : "선택됨"}
+                </small>
+              </div>
+              <div className="claim-receipt-actions">
+                <button type="button" onClick={() => onRetakeReceipt(receipt.id)}>
+                  다시 촬영
+                </button>
+                <button type="button" onClick={() => onDeleteReceipt(receipt.id)}>
+                  삭제
+                </button>
+              </div>
+            </div>
           ))}
-        </div>
-      </section>
-      <div className="claim-field">
-        <label>결과 미리보기 (테스트용)</label>
-        <div className="claim-seg">
-          {(["matched", "review", "proof", "rejected"] as const).map((variant) => (
-            <button
-              key={variant}
-              type="button"
-              className={previewResult === variant ? "on" : ""}
-              onClick={() => onChangePreviewResult(variant)}
-            >
-              {previewLabels[variant]}
-            </button>
-          ))}
-        </div>
-      </div>
-      <button className="primary-button" onClick={onUpload} disabled={uploading}>
-        {uploading ? "업로드하는 중…" : "업로드하고 검증하기"} <ArrowRight size={18} />
+        </section>
+      )}
+
+      {error && <p className="claim-upload-error" role="alert">{error}</p>}
+      <button className="primary-button claim-upload-submit" onClick={onUpload} disabled={receipts.length === 0}>
+        영수증 확인하기
       </button>
     </main>
   );
@@ -3821,25 +4266,28 @@ function ClaimVerifying() {
     { label: "학원 정보와 대조", sub: "학원명·사업자등록번호 대기", done: false },
   ];
   return (
-    <div className="screen page-with-nav claim-verifying">
-      <div className="claim-spinner" />
-      <h1>영수증을 확인하고 있어요</h1>
-      <p>
-        보통 30초, 길어도 1분이면 끝나요.
-        <br />
-        앱을 닫아도 결과는 알림으로 보내드려요.
-      </p>
-      <section className="white-card claim-verify-list">
-        {steps.map((step, index) => (
-          <div className="claim-verify-item" key={step.label}>
-            <span className={`claim-verify-marker ${step.done ? "" : "wait"}`}>{step.done ? <Check size={12} /> : index + 1}</span>
-            <span>
-              <strong>{step.label}</strong>
-              <small>{step.sub}</small>
-            </span>
-          </div>
-        ))}
-      </section>
+    <div className="screen page-with-nav claim-screen">
+      <TopBar />
+      <main className="claim-verifying">
+        <div className="claim-spinner" />
+        <h1>영수증을 확인하고 있어요</h1>
+        <p>
+          보통 30초, 길어도 1분이면 끝나요.
+          <br />
+          앱을 닫아도 결과는 알림으로 보내드려요.
+        </p>
+        <section className="white-card claim-verify-list">
+          {steps.map((step, index) => (
+            <div className="claim-verify-item" key={step.label}>
+              <span className={`claim-verify-marker ${step.done ? "" : "wait"}`}>{step.done ? <Check size={12} /> : index + 1}</span>
+              <span>
+                <strong>{step.label}</strong>
+                <small>{step.sub}</small>
+              </span>
+            </div>
+          ))}
+        </section>
+      </main>
     </div>
   );
 }
@@ -3847,7 +4295,8 @@ function ClaimVerifying() {
 function ClaimResult({
   variant,
   cardLast4,
-  reasons = [],
+  ocrResult,
+  reasons,
   onSubmit,
   onRetryUpload,
   onChangeCard,
@@ -3855,13 +4304,23 @@ function ClaimResult({
 }: {
   variant: ClaimResultVariant;
   cardLast4: string;
-  /** 백엔드가 판정한 이상 사유 (receipt_verification anomaly_reasons) */
-  reasons?: string[];
+  ocrResult: ClaimOCRResult | null;
+  reasons: string[];
   onSubmit: () => void;
   onRetryUpload: () => void;
   onChangeCard: () => void;
   onViewStatus: () => void;
 }) {
+  const receiptLast4 = ocrResult?.card_last4 ?? "확인되지 않음";
+  const merchantName = ocrResult?.merchant_name ?? "학원명 확인 필요";
+  const businessNumber = ocrResult?.business_number ?? "사업자번호 확인 필요";
+  const paymentAmount =
+    typeof ocrResult?.payment_amount === "number"
+      ? `${ocrResult.payment_amount.toLocaleString("ko-KR")}원`
+      : "결제금액 확인 필요";
+  const approvalNumber = ocrResult?.approval_number ?? "승인번호 확인 필요";
+  const reasonText = reasons.length > 0 ? reasons.join(" · ") : "백엔드 자동 검증 결과";
+
   if (variant === "matched") {
     return (
       <main className="sub-page claim-step">
@@ -3887,7 +4346,7 @@ function ClaimResult({
               <div className="label">카드 뒤 4자리</div>
               <div className="value">{cardLast4}</div>
               <div className="sub">
-                등록 {cardLast4} · 영수증 {cardLast4}
+                등록 {cardLast4} · 영수증 {receiptLast4}
               </div>
             </div>
             <span className="claim-tag ok">일치</span>
@@ -3895,25 +4354,25 @@ function ClaimResult({
           <div className="claim-match-row">
             <div>
               <div className="label">학원</div>
-              <div className="value">○○기숙학원</div>
-              <div className="sub">사업자 123-45-67890</div>
+              <div className="value">{merchantName}</div>
+              <div className="sub">사업자 {businessNumber}</div>
             </div>
             <span className="claim-tag ok">일치</span>
           </div>
           <div className="claim-match-row">
             <div>
               <div className="label">결제금액 · 승인번호</div>
-              <div className="value">15,000,000원</div>
-              <div className="sub">승인 12345678 · 형식 정상</div>
+              <div className="value">{paymentAmount}</div>
+              <div className="sub">승인 {approvalNumber} · 형식 정상</div>
             </div>
             <span className="claim-tag ok">정상</span>
           </div>
         </section>
         <div className="claim-btn-stack">
-          <button className="primary-button" onClick={onSubmit}>
+          <button className="primary-button button-flat-primary" onClick={onSubmit}>
             청구 접수하기
           </button>
-          <button className="secondary-button" onClick={onRetryUpload}>
+          <button className="secondary-button button-outline-secondary" onClick={onRetryUpload}>
             영수증 다시 올리기
           </button>
         </div>
@@ -3939,13 +4398,6 @@ function ClaimResult({
             <br />
             1영업일 안에 결과를 알려드려요.
           </p>
-          {reasons.length > 0 && (
-            <ul className="claim-reason-list">
-              {reasons.map((reason) => (
-                <li key={reason}>{reason}</li>
-              ))}
-            </ul>
-          )}
         </section>
         <section className="white-card">
           <div className="claim-match-row">
@@ -3953,7 +4405,7 @@ function ClaimResult({
               <div className="label">카드 뒤 4자리</div>
               <div className="value">{cardLast4}</div>
               <div className="sub">
-                등록 {cardLast4} · 영수증 {cardLast4}
+                등록 {cardLast4} · 영수증 {receiptLast4}
               </div>
             </div>
             <span className="claim-tag ok">일치</span>
@@ -3961,16 +4413,16 @@ function ClaimResult({
           <div className="claim-match-row">
             <div>
               <div className="label">학원</div>
-              <div className="value">○○기숙학원</div>
-              <div className="sub">사업자 123-45-67890</div>
+              <div className="value">{merchantName}</div>
+              <div className="sub">사업자 {businessNumber}</div>
             </div>
             <span className="claim-tag ok">일치</span>
           </div>
           <div className="claim-match-row">
             <div>
               <div className="label">결제일</div>
-              <div className="value">2026.06.28</div>
-              <div className="sub">보장 기간 시작 이틀 전 결제</div>
+              <div className="value">{ocrResult?.payment_date ?? "결제일 확인 필요"}</div>
+              <div className="sub">{reasonText}</div>
             </div>
             <span className="claim-tag warn">확인</span>
           </div>
@@ -4002,8 +4454,8 @@ function ClaimResult({
           <div className="claim-match-row">
             <div>
               <div className="label">결제금액</div>
-              <div className="value">15,000,000원</div>
-              <div className="sub">동일 승인번호가 2건 확인됨</div>
+              <div className="value">{paymentAmount}</div>
+              <div className="sub">{reasonText}</div>
             </div>
             <span className="claim-tag warn">중복</span>
           </div>
@@ -4051,24 +4503,24 @@ function ClaimResult({
         <div className="claim-match-row">
           <div>
             <div className="label">카드 뒤 4자리</div>
-            <div className="value">7302</div>
-            <div className="sub">등록 {cardLast4} · 영수증 7302</div>
+            <div className="value">{receiptLast4}</div>
+            <div className="sub">등록 {cardLast4} · 영수증 {receiptLast4}</div>
           </div>
           <span className="claim-tag bad">불일치</span>
         </div>
         <div className="claim-match-row">
           <div>
             <div className="label">학원</div>
-            <div className="value">○○기숙학원</div>
-            <div className="sub">사업자 123-45-67890</div>
+            <div className="value">{merchantName}</div>
+            <div className="sub">사업자 {businessNumber}</div>
           </div>
           <span className="claim-tag ok">일치</span>
         </div>
       </section>
       <div className="claim-note bad">
-        <b>1</b> 실제로 다른 카드로 결제했다면 등록 카드를 먼저 변경하세요.
+        <b>검증 사유</b> {reasonText}
         <br />
-        <b>2</b> 다른 영수증을 잘못 올렸다면 해당 영수증만 다시 올리면 돼요.
+        실제로 다른 카드로 결제했다면 등록 카드를 변경하거나 영수증을 다시 올려주세요.
       </div>
       <div className="claim-btn-stack">
         <button className="primary-button claim-red" onClick={onRetryUpload}>
@@ -4082,7 +4534,49 @@ function ClaimResult({
   );
 }
 
-function ClaimStatus() {
+function ClaimStatus({
+  phase,
+  firstClaimed,
+  secondClaimed,
+  submittedReceipts,
+  onStartClaim,
+}: {
+  phase: ClaimPhase;
+  firstClaimed: boolean;
+  secondClaimed: boolean;
+  submittedReceipts: ReceiptItem[];
+  onStartClaim: () => void;
+}) {
+  const { account, phaseInfo } = useClaimInfo();
+  const [receiptsOpen, setReceiptsOpen] = useState(false);
+
+  // TODO(claim-receipts-api): 청구 상세 API에 영수증 목록이 추가되면 서버 응답을
+  // submittedReceipts 로 전달한다. 그 전까지는 이번 세션에서 실제 제출한 목록만 표시한다.
+  if (!firstClaimed && !secondClaimed) {
+    const info = phaseInfo[phase];
+    return (
+      <main className="sub-page">
+        <span className="eyebrow">청구 진행 상황</span>
+        <h1>내 청구 내역</h1>
+        <section className="claim-empty-state">
+          <span className="claim-empty-icon">
+            <FileText size={26} />
+          </span>
+          <h2>{phase === "period1" ? "아직 접수한 청구가 없어요" : info.bannerTitle}</h2>
+          <p>{phase === "period1" ? "청구를 시작하면 진행 상황을 여기서 확인할 수 있어요." : info.bannerText}</p>
+          {phase === "period1" && (
+            <button className="primary-button button-flat-primary" onClick={onStartClaim}>
+              청구 시작하기
+            </button>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  const usedManwon = (firstClaimed ? account.firstPaidManwon : 0) + (secondClaimed ? account.secondPaidManwon : 0);
+  const usedPercent = Math.round((usedManwon / account.capManwon) * 100);
+
   return (
     <main className="sub-page">
       <span className="eyebrow">청구 진행 상황</span>
@@ -4090,46 +4584,72 @@ function ClaimStatus() {
       <section className="white-card">
         <h2>보장 한도 사용</h2>
         <div className="claim-limit-track">
-          <span style={{ width: "100%" }} />
+          <span style={{ width: `${usedPercent}%` }} />
         </div>
         <div className="claim-limit-caption">
-          <span>사용 {policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원</span>
-          <span>한도 {policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원</span>
+          <span>사용 {만원표기(usedManwon)}</span>
+          <span>한도 {만원표기(account.capManwon)}</span>
         </div>
       </section>
       <section className="white-card">
-        <div className="claim-match-row">
-          <div>
-            <div className="label">1차 청구 · 2026.06.30</div>
-            <div className="value">364만원</div>
-            <div className="sub">영수증 2건 · 정상 확인</div>
+        {firstClaimed && (
+          <div className="claim-match-row">
+            <div>
+              <div className="label">1차 청구 · 2026.06.30</div>
+              <div className="value">{만원표기(account.firstPaidManwon)}</div>
+              <div className="sub">영수증 2건 · 정상 확인</div>
+            </div>
+            <span className="claim-tag ok">지급완료</span>
           </div>
-          <span className="claim-tag ok">지급완료</span>
-        </div>
-        <div className="claim-match-row">
-          <div>
-            <div className="label">2차 청구 · 2026.12.04</div>
-            <div className="value">{(policyInfo.coverageCapManwon - 364).toLocaleString("ko-KR")}만원</div>
-            <div className="sub">영수증 3건 · 정상 확인</div>
+        )}
+        {secondClaimed && (
+          <div className="claim-match-row">
+            <div>
+              <div className="label">2차 청구 · 2026.12.04</div>
+              <div className="value">{만원표기(account.secondPaidManwon)}</div>
+              <div className="sub">영수증 3건 · 정상 확인</div>
+            </div>
+            <span className="claim-tag warn">심사중</span>
           </div>
-          <span className="claim-tag warn">심사중</span>
-        </div>
+        )}
       </section>
-      <button type="button" className="claim-lrow">
+      <button
+        type="button"
+        className="claim-lrow"
+        aria-expanded={receiptsOpen}
+        aria-controls="submitted-receipts"
+        onClick={() => setReceiptsOpen((open) => !open)}
+      >
         <span>
           <strong>제출한 영수증 보기</strong>
-          <small>총 5건</small>
+          <small>{submittedReceipts.length > 0 ? `총 ${submittedReceipts.length}건` : "내역 확인"}</small>
         </span>
-        <ChevronRight size={17} />
+        <ChevronDown className={receiptsOpen ? "flip" : ""} size={17} />
       </button>
-      <button type="button" className="claim-lrow">
-        <span>
-          <strong>검증 결과 상세</strong>
-          <small>차수별 대조 항목 확인</small>
-        </span>
-        <ChevronRight size={17} />
-      </button>
-      <div className="claim-note">2차까지 지급되면 청구 절차가 모두 끝나요.</div>
+      {receiptsOpen && (
+        <section id="submitted-receipts" className="claim-submitted-receipts" aria-label="제출한 영수증 내역">
+          {submittedReceipts.length > 0 ? (
+            submittedReceipts.map((receipt, index) => (
+              <div className="claim-submitted-receipt" key={receipt.id}>
+                <span className="claim-receipt-thumb">
+                  <FileText size={17} />
+                </span>
+                <span>
+                  <strong>영수증 {index + 1}</strong>
+                  <small>{receipt.source === "capture" ? "카메라 촬영" : "파일 업로드"} · 제출 완료</small>
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="claim-submitted-empty">
+              저장된 영수증 내역은 청구 영수증 DB가 연결되면 이곳에 표시돼요.
+            </p>
+          )}
+        </section>
+      )}
+      <div className="claim-note">
+        {secondClaimed ? "2차까지 지급되면 청구 절차가 모두 끝나요." : "2차 청구가 열리면 알려드릴게요."}
+      </div>
     </main>
   );
 }

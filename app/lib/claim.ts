@@ -20,6 +20,40 @@ import { api, CLAIM_STATUS_VARIANT, CLAIM_VARIANT } from "@jaesoo/api-client";
 
 export type ClaimVariant = "matched" | "review" | "proof" | "rejected";
 
+export type ClaimOCRResult = {
+  card_last4?: string | null;
+  payment_amount?: number | null;
+  payment_date?: string | null;
+  approval_number?: string | null;
+  merchant_name?: string | null;
+  business_number?: string | null;
+  confidence_score?: number;
+};
+
+export type ClaimVerificationResult = {
+  status?: string;
+  final_result?: string;
+  anomaly_reasons?: string[];
+  next_action?: string | null;
+  checks?: Record<string, boolean>;
+};
+
+export type UploadedClaimDocument = {
+  id: number;
+  original_filename: string;
+  content_type: string;
+  file_size: number;
+  document_type: string;
+  uploaded_at: string;
+};
+
+export type ClaimUploadResult = {
+  status?: string;
+  document?: UploadedClaimDocument;
+  ocr_result?: ClaimOCRResult | null;
+  verification?: ClaimVerificationResult | null;
+};
+
 /** 등록 카드 입력 — 백엔드 CardCreate 와 1:1 (전체 번호·CVC 는 받지 않는다) */
 export type CardInput = {
   company: string;
@@ -35,6 +69,9 @@ export type ClaimState = {
   variant: ClaimVariant | null;
   status: string | null;
   reasons: string[];
+  ocrResult: ClaimOCRResult | null;
+  verification: ClaimVerificationResult | null;
+  documents: UploadedClaimDocument[];
   error: string | null;
   busy: boolean;
 };
@@ -46,6 +83,9 @@ const EMPTY: ClaimState = {
   variant: null,
   status: null,
   reasons: [],
+  ocrResult: null,
+  verification: null,
+  documents: [],
   error: null,
   busy: false,
 };
@@ -74,7 +114,20 @@ export function useClaim(studentId: string | null) {
       const existing = await api.activeCard(String(userId));
       if (existing.ok && (existing.data as { id?: number })?.id) {
         const found = existing.data as { id: number; card_last4?: string };
-        patch({ busy: false, cardId: found.id, last4: found.card_last4 ?? card.last4 });
+        if (found.card_last4 !== card.last4) {
+          const updated = await api.updateCard(String(found.id), {
+            card_company: card.company,
+            card_last4: card.last4,
+            card_holder_name: card.holderName,
+            relationship_to_student: card.relationship,
+            is_active: true,
+          });
+          if (!updated.ok) {
+            patch({ busy: false, error: updated.error });
+            return null;
+          }
+        }
+        patch({ busy: false, cardId: found.id, last4: card.last4 });
         return found.id;
       }
       const created = await api.registerCard({
@@ -140,17 +193,21 @@ export function useClaim(studentId: string | null) {
       const res = await api.uploadReceipt(claimId, file, { kind });
       if (!res.ok) {
         patch({ busy: false, error: res.error });
-        return false;
+        return null;
       }
-      const d = res.data as { status?: string; verification?: { final_result?: string } };
+      const d = res.data as ClaimUploadResult;
       patch({
         busy: false,
         status: d.status ?? null,
         variant: toVariant(d.status, d.verification?.final_result) ?? null,
+        reasons: d.verification?.anomaly_reasons ?? [],
+        ocrResult: d.ocr_result ?? null,
+        verification: d.verification ?? null,
+        documents: d.document ? [...state.documents, d.document] : state.documents,
       });
-      return true;
+      return d;
     },
-    [],
+    [state.documents],
   );
 
   /** 검증 결과 조회 — 업로드 후 호출한다. */
@@ -172,6 +229,7 @@ export function useClaim(studentId: string | null) {
       variant,
       status: d.status ?? null,
       reasons: d.anomaly_reasons ?? [],
+      verification: d,
     });
     return variant;
   }, []);
