@@ -198,10 +198,10 @@ def test_policy_pages_는_하위호환으로_남아있다():
     assert body["pages"][0]["anchor"]      # 앵커도 함께 반환
 
 
-def test_scores_응답이_등급_스케일임을_알린다():
+def test_scores_응답이_백분위_스케일임을_알린다():
     """DB 가 없으면 scores 는 비지만, 스케일·판정 과목 메타는 항상 와야 한다."""
     body = client.get("/api/student/stu_none/scores").json()
-    assert body.get("scale") == "grade" or "error" in body
+    assert body.get("scale") == "percentile" or "error" in body
 
 
 def test_chat_빈_질문():
