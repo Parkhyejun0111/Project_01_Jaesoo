@@ -245,7 +245,7 @@ body::-webkit-scrollbar,
 }
 
 .screen {
-  min-height: 100svh;
+  min-height: 100dvh;
   background: var(--background);
 }
 
@@ -442,7 +442,7 @@ body::-webkit-scrollbar,
 .converter-loading {
   position: relative;
   width: 100%;
-  min-height: 100svh;
+  min-height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -550,7 +550,7 @@ body::-webkit-scrollbar,
 }
 
 .login-screen {
-  min-height: 100svh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   justify-content: center;
