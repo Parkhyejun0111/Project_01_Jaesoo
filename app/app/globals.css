@@ -580,6 +580,23 @@ body::-webkit-scrollbar,
   place-items: center;
 }
 
+/* 홈의 노재수 — 가만히 있다가 몇 초에 한 번씩 살짝 흔들린다.
+   6초 주기 중 앞 1.2초에만 움직이고 나머지는 정지 상태로 둔다. */
+.home-ai-copy .mascot img {
+  transform-origin: 50% 88%;
+  animation: mascot-wobble 6s ease-in-out infinite;
+}
+
+@keyframes mascot-wobble {
+  0%   { transform: rotate(0deg) translateY(0); }
+  3%   { transform: rotate(-4deg) translateY(-1px); }
+  7%   { transform: rotate(3.5deg) translateY(-1px); }
+  11%  { transform: rotate(-2.5deg) translateY(0); }
+  15%  { transform: rotate(1.5deg) translateY(0); }
+  20%  { transform: rotate(0deg) translateY(0); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
 .mascot img {
   width: 100%;
   height: 100%;
@@ -698,12 +715,12 @@ body::-webkit-scrollbar,
   justify-content: space-between;
 }
 
-.home-hero-top .avatar {
-  width: 54px;
-  height: 54px;
-  color: var(--brand-green-deep);
-  background: var(--brand-mint);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
+/* 다른 탭 상단바(.grades-brand-header img)와 같은 40px */
+.home-hero-logo {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  object-fit: contain;
 }
 
 .home-hero-top .icon-button {
@@ -1840,6 +1857,12 @@ body::-webkit-scrollbar,
   font-size: 1.35em;
   font-weight: 900;
   color: var(--brand-green);
+  white-space: nowrap;
+}
+
+/* 소개 문장은 통째로 넘어가게 — 'NO재수예/요.' 로 끊기던 자리 */
+.chat-welcome-intro {
+  display: inline-block;
   white-space: nowrap;
 }
 

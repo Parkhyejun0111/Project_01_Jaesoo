@@ -542,15 +542,15 @@ function HomeMain({
         <Clover className="home-clover one" />
         <Clover className="home-clover two" />
         <div className="home-hero-top">
-          <span className="avatar" aria-hidden="true">
-            {studentName ? studentName[0] : "재"}
-          </span>
+          {/* 다른 탭 상단바와 같은 40px 로고 (예전엔 이 자리에 성씨 한 글자 아바타가 있었다) */}
+          <img className="home-hero-logo" src="/logo-final-white.png" alt="재수없수" />
           <button className="icon-button" onClick={onNotification} aria-label="알림 열기">
             <Bell size={20} />
             {hasUnread && <span className="notification-dot" />}
           </button>
         </div>
-        <p className="home-greeting">안녕하세요, {studentProfile.name} 학생 학부모님!</p>
+        {/* 아바타를 로고로 바꾸면서 이름은 인사말에만 남는다 — 목데이터가 아니라 실제 계약자 이름으로 */}
+        <p className="home-greeting">안녕하세요, {studentName || studentProfile.name} 학생 학부모님!</p>
         <div className="home-ai-copy">
           <Mascot size="lg" />
           <p>
@@ -820,7 +820,7 @@ function Chat({
 
   // 'NO' 만 브랜드 그린으로 강조하므로 앞머리는 JSX 로 두고 꼬리만 문자열로 잡는다.
   const welcomeMessageTail =
-    "재수예요.\n\n약관과 보험료 산정 근거를 실제 약관 문서에 근거해 설명해드릴게요. 아래 추천 질문을 누르거나, 궁금한 점을 직접 입력해 물어보세요.";
+    "\n\n약관과 보험료 산정 근거를 실제 약관 문서에 근거해 설명해드릴게요. 아래 추천 질문을 누르거나, 궁금한 점을 직접 입력해 물어보세요.";
   const recommendedQuestions = [
     "보험금은 언제, 어떻게 받나요?",
     "보험료는 어떤 기준으로 산정되나요?",
@@ -863,7 +863,12 @@ function Chat({
         <div className="message-row ai">
           <Mascot size="sm" />
           <div className="message ai chat-welcome">
-            안녕하세요! 저는 재수없수 AI 도우미 <span className="chat-welcome-no">NO</span>
+            {/* '…NO재수예/요.' 로 끊기지 않도록 인사와 소개를 줄로 나누고,
+                소개 문장은 통째로 묶어 중간에서 안 끊기게 한다 */}
+            안녕하세요!{"\n"}
+            <span className="chat-welcome-intro">
+              저는 재수없수 AI 도우미 <span className="chat-welcome-no">NO</span>재수예요!
+            </span>
             {welcomeMessageTail}
           </div>
         </div>
@@ -1020,8 +1025,28 @@ function PolicyPopup({
               html { zoom: 0.82; background: #fff; }
               body { font-size: 14px; }
               .document { padding: 14px 12px 28px; }
+              mark.jaesoo-hl {
+                background: linear-gradient(transparent 12%, #ffe98a 12%, #ffe98a 92%, transparent 92%);
+                color: inherit;
+                padding: 0 2px;
+                border-radius: 2px;
+                -webkit-box-decoration-break: clone;
+                box-decoration-break: clone;
+              }
             `;
             doc.head.appendChild(style);
+
+            // 형광펜은 '해당 조항 제목' 한 줄에만 — 본문까지 칠하면 읽기 어렵다.
+            // 제목이 블록 요소라 배경을 그냥 주면 줄 전체가 칠해지므로,
+            // 내용물을 인라인 <mark> 로 감싸 글자 길이만큼만 칠한다.
+            const heading = doc.getElementById(anchor);
+            if (heading && !heading.querySelector("mark.jaesoo-hl")) {
+              const mark = doc.createElement("mark");
+              mark.className = "jaesoo-hl";
+              while (heading.firstChild) mark.appendChild(heading.firstChild);
+              heading.appendChild(mark);
+              heading.scrollIntoView({ block: "start" });
+            }
           }}
         />
         <footer className="policy-popup-foot">
