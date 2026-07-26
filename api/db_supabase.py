@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import contextmanager
 
 from dotenv import load_dotenv
 
@@ -49,6 +50,25 @@ def _connect():
 def connect():
     """Return a configured connection for modules sharing this Supabase DB."""
     return _connect()
+
+
+@contextmanager
+def _use(conn):
+    """커넥션을 넘겨받으면 그대로 쓰고, 없으면 새로 열었다 닫는다.
+
+    DB 는 서울(ap-northeast-2), 함수는 서버리스라 커넥션 하나 여는 값(TLS+인증
+    왕복)이 질의보다 비싸다. 한 요청에서 여러 번 쓰는 경로(enroll)는 커넥션을
+    하나로 묶어야 한다 — 예전엔 4개를 따로 열어 제출에만 7초가 걸렸고,
+    함수 제한시간을 넘겨 브라우저에 'Load failed' 로 떨어지곤 했다.
+    """
+    if conn is not None:
+        yield conn
+        return
+    own = _connect()
+    try:
+        yield own
+    finally:
+        own.close()
 
 
 SCHEMA = """
@@ -163,12 +183,12 @@ def get_student(student_id: str) -> dict | None:
         return student
 
 
-def get_scores(student_id: str) -> dict:
+def get_scores(student_id: str, conn=None) -> dict:
     """{subject: [{seq, label, grade, percentile}, ...]} (seq 순).
 
     grade(등급 1~9)가 판정·요율의 기준이고 percentile 은 표시 참고용이다.
     """
-    with _connect() as conn, conn.cursor() as cur:
+    with _use(conn) as conn, conn.cursor() as cur:
         cur.execute(
             "select subject, seq, exam_label, grade, percentile from jaesoo_exam_scores "
             "where student_id = %s order by subject, seq",
@@ -185,8 +205,8 @@ def get_scores(student_id: str) -> dict:
 
 
 # ── 쓰기 ────────────────────────────────────────────────────────────────────
-def upsert_student(s: dict) -> None:
-    with _connect() as conn, conn.cursor() as cur:
+def upsert_student(s: dict, conn=None) -> None:
+    with _use(conn) as conn, conn.cursor() as cur:
         cur.execute(
             """insert into jaesoo_students (student_id, name, school, grade_year, track, target_univ, source_site)
                values (%(student_id)s, %(name)s, %(school)s, %(grade_year)s, %(track)s, %(target_univ)s, %(source_site)s)
@@ -207,10 +227,10 @@ _ENROLL_DEFAULTS = {
 }
 
 
-def insert_enrollment(e: dict) -> int:
+def insert_enrollment(e: dict, conn=None) -> int:
     params = {**_ENROLL_DEFAULTS, **e,
               "survey": json.dumps(e.get("survey") or {}, ensure_ascii=False)}
-    with _connect() as conn, conn.cursor() as cur:
+    with _use(conn) as conn, conn.cursor() as cur:
         cur.execute(
             """insert into jaesoo_enrollments
                (student_id, tier, region, academy_density_index,
@@ -229,9 +249,9 @@ def insert_enrollment(e: dict) -> int:
         return new_id
 
 
-def insert_scores(student_id: str, rows: list[dict]) -> None:
+def insert_scores(student_id: str, rows: list[dict], conn=None) -> None:
     """rows: [{seq, label, subject, grade, percentile?}, ...]"""
-    with _connect() as conn, conn.cursor() as cur:
+    with _use(conn) as conn, conn.cursor() as cur:
         cur.executemany(
             "insert into jaesoo_exam_scores (student_id, seq, exam_label, subject, grade, percentile) "
             "values (%s, %s, %s, %s, %s, %s)",

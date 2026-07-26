@@ -343,10 +343,6 @@ def enroll(req: EnrollRequest):
 
     try:
         sid = "stu_" + re.sub(r"[^a-z0-9]", "", (req.name or "user").lower()) + "_" + str(abs(hash(req.name)) % 10000)
-        db.upsert_student({
-            "student_id": sid, "name": req.name, "school": req.school, "grade_year": req.grade_year,
-            "track": req.track, "target_univ": req.target_univ, "source_site": req.source_site,
-        })
         survey = req.survey or {"source": req.source_site, "track": req.track, "target": req.target_univ}
         if req.gender:
             survey = {**survey, "성별": req.gender}
@@ -354,31 +350,40 @@ def enroll(req: EnrollRequest):
 
         months = max(engine.MONTHS_DEADLINE,
                      min(int(req.enrolled_at_remaining_months), engine.MONTHS_FIRST))
-        db.insert_enrollment({
-            "student_id": sid, "tier": req.tier,
-            "region": req.region,
-            "academy_density_index": engine.density_index(req.region),
-            "household_income_manwon": req.household_income_manwon,
-            "monthly_edu_cost_manwon": req.monthly_edu_cost_manwon,
-            "enrolled_at_remaining_months": months,
-            "declared_subjects": req.declared_subjects or sorted(engine.subject_weights()),
-            "surrender_type": req.surrender_type,
-            "monthly_saving": req.monthly_saving, "retire_goal": req.retire_goal,
-            "terms_agreed": req.terms_agreed,
-            "survey": survey,
-        })
-        # 신규 가입자는 성적 이력이 아직 없으므로, 데모용 기본 성적을 생성해 붙임
-        try:
-            if not db.get_scores(sid):
-                import random
 
-                import seed_supabase as seed
+        # 커넥션 하나로 묶는다. 예전엔 질의마다 새로 열어 서울 DB 까지 4번 왕복했고,
+        # 제출 한 번에 7초가 걸려 함수 제한시간을 넘기면 브라우저가 'Load failed' 로 받았다.
+        with db.connect() as conn:
+            db.upsert_student({
+                "student_id": sid, "name": req.name, "school": req.school, "grade_year": req.grade_year,
+                "track": req.track, "target_univ": req.target_univ, "source_site": req.source_site,
+            }, conn=conn)
+            db.insert_enrollment({
+                "student_id": sid, "tier": req.tier,
+                "region": req.region,
+                "academy_density_index": engine.density_index(req.region),
+                "household_income_manwon": req.household_income_manwon,
+                "monthly_edu_cost_manwon": req.monthly_edu_cost_manwon,
+                "enrolled_at_remaining_months": months,
+                "declared_subjects": req.declared_subjects or sorted(engine.subject_weights()),
+                "surrender_type": req.surrender_type,
+                "monthly_saving": req.monthly_saving, "retire_goal": req.retire_goal,
+                "terms_agreed": req.terms_agreed,
+                "survey": survey,
+            }, conn=conn)
+            # 신규 가입자는 성적 이력이 아직 없으므로, 데모용 기본 성적을 생성해 붙임.
+            # 여기서 실패해도 청약 자체는 이미 저장됐으므로 가입은 성공으로 본다.
+            try:
+                if not db.get_scores(sid, conn=conn):
+                    import random
 
-                rng = random.Random(abs(hash(sid)) % 100000)
-                rows = seed.build_rows(seed.default_subject_profile(rng), rng)
-                db.insert_scores(sid, rows)
-        except Exception:  # noqa: BLE001
-            pass
+                    import seed_supabase as seed
+
+                    rng = random.Random(abs(hash(sid)) % 100000)
+                    rows = seed.build_rows(seed.default_subject_profile(rng), rng)
+                    db.insert_scores(sid, rows, conn=conn)
+            except Exception:  # noqa: BLE001
+                pass
 
         # 방금 저장한 청약 조건으로 산출한 보험료를 그대로 돌려준다 (가입완료 화면용)
         quote = None
