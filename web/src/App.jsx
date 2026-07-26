@@ -392,7 +392,6 @@ class Component extends React.Component {
   instructors = [
     { n:'차미래', s:'국어', c:'#5B7CFA', icon:'book',
       tag:'국어의 기준을\n세우는\n미래 CLASS', img:'/instructors/cha-mirae-angled-clean.png',
-      photo:{ size:'auto 175%', pos:'70% 26%' },
       years:'강의 12년', field:'문학 · 독서 · 화법과 작문',
       career:['前 대치 국어논술 대표강사', '수능 국어 분석서 「기준」 집필', '누적 수강생 21만 명'],
       style:'지문을 읽는 순서와 선지를 지우는 기준부터 세웁니다. 감으로 고르던 판단을 문장 근거로 바꾸는 데 한 학기를 씁니다.',
@@ -400,7 +399,6 @@ class Component extends React.Component {
       quote:'국어는 재능이 아니라 기준의 문제예요. 기준이 서면 점수는 흔들리지 않습니다.' },
     { n:'이윤서', s:'수학', c:'#0B8F58', icon:'graph',
       tag:'막힌 수학을\n뚫어내는\n윤서 ROUTE', img:'/instructors/yunseo-math-card-polished.png?v=3',
-      photo:{ size:'auto 175%', pos:'51% 30%' },
       years:'강의 10년', field:'수학Ⅰ · 수학Ⅱ · 미적분',
       career:['前 강남대성 수학과 전임', '「루트」 시리즈 저자', '학습 상담 누적 8천 건'],
       style:'막히는 지점을 유형이 아니라 풀이 순서로 정리합니다. 손이 멈췄을 때 다음에 무엇을 할지 알게 만드는 수업입니다.',
@@ -408,7 +406,6 @@ class Component extends React.Component {
       quote:'안 풀리는 게 아니라 순서를 모르는 겁니다. 순서만 잡아도 절반은 풀려요.' },
     { n:'박혜준', s:'영어', c:'#2B4FE8', icon:'globe',
       tag:'영어 고민을\n때려잡는\n혜준 CRUSH', img:'/instructors/park-hyejun.png',
-      photo:{ size:'auto 175%', pos:'62% 30%' },
       years:'강의 9년', field:'독해 · 어법 · 듣기',
       career:['前 종로학원 영어과 강사', 'EBS 연계교재 집필 참여', '모의고사 해설 누적 400회'],
       style:'구문을 외우게 하지 않습니다. 문장이 이어지는 흐름을 따라가 지문 끝까지 밀고 가는 힘을 만듭니다.',
@@ -416,7 +413,6 @@ class Component extends React.Component {
       quote:'해석이 아니라 흐름입니다. 흐름을 잡으면 모르는 단어가 나와도 안 멈춰요.' },
     { n:'한희지', s:'한국사', c:'#B7791F', icon:'temple',
       tag:'역사의 흐름을\n한눈에 잡는\n희지 FLOW', img:'/instructors/han-heeji-history-card.png?v=1',
-      photo:{ size:'auto 240%', pos:'60% 26%' },
       years:'강의 8년', field:'한국사 · 동아시아사',
       career:['한국사능력검정 대비서 집필', '역사 교양 채널 구독 12만', '고교 특강 300회'],
       style:'연표를 외우는 대신 사건을 원인과 결과로 잇습니다. 한 번 이어두면 문제에서 먼저 떠오릅니다.',
@@ -424,7 +420,6 @@ class Component extends React.Component {
       quote:'외운 역사는 시험장에서 사라져요. 이어진 역사는 남습니다.' },
     { n:'최지현', s:'사회문화', c:'#B03A5B', icon:'temple',
       tag:'사탐 개념을\n꿰뚫는\n지현 READ', img:'/instructors/choi-jihyun-fixed.png',
-      photo:{ size:'auto 175%', pos:'71% 28%' },
       years:'강의 11년', field:'사회문화 · 생활과 윤리',
       career:['前 메가스터디 사탐 대표강사', '「도표로 읽는 사회문화」 저자', '오답 유형 데이터 6만 건 분석'],
       style:'개념을 사례와 붙여 정리합니다. 헷갈리던 선지가 눈에 걸리기 시작하면 실전에서 시간이 줄어듭니다.',
@@ -432,7 +427,6 @@ class Component extends React.Component {
       quote:'사탐은 암기 과목이 아니라 구분 과목이에요. 구분이 되면 빨라집니다.' },
     { n:'노재희', s:'과학탐구', c:'#7A5BFA', icon:'flask',
       tag:'과탐 고민을\n뿌리뽑는\n재희 SOLVE', img:'/instructors/no-jaehee.png',
-      photo:{ size:'auto 175%', pos:'64% 28%' },
       years:'강의 9년', field:'생명과학Ⅰ · 지구과학Ⅰ',
       career:['前 시대인재 과탐 전임', '수능 과탐 자료해석 특강 개설', '재수생 대상 강의 6년'],
       style:'공식보다 원리를 먼저 세웁니다. 처음 보는 자료가 나와도 어디부터 읽을지 알게 만드는 게 목표입니다.',
@@ -658,7 +652,7 @@ class Component extends React.Component {
       <div className={app ? "app-mode" : undefined} style={S("min-height:100dvh;display:flex;justify-content:center;background:#fff")}>
         <div style={S("width:100%;min-height:100dvh;background:#fff;position:relative;display:flex;flex-direction:column")}>
           {/* ── 인강 데스크톱 웹페이지 (첫 화면 · 웹) ── */}
-          {(!['apply','done','insurance','instructors'].includes(vm.entry) && !(vm.payBackEntry === 'insurance' && ['terms'].includes(vm.entry))) && (<>
+          {(!['apply','done','insurance','instructors','policy'].includes(vm.entry) && !(vm.payBackEntry === 'insurance' && ['terms'].includes(vm.entry))) && (<>
             <div style={S("background:#fff;display:flex;flex-direction:column;width:100%")}>
               {/* ① 상단 유틸리티 바 — 앱에서는 자리만 먹어 감춘다 */}
               {!app && (
@@ -920,11 +914,11 @@ class Component extends React.Component {
                     {q:'박혜준 선생님 강의는 구문을 외우게 하기보다 문장 흐름을 읽게 해줘요. 영어 지문을 끝까지 밀고 가는 힘이 생겼어요.',
                      who:'박준규',univ:'연세대 전기전자공학부',pass:'영어',from:78,to:94},
                     {q:'한희지 선생님이 시대 흐름을 한 번에 이어주셔서, 외우기만 하던 한국사가 문제에서 바로 떠오르기 시작했어요.',
-                     who:'최O민',univ:'성균관대 글로벌리더학부',pass:'한국사',from:69,to:92},
+                     who:'최지연',univ:'성균관대 글로벌리더학부',pass:'한국사',from:69,to:92},
                     {q:'최지현 선생님이 사문 개념을 사례랑 같이 정리해 주셔서 헷갈리던 선지가 눈에 걸리기 시작했어요. 실전에서 시간이 줄었어요.',
-                     who:'박O아',univ:'고려대 미디어학부',pass:'사회문화',from:66,to:91},
+                     who:'문혜영',univ:'고려대 미디어학부',pass:'사회문화',from:66,to:91},
                     {q:'노재희 선생님이 과탐 개념을 공식보다 원리로 풀어주셔서, 낯선 자료가 나와도 당황하지 않게 됐어요.',
-                     who:'윤O호',univ:'한양대 융합전자공학부',pass:'과학탐구',from:70,to:93},
+                     who:'김찬영',univ:'한양대 융합전자공학부',pass:'과학탐구',from:70,to:93},
                   ].map((r,ri)=>(<React.Fragment key={ri}>
                     <div className="hov-lift" style={S("min-width:0;min-height:238px;border:1px solid #EDEFF2;border-radius:18px;padding:22px;background:#fff;display:flex;flex-direction:column;box-sizing:border-box")}>
                       <div style={S("display:flex;align-items:center;justify-content:space-between;gap:8px")}>
@@ -1008,9 +1002,23 @@ class Component extends React.Component {
             </div>
           </>)}
 
+          {/* ── 약관·상품설명서 전문 (앱 전용) ──
+              앱에는 주소창이 없어 새 탭으로 열면 돌아올 길이 없다. 화면 안에 띄우고
+              좌상단에 되돌아가는 버튼을 둔다. */}
+          {(vm.entry === 'policy') && (<>
+            <div style={S("background:#fff;display:flex;flex-direction:column;width:100%;height:100dvh")}>
+              <div style={S("flex:none;width:100%;background:#fff;border-bottom:1px solid #ECEEF1;display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 16px;box-sizing:border-box")}>
+                <span className="hov-link" style={S("font-size:13.5px;font-weight:700;color:#5C626C;cursor:pointer;flex:none")}
+                      onClick={() => vm.entryGo('insurance')}>‹ 이전 화면</span>
+                <span style={S("flex:1;min-width:0;font-size:15px;font-weight:900;color:#16181D;letter-spacing:-0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis")}>약관·상품설명서 전문</span>
+              </div>
+              <iframe src={vm.policyUrl} title="재수없수 교육보험 보통약관 전문"
+                      style={S("flex:1;width:100%;border:0;background:#fff")} />
+            </div>
+          </>)}
+
           {/* ── 전체 강사 페이지 (랜딩 라인업 → '전체 강사 보기') ──
-              한 명당 카드 하나로 세로로만 쌓는다. 랜딩 카드가 사진을 잘라 쓰는 것과 달리
-              여기서는 얼굴이 온전히 보여야 하므로 사진 칸을 따로 두고 contain 으로 넣는다. */}
+              한 명당 카드 하나로 세로로만 쌓는다. */}
           {(vm.entry === 'instructors') && (<>
             <div style={S("background:#fff;display:flex;flex-direction:column;width:100%;min-height:100dvh")}>
               <div style={S("width:100%;background:#fff;border-bottom:1px solid #ECEEF1;position:sticky;top:0;z-index:8")}>
@@ -1044,10 +1052,10 @@ class Component extends React.Component {
                       <section style={S(`border:1px solid ${t.c}33;border-radius:18px;background:${t.c}0A;overflow:hidden`)}>
                         {/* 상단 — 사진 + 이름·과목 */}
                         <div style={S(`display:flex;align-items:stretch;gap:14px;padding:16px;background:linear-gradient(180deg,${t.c}30,${t.c}0A)`)}>
-                          {/* object-fit:cover 로는 원본마다 인물이 치우쳐 있어도 좌우로 옮길 여지가 없다.
-                              배경으로 깔고 크기를 키워, 강사별 초점(photo.pos)으로 얼굴을 가운데 맞춘다. */}
-                          <div role="img" aria-label={`${t.n} 선생님`}
-                               style={S(`width:${app ? '92px' : '110px'};height:${app ? '112px' : '132px'};flex:none;border-radius:14px;background-color:#F1F0EE;background-image:url("${t.img}");background-repeat:no-repeat;background-size:${t.photo.size};background-position:${t.photo.pos}`)} />
+                          <div style={S(`width:${app ? '92px' : '110px'};height:${app ? '112px' : '132px'};flex:none;border-radius:14px;background:#F1F0EE;overflow:hidden;display:flex;align-items:flex-end;justify-content:center`)}>
+                            <img src={t.img} alt={`${t.n} 선생님`}
+                                 style={S("width:100%;height:100%;object-fit:cover;object-position:top center")} />
+                          </div>
                           <div style={S("flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center")}>
                             <span style={S(`display:inline-flex;align-self:flex-start;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:${t.c};background:${t.c}14;border-radius:20px;padding:5px 11px`)}>
                               {this.subjectIcon(t.icon, 14, t.c)}{t.s}
@@ -1183,7 +1191,8 @@ class Component extends React.Component {
                 <div style={S("text-align:center")}>
                   <div style={S("font-size:13px;font-weight:800;color:#0B7A4A")}>WHY IT MATTERS</div>
                   <div style={S("font-size:clamp(21px,3vw,26px);font-weight:900;color:#16181D;letter-spacing:-1px;margin-top:6px;word-break:keep-all")}>재수, 1년에 얼마나 들까요?</div>
-                  <div style={S("font-size:13.5px;color:#7A808B;margin-top:10px;line-height:1.7;word-break:keep-all")}>재수 형태에 따라 1년에 {vm.costBars.minLabel}에서 {vm.costBars.maxLabel}까지 듭니다.<br/>재수없수는 이 비용의 <b style={S("color:#0B7A4A")}>70%</b>를 보장합니다.</div>
+                  {/* '…3,000만원까지 / 듭니다.' 로 끊기지 않도록 금액과 서술어를 묶는다 */}
+                  <div style={S("font-size:13.5px;color:#7A808B;margin-top:10px;line-height:1.7;word-break:keep-all")}>재수 형태에 따라 1년에 {vm.costBars.minLabel}에서 <span style={S("white-space:nowrap")}>{vm.costBars.maxLabel}까지 듭니다.</span><br/>재수없수는 이 비용의 <b style={S("color:#0B7A4A")}>70%</b>를 보장합니다.</div>
                 </div>
 
                 {/* 범례 — 색만으로 구분되지 않도록 항상 노출 */}
@@ -1417,10 +1426,20 @@ class Component extends React.Component {
                 <div style={S("font-size:12.5px;font-weight:800;color:#0B7A4A;margin-top:22px;margin-bottom:2px")}>약관·상품설명서 원문</div>
                 {/* 원문 바로가기 — 청약서 작성 전 약관과 상품설명서를 먼저 확인하도록 배치 */}
                 <div style={S("margin-top:16px")}>
-                  <a className="hov-btn" href={vm.policyUrl} target="_blank" rel="noreferrer"
-                     style={S("text-decoration:none;background:#fff;border:1.5px solid #84C2A3;color:#00462A;border-radius:14px;padding:14px 18px;font-size:13.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;word-break:keep-all")}>
-                    <span style={S("flex:none;display:flex")}>{this.uiIcon('book', 18, '#0B7A4A')}</span>약관·상품설명서 전문 보기 <span style={S("font-size:11px;color:#6E8A7C;flex:none")}>↗</span>
-                  </a>
+                  {/* 앱에서는 새 탭으로 열면 돌아올 길이 없다(주소창이 없다) — 화면 안에서 연다 */}
+                  {app ? (
+                    <div className="hov-btn" role="button" tabIndex={0}
+                         onClick={() => vm.entryGo('policy', 'insurance')}
+                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') vm.entryGo('policy', 'insurance'); }}
+                         style={S("cursor:pointer;background:#fff;border:1.5px solid #84C2A3;color:#00462A;border-radius:14px;padding:14px 18px;font-size:13.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;word-break:keep-all")}>
+                      <span style={S("flex:none;display:flex")}>{this.uiIcon('book', 18, '#0B7A4A')}</span>약관·상품설명서 전문 보기
+                    </div>
+                  ) : (
+                    <a className="hov-btn" href={vm.policyUrl} target="_blank" rel="noreferrer"
+                       style={S("text-decoration:none;background:#fff;border:1.5px solid #84C2A3;color:#00462A;border-radius:14px;padding:14px 18px;font-size:13.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;word-break:keep-all")}>
+                      <span style={S("flex:none;display:flex")}>{this.uiIcon('book', 18, '#0B7A4A')}</span>약관·상품설명서 전문 보기 <span style={S("font-size:11px;color:#6E8A7C;flex:none")}>↗</span>
+                    </a>
+                  )}
                 </div>
 
                 <div style={S("display:flex;gap:10px;margin-top:18px;align-items:stretch")}>
@@ -1461,7 +1480,9 @@ class Component extends React.Component {
               <div style={S("position:sticky;top:0;height:52px;box-sizing:border-box;z-index:3;display:flex;align-items:center;gap:8px;padding:0 14px;background:#fff;border-bottom:1px solid #E6E6E6")}>
                 <span style={S("font-size:19px;color:#555;cursor:pointer")} onClick={() => {
                   if (vm.entry === 'apply') {
-                    if (window.confirm('지금 나가면 작성 중인 청약서 내용이 모두 사라져요. 나가시겠어요?')) vm.entryGo('terms');
+                    // 나가기를 택했는데 방금 지나온 약관 동의 팝업이 다시 뜨면 갇힌 느낌이 든다.
+                    // 작성을 접은 것이므로 보험 상세 페이지로 되돌린다.
+                    if (window.confirm('지금 나가면 작성 중인 청약서 내용이 모두 사라져요. 나가시겠어요?')) vm.entryGo('insurance');
                   } else {
                     vm.entryGo(vm.payBackEntry || 'landing');
                   }

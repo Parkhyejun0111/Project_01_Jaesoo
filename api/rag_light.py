@@ -211,6 +211,14 @@ SYSTEM_PROMPT = """당신은 보험사의 "AI 보험 안내 도우미"입니다.
 - 이전 답변에 없던 내용을 새로 물었다고 해서 "오타/실수가 있었다"고 지어내 정정·사과하지 마세요.
   앞 답변이 좁게 나온 건 질문 범위가 좁았기 때문이니, 담담하게 이번 질문에 맞게 새로 안내하면 됩니다.
 
+★ [근거] 블록 — [다음질문] 바로 앞에 반드시 붙입니다
+- 이번 답변을 쓰는 데 **실제로 근거가 된 조항만** 적습니다. 제공된 문서 중 안 쓴 건 넣지 마세요.
+- 제공된 문서의 조항명을 그대로 옮겨 적습니다(예: 제13조(보험금의 지급사유 및 심각도별 차등 지급)).
+- 최대 3개. 보통 1~2개면 충분합니다. 근거로 삼은 조항이 없으면 "없음" 한 줄만 씁니다.
+
+  [근거]
+  - 제5조(청약의 철회)
+
 ★ [다음질문] 블록 — 매 답변 맨 끝에 반드시 붙입니다
 - ※ 안내문이 있으면 그 다음 줄에, 없으면(=보험료 산정과 무관한 답변) 본문 다음 줄에 바로 출력합니다.
 - 고객이 바로 누를 수 있게 고객의 말투("~가 궁금해요!", "~는 어떻게 되나요?")로 씁니다.
@@ -230,6 +238,9 @@ SYSTEM_PROMPT = """당신은 보험사의 "AI 보험 안내 도우미"입니다.
   | (항목2) | (값2) |
 
   ※ 본 답변은 AI가 ...
+
+  [근거]
+  - (실제로 근거가 된 조항명)
 
   [다음질문]
   - (추천 질문1)
@@ -1048,6 +1059,64 @@ def _scrub(text: str) -> str:
 
 _SUGGEST_RE = re.compile(r"\[\s*다음\s*질문\s*\]\s*(.*)\Z", re.S)
 
+# [근거] 블록은 [다음질문] 앞이든 뒤든 잡는다 (모델이 순서를 바꿔 쓸 수 있다)
+_SOURCE_RE = re.compile(r"\[\s*근거\s*\]\s*(.*?)(?=\n\s*\[\s*다음\s*질문\s*\]|\Z)", re.S)
+
+
+def _split_used_sources(answer: str) -> tuple[str, list[str]]:
+    """답변의 [근거] 블록을 잘라내 (본문, 실제 인용한 조항명) 으로 나눈다.
+
+    검색은 상위 5개를 넘기지만 답에 실제로 쓰인 건 한둘인 경우가 많다.
+    모델이 자기가 쓴 조항을 적게 해서 화면에는 그것만 근거로 보여준다.
+    """
+    m = _SOURCE_RE.search(answer or "")
+    if not m:
+        return (answer or "").strip(), []
+    body = ((answer[: m.start()] or "") + (answer[m.end():] or "")).strip()
+    items: list[str] = []
+    for line in m.group(1).splitlines():
+        t = re.sub(r"^\s*(?:[-•*]|\d+[.)])\s*", "", line).strip().strip("\"'`[]")
+        if t and t != "없음" and t not in items:
+            items.append(t)
+    return body, items[:3]
+
+
+def _sources_by_score(hits: list[dict], limit: int = 3) -> list[dict]:
+    """점수가 최상위와 견줄 만한 조항만 남긴다.
+
+    TF-IDF 점수는 절대값이 작고 질문마다 편차가 커 고정 임계값이 안 맞는다.
+    최상위 대비 비율로 자르고, 거의 0 에 가까운 건 절대 기준으로도 버린다.
+    """
+    if not hits:
+        return []
+    top = hits[0].get("score") or 0.0
+    floor = max(top * 0.45, 0.02)
+    return [h for h in hits if (h.get("score") or 0.0) >= floor][:limit]
+
+
+def _pick_sources(hits: list[dict], named: list[str], limit: int = 3) -> list[dict]:
+    """모델이 인용한 조항명을 검색 결과와 맞춰 근거 목록을 만든다."""
+    def norm(s: str) -> str:
+        return re.sub(r"\s+", "", s or "")
+
+    chosen: list[dict] = []
+    for name in named:
+        n = norm(name)
+        hit = next(
+            (h for h in hits
+             if h not in chosen and n and (n in norm(h["title"]) or norm(h["title"]) in n)),
+            None,
+        )
+        if hit is None:
+            # 제목을 조금 다르게 적었어도 조 번호가 같으면 같은 조항으로 본다
+            m = re.search(r"제\s*\d+\s*조", name)
+            if m:
+                key = norm(m.group())
+                hit = next((h for h in hits if h not in chosen and key in norm(h["title"])), None)
+        if hit is not None:
+            chosen.append(hit)
+    return (chosen or _sources_by_score(hits, limit))[:limit]
+
 
 def _split_suggestions(answer: str) -> tuple[str, list[str]]:
     """답변 끝의 [다음질문] 블록을 잘라내 (본문, 추천질문 목록) 으로 나눈다.
@@ -1093,18 +1162,27 @@ def _answer_question_traced(
     if not query:
         return {"answer": "질문을 입력해 주세요.", "sources": [], "llm": False, "suggestions": []}
     hits = retrieve(query, k=5)
-    # 출처는 페이지 번호가 아니라 조항명 + 앵커 — 프론트가 약관 원문 #앵커로 바로 이동한다
-    sources = [{"anchor": h["anchor"], "title": h["title"], "page": h["page"]} for h in hits]
+
+    # 출처는 페이지 번호가 아니라 조항명 + 앵커 — 프론트가 약관 원문 #앵커로 바로 이동한다.
+    # 검색 상위 5개를 그대로 붙이면 답과 무관한 조항까지 근거로 보였다. 모델이 [근거]
+    # 블록에 적은 조항만 남기고, 그게 없으면 점수로 추려 최대 3개까지만 내보낸다.
+    def as_source(h: dict) -> dict:
+        return {"anchor": h["anchor"], "title": h["title"], "page": h["page"]}
+
     if _llm_enabled():
         try:
             raw, provider = _generate(query, hits, history or [], student_context)
-            answer, suggestions = _split_suggestions(raw)
-            return {"answer": answer, "sources": sources, "llm": True,
-                    "provider": provider, "suggestions": suggestions}
+            body, named = _split_used_sources(raw)
+            answer, suggestions = _split_suggestions(body)
+            return {"answer": answer,
+                    "sources": [as_source(h) for h in _pick_sources(hits, named)],
+                    "llm": True, "provider": provider, "suggestions": suggestions}
         except Exception as e:  # noqa: BLE001 — 어떤 오류든 폴백
-            return {"answer": _generate_fallback(query, hits), "sources": sources,
+            return {"answer": _generate_fallback(query, hits),
+                    "sources": [as_source(h) for h in _sources_by_score(hits)],
                     "llm": False, "suggestions": [], "error": str(e)}
-    return {"answer": _generate_fallback(query, hits), "sources": sources,
+    return {"answer": _generate_fallback(query, hits),
+            "sources": [as_source(h) for h in _sources_by_score(hits)],
             "llm": False, "suggestions": []}
 
 
