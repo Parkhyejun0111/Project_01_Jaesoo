@@ -209,8 +209,10 @@ input:focus-visible {
   box-shadow: 0 0 0 5px #075b3f;
 }
 
+/* 독립 실행에서는 화면이 홈 인디케이터 밑까지 깔린다. svh 는 그 영역을 빼고 재는
+   경우가 있어 셸이 화면보다 짧아지고 아래쪽에 배경색 띠가 남았다 — dvh 로 잰다. */
 .site-stage {
-  min-height: 100svh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 0;
@@ -220,7 +222,7 @@ input:focus-visible {
 .app-shell {
   position: relative;
   width: min(100%, 430px);
-  min-height: 100svh;
+  min-height: 100dvh;
   overflow-x: hidden;
   scrollbar-width: none;
   background: var(--background);
@@ -251,11 +253,13 @@ body::-webkit-scrollbar,
   padding-bottom: 96px;
 }
 
+/* 청구 단계 미리보기 토글 — 노치 밑으로 화면이 깔리면서 상태바에 겹쳐 눌리지 않았다.
+   각 화면 상단바(≈68px)를 지나 알림 아이콘 바로 아래에 놓는다. */
 .claim-phase-toggle {
   min-height: 44px;
   position: fixed;
   z-index: 60;
-  top: 12px;
+  top: calc(env(safe-area-inset-top) + 76px);
   right: 12px;
   display: inline-flex;
   align-items: center;
@@ -1640,7 +1644,7 @@ body::-webkit-scrollbar,
 .chat-screen {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  height: 100svh;
+  height: 100dvh;
   min-height: 0;
   overflow: hidden;
   background: #eff9f4;
@@ -6485,22 +6489,8 @@ input.claim-input::placeholder {
    늘려 흰 띠를 없앤다. 사파리 탭으로 열거나 노치가 없는 기기에서는 env() 가 0 이라
    지금과 똑같이 보인다.
 
-   black-translucent 는 상태바 글자를 항상 흰색으로 그린다. 상단바가 흰 화면
-   (성적분석·돈워리 도입, 마이, 챗봇)에서는 시계·배터리가 안 보이므로 노치 영역만은
-   어느 화면에서든 브랜드 그린으로 덮는다 — 그린 상단바 화면에서는 같은 색이라
-   이어져 보이고, 흰 상단바 화면에서는 색 있는 상태바로 읽힌다. */
-.app-shell::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-top);
-  z-index: 60;
-  background: var(--brand-green);
-  pointer-events: none;
-}
-
+   노치 영역 색은 화면마다 그 화면 상단바 색을 그대로 잇는다. 한 색으로 고정해 두면
+   흰 상단바 화면(성적분석·돈워리 도입, 마이, 챗봇)에서 그린 띠가 도리어 도드라진다. */
 .home-main-hero {
   padding-top: calc(25px + env(safe-area-inset-top));
 }

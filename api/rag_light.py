@@ -213,6 +213,7 @@ SYSTEM_PROMPT = """당신은 보험사의 "AI 보험 안내 도우미"입니다.
 
 ★ [근거] 블록 — [다음질문] 바로 앞에 반드시 붙입니다
 - 이번 답변을 쓰는 데 **실제로 근거가 된 조항만** 적습니다. 제공된 문서 중 안 쓴 건 넣지 마세요.
+- 글 전체를 가리키는 문서 제목("재수없수! · 교육보험 보통약관 (통합판)")은 근거가 아닙니다. 조·별표 단위로 적으세요.
 - 제공된 문서의 조항명을 그대로 옮겨 적습니다(예: 제13조(보험금의 지급사유 및 심각도별 차등 지급)).
 - 최대 3개. 보통 1~2개면 충분합니다. 근거로 삼은 조항이 없으면 "없음" 한 줄만 씁니다.
 
@@ -1081,6 +1082,22 @@ def _split_used_sources(answer: str) -> tuple[str, list[str]]:
     return body, items[:3]
 
 
+@lru_cache(maxsize=1)
+def _document_root_anchors() -> frozenset:
+    """문서 전체 제목(h1) 앵커.
+
+    '재수없수! · 교육보험 보통약관 (통합판)' 처럼 글 전체를 가리키는 제목은
+    근거 조항이 될 수 없다(어떤 질문이든 걸리는데 아무것도 특정하지 못한다).
+    본문 검색 결과에서는 빼지 않고, 화면에 보여줄 근거 목록에서만 뺀다.
+    """
+    return frozenset(s["anchor"] for s in _document_sections() if str(s.get("level")) == "1")
+
+
+def _citable(hits: list[dict]) -> list[dict]:
+    root = _document_root_anchors()
+    return [h for h in hits if h.get("anchor") not in root]
+
+
 def _sources_by_score(hits: list[dict], limit: int = 3) -> list[dict]:
     """점수가 최상위와 견줄 만한 조항만 남긴다.
 
@@ -1169,20 +1186,22 @@ def _answer_question_traced(
     def as_source(h: dict) -> dict:
         return {"anchor": h["anchor"], "title": h["title"], "page": h["page"]}
 
+    citable = _citable(hits)   # 문서 전체 제목은 근거로 쓰지 않는다
+
     if _llm_enabled():
         try:
             raw, provider = _generate(query, hits, history or [], student_context)
             body, named = _split_used_sources(raw)
             answer, suggestions = _split_suggestions(body)
             return {"answer": answer,
-                    "sources": [as_source(h) for h in _pick_sources(hits, named)],
+                    "sources": [as_source(h) for h in _pick_sources(citable, named)],
                     "llm": True, "provider": provider, "suggestions": suggestions}
         except Exception as e:  # noqa: BLE001 — 어떤 오류든 폴백
             return {"answer": _generate_fallback(query, hits),
-                    "sources": [as_source(h) for h in _sources_by_score(hits)],
+                    "sources": [as_source(h) for h in _sources_by_score(citable)],
                     "llm": False, "suggestions": [], "error": str(e)}
     return {"answer": _generate_fallback(query, hits),
-            "sources": [as_source(h) for h in _sources_by_score(hits)],
+            "sources": [as_source(h) for h in _sources_by_score(citable)],
             "llm": False, "suggestions": []}
 
 
