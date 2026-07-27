@@ -1,5 +1,39 @@
 # Vercel 배포
 
+## 현재 운영 중 — `Hyejun_727` 브랜치
+
+| 프로젝트 | URL | Root Directory | 빌드 |
+|---|---|---|---|
+| `project-01-jaesoo` (앱) | https://project-01-jaesoo.vercel.app | `.` | `npm run build:app` → `app/.next` |
+| `jaesoo-api-hyejun727` | https://jaesoo-api-hyejun727.vercel.app | `api` | `pip install -r requirements.txt` |
+| `jaesoo-web-hyejun727` | https://jaesoo-web-hyejun727.vercel.app | `.` | `npm run build:web` → `web/dist` |
+| `jaesoo-webapp-hyejun727` | https://jaesoo-webapp-hyejun727.vercel.app | `.` | `npm run build:webapp` → `webapp/dist` |
+
+앱·웹·웹앱은 Root Directory 가 `.` 다. `webapp` 은 `../web/public` 을, `app` 은
+워크스페이스 패키지 `packages/api-client` 를 참조해서 하위 폴더만 올리면 빌드가
+깨진다 — 저장소 루트에서 워크스페이스 빌드를 돌려야 한다.
+
+> ⚠️ **`jaesoo-api-hyejun727` 은 Root Directory 가 `api` 다.** CLI 로 수동 배포할
+> 때도 **저장소 루트에서** 해야 한다. `cd api && vercel deploy` 로 하면 Vercel 이
+> 업로드된 `api/` 를 루트로 잡고 거기서 다시 `api/` 로 내려가 `api/api/` 를
+> 프로젝트 루트로 착각한다 → 500 `FUNCTION_INVOCATION_FAILED`.
+> (실제로 이렇게 한 번 죽였다)
+
+앱의 `NEXT_PUBLIC_API_URL`, 웹·웹앱의 `VITE_API_URL` 은 모두 위 api 주소를 가리킨다.
+
+### 무료 플랜 배포 한도
+
+Hobby 플랜은 **하루 100회**다(`api-deployments-free-per-day`). 푸시 한 번에 연결된
+프로젝트가 동시에 빌드되므로 한 번 푸시 = 배포 3~4회로 계산된다. 넘기면
+`Resource is limited - try again in 24 hours` 로 배포가 아예 생성되지 않는다.
+리셋은 한국 자정이 아니라 UTC 기준이다(KST 오전 9시경).
+
+---
+
+## 레거시 — `Final_02` 브랜치
+
+아래는 `Final_02` 를 프로덕션으로 쓰는 기존 4개 프로젝트 구성이다.
+
 같은 저장소(`Final_02` 브랜치)로 **4개 프로젝트**를 만듭니다. Root Directory 만 다릅니다.
 
 | 프로젝트 | Root Directory | Framework | 결과 |
