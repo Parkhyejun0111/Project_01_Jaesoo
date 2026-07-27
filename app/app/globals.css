@@ -3598,63 +3598,113 @@ body::-webkit-scrollbar,
   gap: 4px;
 }
 
-.converter-why-button {
-  width: 44px;
-  height: 44px;
+/* ── 결과 화면 우하단의 노재수 설명 독 ──────────────────────────────────────
+   금액 옆 ⓘ 버튼 + 바텀시트를 대신한다. 마스코트를 눌러 말풍선으로 근거를 듣고,
+   한 번 더 누르면 답이 닫힌다.
+
+   하단 탭바 위에 떠야 하므로 bottom 값에 탭바 높이를 더해 둔다. 결과 화면은
+   세로로 길어서 스크롤을 따라다니지 않으면 아래쪽에서 닿지 않는다 → fixed. */
+.explain-dock {
+  position: fixed;
+  left: 50%;
+  /* 하단 네비(.bottom-nav) 높이 78px 위에 띄운다. */
+  bottom: calc(78px + 12px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  /* 앱은 430px 중앙 정렬 컬럼이다 — 네비와 같은 폭·정렬을 써야 넓은 화면에서
+     화면 오른쪽 끝으로 떨어져 나가지 않는다. */
+  width: min(100%, 430px);
+  padding: 0 16px;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  pointer-events: none;   /* 빈 영역이 화면 클릭을 먹지 않게 */
+}
+
+.explain-dock > * {
+  max-width: min(300px, 100%);
+}
+
+.explain-dock > * {
+  pointer-events: auto;
+}
+
+.explain-mascot {
+  width: 56px;
+  height: 56px;
+  padding: 6px;
   display: grid;
   place-items: center;
-  border: 0;
+  border: 1px solid var(--line);
   border-radius: 50%;
-  background: none;
-  color: var(--muted);
+  background: #fff;
+  box-shadow: 0 6px 18px rgb(17 34 28 / 14%);
   cursor: pointer;
-  transition: color 160ms var(--ease-standard, ease-out);
 }
 
-.converter-why-button:hover,
-.converter-why-button:focus-visible {
-  color: var(--brand-green);
+.explain-mascot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-/* 설명 시트 — 약관 팝업의 바텀시트를 쓰되 2~3문장에 맞게 높이를 내용에 맞춘다. */
-.explain-sheet {
-  height: auto;
-  max-height: 70svh;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+.explain-mascot[aria-expanded="true"] {
+  border-color: var(--brand-green);
+  background: #effaf6;
 }
 
-.explain-sheet-head strong em {
-  color: var(--brand-green);
-  font-style: normal;
+/* 말풍선 — 오른쪽 아래 마스코트를 향해 꼬리를 단다. */
+.explain-bubble {
+  position: relative;
+  margin: 0;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  border-bottom-right-radius: 5px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgb(17 34 28 / 12%);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: keep-all;
 }
 
-.explain-sheet-body {
-  padding: 20px;
-  overflow-y: auto;
+.explain-bubble-teaser {
+  color: var(--muted);
+  font-weight: 600;
 }
 
-.explain-sheet-answer {
+.explain-bubble-answer {
+  display: grid;
+  gap: 7px;
+}
+
+.explain-bubble-text {
   margin: 0;
   color: var(--ink);
-  font-size: 15px;
-  line-height: 1.7;
+  font-size: 12.5px;
+  line-height: 1.65;
 }
 
-.explain-sheet-error {
+.explain-bubble-error {
   margin: 0;
   color: var(--muted);
-  font-size: 14px;
-  line-height: 1.7;
+}
+
+.explain-bubble-foot {
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
 }
 
 /* 로딩 스켈레톤. 캐시 히트면 거의 보이지 않는다. */
 .explain-skeleton {
   display: grid;
-  gap: 10px;
+  gap: 7px;
+  min-width: 168px;
 }
 
 .explain-skeleton .skeleton-line {
-  height: 15px;
+  height: 11px;
   border-radius: 6px;
   background: linear-gradient(90deg, #eef3f0 25%, #f7faf8 37%, #eef3f0 63%);
   background-size: 400% 100%;
@@ -3672,20 +3722,6 @@ body::-webkit-scrollbar,
 
 @media (prefers-reduced-motion: reduce) {
   .explain-skeleton .skeleton-line { animation: none; }
-}
-
-.explain-sheet-foot {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 20px 18px;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.explain-sheet-foot > svg {
-  flex: none;
 }
 
 /* "전국 평균 대비 O.OO배" — 우리 지역 숫자를 전국 기준선에 붙여 읽게 하는 참고 표시.

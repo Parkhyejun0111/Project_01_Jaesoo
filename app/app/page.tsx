@@ -2364,16 +2364,6 @@ function Converter({
             <span>1년 동안 발생하는 재수 비용은 얼마일까요?</span>
             <strong className="converter-result-amount">
               {formattedComparison}만원
-              {est?.region_coefficient && (
-                <button
-                  type="button"
-                  className="converter-why-button"
-                  onClick={() => setExplainOpen(true)}
-                  aria-label="이 금액이 나온 이유 보기"
-                >
-                  <Info size={17} aria-hidden="true" />
-                </button>
-              )}
             </strong>
             <small>{converterChoices.academy} · {regionLabel} 기준</small>
             {est?.vs_national != null && (
@@ -2385,17 +2375,6 @@ function Converter({
               </p>
             )}
           </section>
-
-          {explainOpen && (
-            <ExplainSheet
-              userId={explainUserId}
-              재수유형={converterChoices.academy}
-              sido={converterChoices.sido}
-              gu={isSeoul ? converterChoices.gu : null}
-              amountLabel={`${formattedComparison}만원`}
-              onClose={() => setExplainOpen(false)}
-            />
-          )}
 
           <RegionFormsTable
             forms={catalog.data?.forms ?? []}
@@ -2514,6 +2493,17 @@ function Converter({
 
           <RegionSourceNote sources={regionCatalog?.sources} />
         </main>
+
+        {est?.region_coefficient && (
+          <ExplainDock
+            userId={explainUserId}
+            재수유형={converterChoices.academy}
+            sido={converterChoices.sido}
+            gu={isSeoul ? converterChoices.gu : null}
+            open={explainOpen}
+            onToggle={() => setExplainOpen((v) => !v)}
+          />
+        )}
       </div>
     );
   }
@@ -2846,26 +2836,70 @@ function RegionFormsTable({
 }
 
 /**
- * "왜 이 금액인가요?" 설명 시트.
+ * 결과 화면 우하단의 노재수 — 눌러서 산출 근거를 듣는다.
  *
- * 문구는 백엔드가 만든다 — 지역계수는 배치가 계산해 둔 값이고, LLM 은 그 숫자를
- * 문장으로 옮기는 역할만 한다. 실패하면 백엔드가 템플릿 문구를 주므로 이 화면에
- * 오류 상태가 오는 경우는 네트워크가 아예 끊긴 때뿐이다.
+ * 닫힌 상태에서는 "설명해드려요" 권유 말풍선만 띄우고, 누르면 그 자리에 실제
+ * 설명 말풍선이 뜬다. 한 번 더 누르면 답이 사라지고 다시 권유 문구로 돌아간다.
+ *
+ * 답 말풍선은 열렸을 때만 마운트한다 — useDontworryExplain 이 마운트 시점에
+ * 요청하므로, 이렇게 해야 화면에 들어오자마자 LLM 을 부르지 않는다. 대신 한 번
+ * 받아온 답은 훅 안의 메모에 남아 다시 열 때 즉시 뜬다.
  */
-function ExplainSheet({
+function ExplainDock({
   userId,
   재수유형,
   sido,
   gu,
-  amountLabel,
-  onClose,
+  open,
+  onToggle,
 }: {
   userId: string;
   재수유형: string;
   sido: string;
   gu: string | null;
-  amountLabel: string;
-  onClose: () => void;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="explain-dock">
+      {open ? (
+        <ExplainAnswerBubble userId={userId} 재수유형={재수유형} sido={sido} gu={gu} />
+      ) : (
+        <p className="explain-bubble explain-bubble-teaser" aria-hidden="true">
+          지역별 시세 계산데이터를 설명해드려요
+        </p>
+      )}
+
+      <button
+        type="button"
+        className="explain-mascot"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-label={open ? "설명 닫기" : "지역별 시세 계산데이터 설명 듣기"}
+      >
+        <img src="/jaesoo_character.png" alt="" />
+      </button>
+    </div>
+  );
+}
+
+/**
+ * 설명 말풍선.
+ *
+ * 문구는 백엔드가 만든다 — 지역계수는 배치가 계산해 둔 값이고, LLM 은 그 숫자를
+ * 문장으로 옮기는 역할만 한다. 실패하면 백엔드가 템플릿 문구를 주므로 여기에
+ * 오류 상태가 오는 경우는 네트워크가 아예 끊긴 때뿐이다.
+ */
+function ExplainAnswerBubble({
+  userId,
+  재수유형,
+  sido,
+  gu,
+}: {
+  userId: string;
+  재수유형: string;
+  sido: string;
+  gu: string | null;
 }) {
   const { answer, reference, loading, error } = useDontworryExplain({
     userId,
@@ -2874,56 +2908,26 @@ function ExplainSheet({
     gu,
   });
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   return (
-    <div
-      className="policy-popup-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-label="예상 비용 산출 근거"
-      onClick={onClose}
-    >
-      <div className="policy-popup explain-sheet" onClick={(e) => e.stopPropagation()}>
-        <header className="policy-popup-head explain-sheet-head">
-          <strong>
-            <em>{amountLabel}</em>, 왜 이 금액인가요?
-          </strong>
-          <button type="button" onClick={onClose} aria-label="설명 닫기">
-            <X size={18} />
-          </button>
-        </header>
-
-        <div className="explain-sheet-body">
-          {loading ? (
-            // 캐시 히트면 이 스켈레톤은 거의 보이지 않는다.
-            <div className="explain-skeleton" role="status" aria-label="설명을 불러오는 중">
-              <span className="skeleton-line" />
-              <span className="skeleton-line" />
-              <span className="skeleton-line short" />
-            </div>
-          ) : error ? (
-            <p className="explain-sheet-error" role="alert">{error}</p>
-          ) : (
-            <p className="explain-sheet-answer">{answer}</p>
-          )}
+    <div className="explain-bubble explain-bubble-answer" role="status" aria-live="polite">
+      {loading ? (
+        // 캐시 히트면 이 스켈레톤은 거의 보이지 않는다.
+        <div className="explain-skeleton" aria-label="설명을 불러오는 중">
+          <span className="skeleton-line" />
+          <span className="skeleton-line short" />
         </div>
-
-        <footer className="explain-sheet-foot">
-          <Info size={13} aria-hidden="true" />
-          <span>
+      ) : error ? (
+        <p className="explain-bubble-error">{error}</p>
+      ) : (
+        <>
+          <p className="explain-bubble-text">{answer}</p>
+          <span className="explain-bubble-foot">
             {reference
-              ? `${reference.replace("-", "년 ")}월 기준 공공데이터 반영`
+              ? `${reference.replace("-", "년 ")}월 기준 공공데이터`
               : "공공데이터 기준"}
           </span>
-        </footer>
-      </div>
+        </>
+      )}
     </div>
   );
 }

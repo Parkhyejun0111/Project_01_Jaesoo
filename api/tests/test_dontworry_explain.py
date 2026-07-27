@@ -478,7 +478,9 @@ def test_시스템프롬프트가_규칙을_담고_있다():
     prompt = dx.SYSTEM_PROMPT
     assert "get_dontworry_breakdown" in prompt
     assert "지어내" in prompt
-    assert "2~3문장" in prompt
+    # 답은 결과 화면 우하단의 작은 말풍선 하나에 들어간다 — 길이 제한이 프롬프트에
+    # 남아 있어야 한다. (예전에는 바텀시트였고 2~3문장을 요구했다)
+    assert "한 문장" in prompt
     assert "보험료" in prompt and "요율" in prompt
 
 
