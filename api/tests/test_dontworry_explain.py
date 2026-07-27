@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -78,7 +79,7 @@ class StubClient:
         if (kw.get("tool_choice") or {}).get("type") == "tool":
             return _Response([_Block(type="tool_use", id="toolu_1",
                                      name=dx.TOOL_NAME,
-                                     input={"user_id": "stu_1", "재수유형": "재종합학원"})],
+                                     input={"user_id": "stu_1", "form_type": "재종합학원"})],
                              stop_reason="tool_use")
         return _Response([_Block(type="text", text=self.answer)])
 
@@ -167,6 +168,26 @@ def test_긴_이름으로도_받아준다():
 def test_알수없는_재수유형은_거부한다():
     with pytest.raises(dx.ExplainError, match="알 수 없는 재수유형"):
         dx.get_dontworry_breakdown("stu_1", "인터넷강의", sido="경기")
+
+
+def test_툴스키마의_속성키는_ASCII다():
+    """Anthropic 은 tool input_schema 의 property key 를 ASCII 로 강제한다.
+
+    한글 키("재수유형")를 넣었더니 매 호출이 400 invalid_request_error 로 죽고,
+    explain_dontworry 가 조용히 폴백 템플릿으로 떨어져 LLM 설명이 한 번도
+    나오지 않았다. 스텁 클라이언트는 이 검증을 하지 않아 테스트를 통과했으므로,
+    스키마 자체를 직접 검사한다.
+    """
+    key_pattern = re.compile(r"^[a-zA-Z0-9_.-]{1,64}$")
+    for tool in dx.TOOLS:
+        for key in tool["input_schema"]["properties"]:
+            assert key_pattern.match(key), (
+                f"툴 {tool['name']!r} 의 속성 키 {key!r} 가 Anthropic 제약을 어긴다"
+            )
+        for key in tool["input_schema"].get("required", []):
+            assert key in tool["input_schema"]["properties"], (
+                f"required 의 {key!r} 가 properties 에 없다"
+            )
 
 
 def test_학군지판정은_구보정계수로_한다():
@@ -406,7 +427,7 @@ def test_툴결과는_서버가_계산한_값이다(monkeypatch):
             self.calls.append(kw)
             if len(self.calls) == 1:
                 return _Response([_Block(type="tool_use", id="toolu_1", name=dx.TOOL_NAME,
-                                         input={"user_id": "victim", "재수유형": "기숙학원"})],
+                                         input={"user_id": "victim", "form_type": "기숙학원"})],
                                  stop_reason="tool_use")
             return _Response([_Block(type="text", text="설명입니다.")])
 

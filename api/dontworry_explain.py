@@ -72,17 +72,22 @@ TOOLS: list[dict] = [
             "돈워리 탭에 표시된 예상 재수비용의 산출 근거(지역계수 세부내역)를 조회한다. "
             "이 함수는 이미 배치로 계산·캐싱된 값을 그대로 반환할 뿐, 어떤 계산도 새로 수행하지 않는다."
         ),
+        # ★ 속성 키는 반드시 ASCII 여야 한다 — Anthropic 은 tool input_schema 의
+        #   property key 를 '^[a-zA-Z0-9_.-]{1,64}$' 로 강제한다. 여기에 "재수유형"
+        #   처럼 한글 키를 쓰면 매 호출이 400 (invalid_request_error) 으로 죽고,
+        #   호출부가 조용히 폴백 템플릿으로 떨어져 LLM 설명이 영영 안 나온다.
+        #   값(enum)·설명문은 한글이어도 된다 — 제한되는 건 키뿐이다.
         "input_schema": {
             "type": "object",
             "properties": {
                 "user_id": {"type": "string", "description": "사용자 ID"},
-                "재수유형": {
+                "form_type": {
                     "type": "string",
                     "enum": list(FORM_KEYS),
                     "description": "재수 형태",
                 },
             },
-            "required": ["user_id", "재수유형"],
+            "required": ["user_id", "form_type"],
         },
     }
 ]
