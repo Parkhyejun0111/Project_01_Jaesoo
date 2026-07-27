@@ -525,9 +525,9 @@ function Splash({ onContinue }: { onContinue: () => void }) {
  */
 const DEMO_ORDER = ["demo_severe", "demo_mild", "demo_none"];
 const DEMO_CASE_LABEL: Record<string, string> = {
-  demo_severe: "중증 청구 대상",
-  demo_mild: "경증 청구 대상",
-  demo_none: "청구 비대상",
+  demo_severe: "중증 청구 학생",
+  demo_mild: "경증 청구 학생",
+  demo_none: "비청구 대상 학생",
 };
 
 /** 데모 자격증명 — 계약을 고르면 그 계약의 아이디·비밀번호가 자동으로 채워진다. */
@@ -542,16 +542,17 @@ function Login({ onLogin }: { onLogin: () => void }) {
   const { setStudentId, health } = useSession();
   const { students: remoteStudents, loading, error } = useStudents();
 
-  // 시연 계정(demo_*)을 목록 맨 위로 끌어올린다. 판정 결과가 각각 다른 세 계약이라
-  // 발표에서 이 순서대로 짚어 보여준다 — 데이터는 전부 실제 DB 에 있다.
-  const students = useMemo<StudentSummary[]>(() => {
-    const isDemo = (s: StudentSummary) => s.student_id.startsWith("demo_");
-    const rank = (s: StudentSummary) => DEMO_ORDER.indexOf(s.student_id);
-    return [
-      ...remoteStudents.filter(isDemo).sort((a, b) => rank(a) - rank(b)),
-      ...remoteStudents.filter((s) => !isDemo(s)),
-    ];
-  }, [remoteStudents]);
+  // 시연 계정 세 건만, DEMO_ORDER 순서(중증 → 경증 → 비대상)로 보여준다.
+  // DB 에는 개발하며 쌓인 계약이 스무 건 넘게 있지만 발표에서 짚을 것은 판정
+  // 결과가 서로 다른 이 세 건뿐이다. 데이터는 전부 실제 DB 에 있고, 다른 계약으로
+  // 로그인해야 하면 이 필터만 풀면 된다.
+  const students = useMemo<StudentSummary[]>(
+    () =>
+      DEMO_ORDER
+        .map((id) => remoteStudents.find((s) => s.student_id === id))
+        .filter((s): s is StudentSummary => Boolean(s)),
+    [remoteStudents],
+  );
   // 계약을 고르면 자격증명 입력 단계로 넘어간다 (한 화면 안의 2단계)
   const [picked, setPicked] = useState<StudentSummary | null>(null);
 
@@ -633,7 +634,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
         {!loading && students.length === 0 && (
           <p className="login-hint">
             {health.online
-              ? "아직 등록된 계약이 없어요. 인강 홈에서 보험에 가입하면 여기에 표시됩니다."
+              ? "시연 계정을 불러오지 못했어요. 백엔드에서 python -m seed_demo_profiles 를 실행해 주세요."
               : "서버에 연결하지 못했어요. 데모 화면으로 둘러볼 수 있어요."}
             {error ? <span className="login-error">{error}</span> : null}
           </p>
