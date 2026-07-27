@@ -105,7 +105,67 @@ def region_catalog() -> dict:
         "default_coefficient": rc.DEFAULT_COEFFICIENT,
         "available": data["available"],
         "sources": rc.sources(),
+        "groups": region_groups(),
     }
+
+
+# ── 거주지 선택 화면의 4분류 ───────────────────────────────────────────────
+#   화면은 "서울 학군지 / 서울 비학군지 / 수도권 / 지방" 네 탭으로 묶어 보여준다.
+#   묶음 정의를 프론트에 두면 학군지 기준이 두 군데 생겨서, 설명 문구("학군지라
+#   학원비가 높은 편이에요")와 화면 분류가 서로 어긋날 수 있다. 그래서 여기서만 정한다.
+METRO_SIDO = ("경기", "인천")   # 수도권 — 서울은 앞의 두 탭이 따로 받는다
+
+
+def region_groups() -> list[dict]:
+    """4개 탭 정의 — 각 탭이 어떤 시도/구를 담는지까지 서버가 알려준다.
+
+    탭을 눌러 고른 항목은 결국 (시도, 구) 한 쌍으로 환원된다. 즉 이 화면은
+    데이터 기반 지역계수를 그대로 쓰고, 레거시 COST_REGIONS 배율은 쓰지 않는다.
+      · 서울 학군지 / 비학군지 → sido="서울", gu=<자치구>
+      · 수도권 / 지방          → sido=<시도>,  gu=None
+    """
+    from dontworry_explain import SCHOOL_DISTRICT_THRESHOLD
+    from regional import coefficients as rc
+
+    data = rc.load()
+    gu = sorted(data["gu"].items(), key=lambda kv: -kv[1])
+    sido = sorted(data["sido"].items(), key=lambda kv: -kv[1])
+
+    def entries(pairs) -> list[dict]:
+        return [{"name": n, "coefficient": v} for n, v in pairs]
+
+    return [
+        {
+            "key": "seoul_edu",
+            "label": "서울 학군지",
+            "desc": "강남·서초·목동 등",
+            "sido": rc.SEOUL,
+            "items": entries((n, v) for n, v in gu if v >= SCHOOL_DISTRICT_THRESHOLD),
+        },
+        {
+            "key": "seoul_other",
+            "label": "서울 비학군지",
+            "desc": "서울 그 외 자치구",
+            "sido": rc.SEOUL,
+            "items": entries((n, v) for n, v in gu if v < SCHOOL_DISTRICT_THRESHOLD),
+        },
+        {
+            "key": "metro",
+            "label": "수도권",
+            "desc": "경기·인천",
+            "sido": None,          # 항목 자체가 시도다
+            "items": entries((n, v) for n, v in sido if n in METRO_SIDO),
+        },
+        {
+            "key": "local",
+            "label": "지방",
+            "desc": "광역시·지방권",
+            "sido": None,
+            "items": entries(
+                (n, v) for n, v in sido if n not in METRO_SIDO and n != rc.SEOUL
+            ),
+        },
+    ]
 
 
 DEFAULT_SIDO = "경기"   # 전국 평균에 가장 가까운 수도권 — 첫 화면 기본 선택

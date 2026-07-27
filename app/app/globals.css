@@ -3408,25 +3408,60 @@ body::-webkit-scrollbar,
   font-weight: 750;
 }
 
-/* 지역계수 2단 선택 — 서울을 고를 때만 나타나는 자치구 하위 그룹.
-   상위 그룹과 같은 타일 패턴을 쓰고, 들여쓰기 대신 점선 구분선으로 층위를 알린다. */
-.region-subgroup {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--line);
+/* 지역 4분류 탭 — 서울 학군지 / 서울 비학군지 / 수도권 / 지방.
+   시도 17개(+서울이면 자치구 25개)를 한 번에 깔던 자리를 네 묶음으로 줄였다.
+   2열 2행으로 두는 이유는 "서울 비학군지"처럼 이름이 길어서 4열로 두면
+   글자가 깨지기 때문이다. */
+.region-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.region-subgroup-title {
-  margin: 0 0 10px;
-  color: var(--ink);
-  font-size: 12px;
+.region-tabs button {
+  min-width: 0;
+  min-height: 52px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 9px 10px;
+  border: 1px solid #dfe6e3;
+  border-radius: 14px;
+  color: #586b64;
+  background: #fff;
+  text-align: center;
+  word-break: keep-all;
+  cursor: pointer;
+}
+
+.region-tabs button strong {
+  font-size: 13px;
   font-weight: 750;
 }
 
-.region-subgroup-title small {
-  color: var(--muted);
+.region-tabs button small {
+  color: #7c8b85;
   font-size: 10px;
   font-weight: 600;
+}
+
+/* 선택된 탭은 타일 버튼의 active 와 같은 초록 계열을 쓰되, 아래 목록과
+   이어져 보이도록 테두리를 한 단계 굵게 준다. */
+.region-tabs button.active {
+  color: var(--brand-green-dark);
+  border-color: var(--brand-green);
+  border-width: 2px;
+  padding: 8px 9px;   /* 굵어진 테두리만큼 빼서 높이를 유지한다 */
+  background: #effaf6;
+}
+
+.region-tabs button.active strong {
+  font-weight: 850;
+}
+
+.region-tabs button.active small {
+  color: var(--brand-green-dark);
 }
 
 /* 자치구는 25개라 3열로 좁힌다. 타일 규격·정렬은 상위 그리드와 같게 유지한다. */

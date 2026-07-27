@@ -183,14 +183,36 @@ export interface RegionCoefficientTable {
   selected?: RegionCoefficient;
 }
 
+/** 거주지 선택 화면의 한 항목 — 시도든 자치구든 같은 모양이다. */
+export interface RegionEntry {
+  name: string;
+  coefficient: number;
+}
+
+/**
+ * 거주지 선택 탭 하나 (서울 학군지 / 서울 비학군지 / 수도권 / 지방).
+ *
+ * sido 가 있으면 items 는 그 시도의 자치구다 → (sido, gu=item) 로 고른다.
+ * sido 가 null 이면 items 자체가 시도다      → (sido=item, gu=null) 로 고른다.
+ * 학군지 경계는 서버가 정한다 (costs.region_groups).
+ */
+export interface RegionGroup {
+  key: "seoul_edu" | "seoul_other" | "metro" | "local";
+  label: string;
+  desc: string;
+  sido: string | null;
+  items: RegionEntry[];
+}
+
 /** 거주지 선택지 — /api/cost-forms 의 region_coefficients. */
 export interface RegionCatalog {
-  sido: Array<{ name: string; coefficient: number }>;
-  seoul_gu: Array<{ name: string; coefficient: number }>;
+  sido: RegionEntry[];
+  seoul_gu: RegionEntry[];
   default_sido: string | null;
   default_coefficient: number;
   available: boolean;
   sources: RegionSources;
+  groups: RegionGroup[];
 }
 
 /** 돈워리 "왜 이 금액인가요?" 설명 + 그 근거. */

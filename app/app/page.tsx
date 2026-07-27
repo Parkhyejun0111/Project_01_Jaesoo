@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SessionProvider, useSession } from "@/lib/session-context";
 import { api } from "@jaesoo/api-client";
-import type { PolicySection, RegionCatalog, RegionSources } from "@jaesoo/api-client";
+import type {
+  PolicySection,
+  RegionCatalog,
+  RegionGroup,
+  RegionSources,
+} from "@jaesoo/api-client";
 import {
   deriveUserId,
   useChat,
@@ -2668,13 +2673,19 @@ function FormChoice({
 }
 
 /**
- * 거주지 선택 — 지역계수의 2단 구조를 그대로 화면에 옮긴다.
+ * 거주지 선택 — 4개 탭(서울 학군지 / 서울 비학군지 / 수도권 / 지방)으로 묶고,
+ * 탭 안에서 실제 지역을 고른다.
  *
- *   1단(항상)      시도 17개 — 통계청 사교육비조사 기반 거시 배율
- *   2단(서울만)    자치구 25개 — 서울 학원 수강료 기반 미시 보정
+ * 이전에는 시도 17개를 한 번에 깔고 서울일 때만 자치구 25개를 덧붙였다. 최대 42개
+ * 버튼이 한 화면에 쏟아져 "우리 동네가 비싼 편인가"를 읽기 어려웠다. 탭으로 묶으면
+ * 한 번에 보이는 버튼이 2~22개로 줄고, 학군지/비학군지 구분도 화면에 드러난다.
  *
- * 서울을 고르지 않으면 2단은 나타나지 않는다. 구보정계수가 서울 전용이기 때문이다.
- * 요율의 학원밀집도지수(engine.REGION_CHOICES)와는 전혀 다른 개념이다.
+ * 묶음 정의(어느 구가 학군지인지 포함)는 서버가 준다 — costs.region_groups().
+ * 프론트에서 따로 판정하면 설명 문구("학군지라 학원비가 높은 편이에요")와
+ * 화면 분류가 어긋날 수 있다.
+ *
+ * 고른 결과는 결국 (시도, 구) 한 쌍이라 데이터 기반 지역계수와 "왜 이 금액인가요?"
+ * 설명이 그대로 동작한다. 요율의 학원밀집도지수(engine.REGION_CHOICES)와는 무관하다.
  */
 function RegionChoice({
   catalog,
@@ -2689,9 +2700,44 @@ function RegionChoice({
   onSidoChange: (value: string) => void;
   onGuChange: (value: string) => void;
 }) {
-  const sidoList = catalog?.sido ?? [];
-  const guList = catalog?.seoul_gu ?? [];
-  const isSeoul = sido === SEOUL;
+  const groups = catalog?.groups ?? [];
+
+  // 현재 선택이 어느 탭에 속하는지 — 되돌아왔을 때 그 탭이 열려 있어야 한다.
+  const activeKeyFromSelection = groups.find((g) =>
+    g.sido
+      ? sido === g.sido && gu != null && g.items.some((i) => i.name === gu)
+      : g.items.some((i) => i.name === sido),
+  )?.key;
+
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const currentKey = openKey ?? activeKeyFromSelection ?? groups[0]?.key ?? null;
+  const current = groups.find((g) => g.key === currentKey);
+
+  // 탭을 옮기면 그 탭의 첫 항목으로 선택도 함께 옮긴다 — 탭만 바뀌고 금액은
+  // 그대로면 "고른 게 반영이 안 됐다"고 읽힌다.
+  const selectGroup = (group: RegionGroup) => {
+    setOpenKey(group.key);
+    const first = group.items[0];
+    if (!first) return;
+    if (group.sido) {
+      onSidoChange(group.sido);
+      onGuChange(first.name);
+    } else {
+      onSidoChange(first.name);
+    }
+  };
+
+  const isPicked = (name: string) =>
+    current?.sido ? gu === name : sido === name;
+
+  const pick = (name: string) => {
+    if (current?.sido) {
+      onSidoChange(current.sido);
+      onGuChange(name);
+    } else {
+      onSidoChange(name);
+    }
+  };
 
   return (
     <fieldset className="choice-field region-choice">
@@ -2702,44 +2748,46 @@ function RegionChoice({
         </span>
       </legend>
       <p>지역마다 학원 시세가 달라요. 사는 곳을 골라주세요.</p>
-      <div className="region-grid">
-        {sidoList.map(({ name, coefficient }) => (
+
+      <div className="region-tabs" role="tablist" aria-label="지역 분류">
+        {groups.map((group) => (
           <button
             type="button"
-            className={sido === name ? "active" : ""}
-            key={name}
-            onClick={() => onSidoChange(name)}
-            aria-pressed={sido === name}
+            key={group.key}
+            role="tab"
+            id={`region-tab-${group.key}`}
+            aria-selected={group.key === currentKey}
+            aria-controls={`region-panel-${group.key}`}
+            className={group.key === currentKey ? "active" : ""}
+            onClick={() => selectGroup(group)}
           >
-            <span>
-              <strong>{name}</strong>
-              <small>{coefficient.toFixed(2)}배</small>
-            </span>
+            <strong>{group.label}</strong>
+            <small>{group.desc}</small>
           </button>
         ))}
       </div>
 
-      {isSeoul && (
-        <div className="region-subgroup">
-          <p className="region-subgroup-title">
-            서울은 구별로 한 번 더 조정해요 <small>(선택)</small>
-          </p>
-          <div className="region-grid compact">
-            {guList.map(({ name, coefficient }) => (
-              <button
-                type="button"
-                className={gu === name ? "active" : ""}
-                key={name}
-                onClick={() => onGuChange(name)}
-                aria-pressed={gu === name}
-              >
-                <span>
-                  <strong>{name}</strong>
-                  <small>{coefficient.toFixed(2)}배</small>
-                </span>
-              </button>
-            ))}
-          </div>
+      {current && (
+        <div
+          className="region-grid compact"
+          role="tabpanel"
+          id={`region-panel-${current.key}`}
+          aria-labelledby={`region-tab-${current.key}`}
+        >
+          {current.items.map(({ name, coefficient }) => (
+            <button
+              type="button"
+              key={name}
+              className={isPicked(name) ? "active" : ""}
+              onClick={() => pick(name)}
+              aria-pressed={isPicked(name)}
+            >
+              <span>
+                <strong>{name}</strong>
+                <small>{coefficient.toFixed(2)}배</small>
+              </span>
+            </button>
+          ))}
         </div>
       )}
     </fieldset>
