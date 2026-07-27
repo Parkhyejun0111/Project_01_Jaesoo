@@ -378,6 +378,18 @@ def test_반올림_표현은_허용한다(gangnam):
     assert ok
 
 
+def test_소수_둘째자리_반올림도_허용한다(gangnam):
+    """최종지역계수 2.0651 → '약 2.07배'.
+
+    말풍선 문구가 "전국 평균의 몇 배"를 말하게 되면서 모델이 소수 둘째 자리로
+    반올림해 쓴다. 1자리·정수만 허용하던 때에는 이게 근거 없는 숫자로 걸려
+    학군지 설명이 매번 폴백으로 떨어졌다.
+    """
+    ok, invented = dx._numbers_are_grounded(
+        "강남구는 전국 평균의 약 2.07배예요.", gangnam)
+    assert ok, f"2.0651 의 둘째 자리 반올림인데 걸렸다: {invented}"
+
+
 def test_계수를_퍼센트로_옮긴_표현도_허용한다(gangnam):
     ok, _ = dx._numbers_are_grounded(
         f"서울은 전국 평균보다 사교육비가 45% 높아요.", gangnam)

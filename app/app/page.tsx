@@ -2177,20 +2177,22 @@ type ConverterChoices = {
   retirement: string;
   income: string;
   academy: string;
-  /** 거주 시도 — 지역계수의 거시 축 (KOSIS 사교육비) */
-  sido: string;
+  /** 거주 시도 — 지역계수의 거시 축 (KOSIS 사교육비). 미선택이면 null. */
+  sido: string | null;
   /** 거주 자치구 — 서울일 때만 쓰는 미시 축 (서울 학원 단가) */
   gu: string | null;
 };
 
-// 기본 거주지는 경기 — 전국 평균에 가장 가까운 수도권이라 첫 화면 기준값으로 적절하다.
+// 거주지는 처음에 아무것도 고르지 않은 상태로 둔다. 기본값(경기)을 미리 박아 두면
+// 사용자가 고르지도 않은 지역의 숫자를 "내 지역 기준"으로 읽게 된다.
+// 미선택이면 백엔드가 전국 평균(지역계수 1.0)으로 계산한다.
 const CONVERTER_DEFAULTS: ConverterChoices = {
   savings: "150~250",
   children: "2명",
   retirement: "3~5억",
   income: "600~800",
   academy: "재수종합학원",
-  sido: "경기",
+  sido: null,
   gu: null,
 };
 
@@ -2257,9 +2259,12 @@ function Converter({
 
   const formattedComparison = comparisonAmount.toLocaleString("ko-KR");
   // 백엔드가 만든 라벨("서울 강남구")을 쓰고, 응답 전에는 선택값으로 채운다.
-  const regionLabel =
-    est?.region ??
-    [converterChoices.sido, isSeoul ? converterChoices.gu : null].filter(Boolean).join(" ");
+  // 거주지를 고르지 않았으면 est.region 이 레거시 기본값("수도권")으로 내려오는데,
+  // 고르지도 않은 지역을 "내 지역 기준"으로 적으면 안 되므로 전국 평균이라고 밝힌다.
+  const regionLabel = !converterChoices.sido
+    ? "전국 평균"
+    : est?.region ??
+      [converterChoices.sido, isSeoul ? converterChoices.gu : null].filter(Boolean).join(" ");
   const avg = catalog.data?.averages;
   const savingsMonths = est ? String(est.conversions.saving_months) : "—";
   const tuitionTerms = est?.conversions.tuition_semesters != null
@@ -2273,17 +2278,18 @@ function Converter({
   };
 
   // 시도를 바꾸면 구 선택은 버린다 — 서울에서 고른 구가 경기도에 남아 있으면 안 된다.
-  const updateSido = (value: string) => {
+  // null 을 넘기면 거주지 선택 자체를 해제한다 → 백엔드가 전국 평균으로 계산한다.
+  const updateSido = (value: string | null) => {
     setConverterChoices((current) => ({
       ...current,
       sido: value,
       gu: value === SEOUL ? current.gu : null,
     }));
   };
-  const updateGu = (value: string) => {
+  const updateGu = (value: string | null) => {
     setConverterChoices((current) => ({
       ...current,
-      gu: current.gu === value ? null : value,   // 같은 구를 다시 누르면 해제
+      gu: value != null && current.gu === value ? null : value,  // 같은 구를 다시 누르면 해제
     }));
   };
 
@@ -2365,23 +2371,11 @@ function Converter({
             <strong className="converter-result-amount">
               {formattedComparison}만원
             </strong>
+            {/* 전국 평균 대비 배율은 별도 박스로 두지 않는다 — 같은 내용을 우하단
+                노재수가 한 문장으로 설명해 준다. 재수유형별 비교표도 뺐다.
+                유형은 STEP2 에서 이미 골랐으므로 결과 화면에서 다시 늘어놓을 이유가 없다. */}
             <small>{converterChoices.academy} · {regionLabel} 기준</small>
-            {est?.vs_national != null && (
-              <p className="converter-vs-national">
-                전국 평균 대비 <b>{est.vs_national.toFixed(2)}배</b>
-                <span>
-                  전국 평균 {est.national_total?.toLocaleString("ko-KR")}만원
-                </span>
-              </p>
-            )}
           </section>
-
-          <RegionFormsTable
-            forms={catalog.data?.forms ?? []}
-            coefficient={est?.region_coefficient?.coefficient ?? 1}
-            regionLabel={regionLabel}
-            selected={converterChoices.academy}
-          />
 
           <div className="converter-result-heading">
             <div>
@@ -2494,7 +2488,10 @@ function Converter({
           <RegionSourceNote sources={regionCatalog?.sources} />
         </main>
 
-        {est?.region_coefficient && (
+        {/* 지역을 고르지 않았어도 띄운다 — 그때는 "전국 평균으로 계산했다"는 것 자체가
+            설명해야 할 근거다. region_coefficient 유무로 막으면 미선택 상태에서
+            노재수가 통째로 사라진다. */}
+        {est && (
           <ExplainDock
             userId={explainUserId}
             재수유형={converterChoices.academy}
@@ -2685,10 +2682,11 @@ function RegionChoice({
   onGuChange,
 }: {
   catalog: RegionCatalog | undefined;
-  sido: string;
+  sido: string | null;
   gu: string | null;
-  onSidoChange: (value: string) => void;
-  onGuChange: (value: string) => void;
+  /** null 이면 선택 해제 — 백엔드가 전국 평균으로 계산한다. */
+  onSidoChange: (value: string | null) => void;
+  onGuChange: (value: string | null) => void;
 }) {
   const groups = catalog?.groups ?? [];
 
@@ -2700,21 +2698,21 @@ function RegionChoice({
   )?.key;
 
   const [openKey, setOpenKey] = useState<string | null>(null);
-  const currentKey = openKey ?? activeKeyFromSelection ?? groups[0]?.key ?? null;
+  // 아무것도 고르지 않은 상태가 기본이다 — 첫 탭을 미리 펴 두지 않는다.
+  const currentKey = openKey ?? activeKeyFromSelection ?? null;
   const current = groups.find((g) => g.key === currentKey);
 
-  // 탭을 옮기면 그 탭의 첫 항목으로 선택도 함께 옮긴다 — 탭만 바뀌고 금액은
-  // 그대로면 "고른 게 반영이 안 됐다"고 읽힌다.
-  const selectGroup = (group: RegionGroup) => {
-    setOpenKey(group.key);
-    const first = group.items[0];
-    if (!first) return;
-    if (group.sido) {
-      onSidoChange(group.sido);
-      onGuChange(first.name);
-    } else {
-      onSidoChange(first.name);
+  // 탭은 "펼치기"만 한다. 여기서 첫 항목을 자동 선택하면 사용자가 고르지도 않은
+  // 지역의 숫자가 "내 지역 기준"으로 찍힌다. 실제 선택은 아래 목록에서 한다.
+  // 열려 있는 탭을 다시 누르면 접고 지역 선택도 함께 해제한다 → 다시 깨끗한 4칸.
+  const toggleGroup = (group: RegionGroup) => {
+    if (group.key === currentKey) {
+      setOpenKey(null);
+      onSidoChange(null);
+      onGuChange(null);
+      return;
     }
+    setOpenKey(group.key);
   };
 
   const isPicked = (name: string) =>
@@ -2725,7 +2723,8 @@ function RegionChoice({
       onSidoChange(current.sido);
       onGuChange(name);
     } else {
-      onSidoChange(name);
+      // 같은 시도를 다시 누르면 해제 — 자치구 타일과 동작을 맞춘다.
+      onSidoChange(sido === name ? null : name);
     }
   };
 
@@ -2749,7 +2748,7 @@ function RegionChoice({
             aria-selected={group.key === currentKey}
             aria-controls={`region-panel-${group.key}`}
             className={group.key === currentKey ? "active" : ""}
-            onClick={() => selectGroup(group)}
+            onClick={() => toggleGroup(group)}
           >
             <strong>{group.label}</strong>
             <small>{group.desc}</small>
@@ -2757,81 +2756,37 @@ function RegionChoice({
         ))}
       </div>
 
+      {/* 2차 옵션 — 회색 패널로 감싸 상위 4탭과 층위를 구분한다. 같은 흰 타일로
+          이어 두면 22개 자치구가 탭과 한 덩어리로 보인다. */}
       {current && (
         <div
-          className="region-grid compact"
+          className="region-detail"
           role="tabpanel"
           id={`region-panel-${current.key}`}
           aria-labelledby={`region-tab-${current.key}`}
         >
-          {current.items.map(({ name, coefficient }) => (
-            <button
-              type="button"
-              key={name}
-              className={isPicked(name) ? "active" : ""}
-              onClick={() => pick(name)}
-              aria-pressed={isPicked(name)}
-            >
-              <span>
-                <strong>{name}</strong>
-                <small>{coefficient.toFixed(2)}배</small>
-              </span>
-            </button>
-          ))}
+          <p className="region-detail-title">
+            {current.label}에서 사는 곳을 골라주세요 <small>(선택)</small>
+          </p>
+          <div className="region-grid compact">
+            {current.items.map(({ name, coefficient }) => (
+              <button
+                type="button"
+                key={name}
+                className={isPicked(name) ? "active" : ""}
+                onClick={() => pick(name)}
+                aria-pressed={isPicked(name)}
+              >
+                <span>
+                  <strong>{name}</strong>
+                  <small>{coefficient.toFixed(2)}배</small>
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </fieldset>
-  );
-}
-
-/**
- * 재수 유형별 "우리 지역 기준" 예상 비용 표.
- *
- * 기준 평균 비용(전국)에 지역계수를 곱한 값을 유형별로 나란히 보여준다.
- * 선택한 유형은 강조하고, 나머지는 비교용으로 남긴다.
- */
-function RegionFormsTable({
-  forms,
-  coefficient,
-  regionLabel,
-  selected,
-}: {
-  forms: Array<{ name: string; total: number }>;
-  coefficient: number;
-  regionLabel: string;
-  selected: string;
-}) {
-  if (!forms.length) return null;
-
-  return (
-    <section className="converter-region-forms">
-      <h2>재수 유형별 <mark>{regionLabel}</mark> 기준 예상 비용</h2>
-      <p>연간 기준이에요. 전국 평균에 우리 지역 계수 {coefficient.toFixed(2)}배를 적용했어요.</p>
-      <table>
-        <caption className="sr-only">
-          재수 유형별 전국 평균 비용과 {regionLabel} 기준 예상 비용 비교 (단위: 만원)
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">유형</th>
-            <th scope="col">전국 평균</th>
-            <th scope="col">우리 지역</th>
-          </tr>
-        </thead>
-        <tbody>
-          {forms.map(({ name, total }) => (
-            <tr key={name} className={name === selected ? "current" : ""}>
-              <th scope="row">
-                {name}
-                {name === selected && <span className="region-forms-tag">선택</span>}
-              </th>
-              <td>{total.toLocaleString("ko-KR")}</td>
-              <td><b>{Math.round(total * coefficient).toLocaleString("ko-KR")}</b></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
   );
 }
 
@@ -2855,7 +2810,7 @@ function ExplainDock({
 }: {
   userId: string;
   재수유형: string;
-  sido: string;
+  sido: string | null;
   gu: string | null;
   open: boolean;
   onToggle: () => void;
@@ -2866,7 +2821,7 @@ function ExplainDock({
         <ExplainAnswerBubble userId={userId} 재수유형={재수유형} sido={sido} gu={gu} />
       ) : (
         <p className="explain-bubble explain-bubble-teaser" aria-hidden="true">
-          지역별 시세 계산데이터를 설명해드려요
+          지역별 사교육 평균비 계산 근거를 설명해드려요!
         </p>
       )}
 
@@ -2898,7 +2853,7 @@ function ExplainAnswerBubble({
 }: {
   userId: string;
   재수유형: string;
-  sido: string;
+  sido: string | null;
   gu: string | null;
 }) {
   const { answer, reference, loading, error } = useDontworryExplain({

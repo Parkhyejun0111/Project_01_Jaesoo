@@ -238,7 +238,8 @@ const explainMemo = new Map<string, { answer: string; reference: string | null }
  * 템플릿 문구를 주기 때문에 error 는 네트워크가 아예 끊긴 경우에만 세팅된다.
  */
 export function useDontworryExplain(
-  args: { userId: string; 재수유형: string; sido: string; gu: string | null } | null,
+  // sido 가 null 이면 거주지를 아직 고르지 않은 상태 — 백엔드가 전국 평균으로 설명한다.
+  args: { userId: string; 재수유형: string; sido: string | null; gu: string | null } | null,
 ) {
   const [state, setState] = useState<{
     answer: string | null;
