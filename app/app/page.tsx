@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SessionProvider, useSession } from "@/lib/session-context";
+import { isMockStudentId, MOCK_DEMO_ACCOUNT } from "@/lib/mock-data";
 import { api } from "@jaesoo/api-client";
 import type {
   PolicySection,
@@ -520,16 +521,34 @@ function Splash({ onContinue }: { onContinue: () => void }) {
 }
 
 /** 데모 자격증명 — 계약을 고르면 그 계약의 아이디·비밀번호가 자동으로 채워진다. */
-const demoCredentials = (studentId: string) => ({
-  id: `${studentId.replace(/^stu_/, "")}_parent`,
-  password: "jaesoo1234",
-});
+const demoCredentials = (studentId: string) =>
+  isMockStudentId(studentId)
+    ? { id: MOCK_DEMO_ACCOUNT.id, password: MOCK_DEMO_ACCOUNT.password }
+    : {
+        id: `${studentId.replace(/^stu_/, "")}_parent`,
+        password: "jaesoo1234",
+      };
 
 function Login({ onLogin }: { onLogin: () => void }) {
   // 프로토타입 범위 — 실인증 대신 백엔드가 아는 학생 중에서 고른다.
   // (웹 가입 완료 화면에서 ?student_id= 로 넘어온 경우엔 이 화면을 건너뛴다)
   const { setStudentId, health } = useSession();
-  const { students, loading, error } = useStudents();
+  const { students: remoteStudents, loading, error } = useStudents();
+
+  // 시연용 계정을 목록 맨 위에 얹는다. 백엔드가 꺼져 있어도 이 계정만은 항상
+  // 고를 수 있어야 발표가 막히지 않는다 — 데이터는 lib/mock-data 가 들고 있다.
+  const students = useMemo<StudentSummary[]>(
+    () => [
+      {
+        student_id: MOCK_DEMO_ACCOUNT.studentId,
+        name: MOCK_DEMO_ACCOUNT.studentName,
+        school: "시연용 계정",
+        tier: "플러스",
+      },
+      ...remoteStudents,
+    ],
+    [remoteStudents],
+  );
   // 계약을 고르면 자격증명 입력 단계로 넘어간다 (한 화면 안의 2단계)
   const [picked, setPicked] = useState<StudentSummary | null>(null);
 
@@ -1301,19 +1320,27 @@ function Chat({
                     </p>
                   )}
 
-                  {/* 근거 조항 — 누르면 그 조항만 담은 팝업이 열린다 */}
+                  {/* 근거 조항 — 서로 독립된 항목이라 한 줄에 하나씩, 같은 표시로 나열한다.
+                      누르면 그 조항만 담은 팝업이 열린다 */}
                   {turn.sources && turn.sources.length > 0 && (
                     <div className="chat-sources">
-                      <span className="chat-sources-label">근거 약관</span>
-                      {turn.sources.map((src) => (
-                        <button
-                          key={src.anchor}
-                          type="button"
-                          onClick={() => setPolicyView({ anchor: src.anchor, title: src.title })}
-                        >
-                          {src.title}
-                        </button>
-                      ))}
+                      <span className="chat-sources-label">
+                        근거 약관 {turn.sources.length}건
+                      </span>
+                      {turn.sources.map((src) => {
+                        const { no, text } = splitClauseNo(src.title);
+                        return (
+                          <button
+                            key={src.anchor}
+                            type="button"
+                            onClick={() => setPolicyView({ anchor: src.anchor, title: src.title })}
+                          >
+                            <FileText size={12} aria-hidden="true" />
+                            {no && <em className="chat-source-no">{no}</em>}
+                            <span>{text}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1389,17 +1416,128 @@ function Chat({
  * 원문 맥락이 필요하면 하단 링크로 전체 문서를 새 탭에서 연다.
  */
 /**
+ * "13 보험금의 지급사유…" 처럼 앞에 붙어 오는 두 자리 항목번호를 떼어낸다.
+ * 번호는 배지로 따로 세우고 제목만 본문에 남긴다.
+ */
+function splitClauseNo(title: string): { no: string | null; text: string } {
+  const matched = /^(\d{2})\s*(\D.*)$/.exec(title.trim());
+  return matched ? { no: matched[1], text: matched[2].trim() } : { no: null, text: title };
+}
+
+/**
+ * 하위 소제목은 "별표3 — 성적 급락 판정 기준 (…) › 검증 방식" 처럼 상위 경로가 앞에 붙어
+ * 온다(백엔드 display_title). 한 줄에 다 넣으면 정작 중요한 말단이 잘리므로,
+ * 상위는 작은 라벨로 올리고 말단만 제목으로 쓴다.
+ */
+function splitClausePath(title: string): { parent: string | null; leaf: string } {
+  const at = title.lastIndexOf("›");
+  if (at < 0) return { parent: null, leaf: title.trim() };
+  return { parent: title.slice(0, at).trim(), leaf: title.slice(at + 1).trim() };
+}
+
+type ClauseBlock =
+  | { kind: "p"; text: string }
+  | { kind: "table"; rows: string[][] };
+
+/**
+ * 조항 원문을 문단과 표로 나눈다.
+ *
  * 조항 원문은 항(li)마다 빈 줄로 구분돼 온다 (백엔드 rag_light._clean).
  * 하나의 <p> 에 통째로 넣으면 pre-wrap 이 빈 줄만 살짝 띄우는 정도라 항이
- * 많은 조항(예: 제18조)은 글자 벽으로 보인다 — 항 단위로 나눠 각각 문단으로 그린다.
+ * 많은 조항(예: 제18조)은 글자 벽으로 보인다 — 항 단위로 나눠 문단으로 그린다.
+ *
+ * 여기에 더해 표를 되살린다. 백엔드(rag_light._CellAwareParser)가 약관의
+ * <table> 을 "| 셀 | 셀 |" 한 줄로 평문화해 보내고 _clean 이 블록 사이에 빈 줄을
+ * 넣기 때문에, 표 한 장이 '빈 줄로 갈린 파이프 문자열' 여러 개로 도착한다.
+ * 그대로 문단으로 그리면 화면에 파이프가 그대로 보인다 (별표1·별표5 등 25곳).
+ *
+ * 빈 줄은 문단만 끊고 표는 끊지 않는다(행 사이 빈 줄이 정상이므로).
+ * 표는 파이프가 아닌 줄을 만나야 닫힌다.
  */
-function ClauseParagraphs({ text }: { text: string }) {
-  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+function parseClauseBlocks(text: string): ClauseBlock[] {
+  const isRow = (line: string) => /^\|.*\|$/.test(line);
+  const toCells = (line: string) =>
+    line.replace(/^\||\|$/g, "").split("|").map((cell) => cell.trim());
+
+  const blocks: ClauseBlock[] = [];
+  let para: string[] = [];
+  let rows: string[][] = [];
+
+  const flushPara = () => {
+    const text = para.join("\n").trim();
+    if (text) blocks.push({ kind: "p", text });
+    para = [];
+  };
+  const flushTable = () => {
+    if (rows.length) blocks.push({ kind: "table", rows });
+    rows = [];
+  };
+
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line) {
+      flushPara();
+      continue;
+    }
+    if (isRow(line)) {
+      flushPara();
+      rows.push(toCells(line));
+      continue;
+    }
+    flushTable();
+    para.push(line);
+  }
+  flushPara();
+  flushTable();
+  return blocks;
+}
+
+function ClauseTable({ rows }: { rows: string[][] }) {
+  // 원문 파서가 빈 셀을 버려서 행마다 칸 수가 다를 수 있다 — 가장 긴 행에 맞춰 채운다
+  const columns = Math.max(...rows.map((row) => row.length));
+  const pad = (row: string[]) => [...row, ...Array(columns - row.length).fill("")];
+  // 행이 하나뿐이면 머리글로 볼 근거가 없으므로 본문으로만 그린다
+  const [head, ...body] = rows.length > 1 ? rows : [];
+  const bodyRows = rows.length > 1 ? body : rows;
+
+  return (
+    <div className="clause-table-wrap">
+      {/* 열 수를 클래스로 넘긴다 — '항목명 + 긴 설명' 2열 표만 설명 칸을 넓게 잡는다 */}
+      <table className={`clause-table clause-table-cols-${columns}`}>
+        {head && (
+          <thead>
+            <tr>
+              {pad(head).map((cell, i) => (
+                <th key={i}>{cell}</th>
+              ))}
+            </tr>
+          </thead>
+        )}
+        <tbody>
+          {bodyRows.map((row, i) => (
+            <tr key={i}>
+              {pad(row).map((cell, j) => (
+                <td key={j}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ClauseBody({ text }: { text: string }) {
+  const blocks = useMemo(() => parseClauseBlocks(text), [text]);
   return (
     <>
-      {paragraphs.map((p, i) => (
-        <p key={i}>{p}</p>
-      ))}
+      {blocks.map((block, i) =>
+        block.kind === "table" ? (
+          <ClauseTable key={i} rows={block.rows} />
+        ) : (
+          <p key={i}>{block.text}</p>
+        ),
+      )}
     </>
   );
 }
@@ -1443,13 +1581,20 @@ function PolicyPopup({
     };
   }, [anchor]);
 
+  // 헤더 제목 — 상위 경로("별표3 … ›")와 두 자리 항목번호를 떼어 말단만 크게 보인다
+  const headFull = section?.title || title;
+  const { parent: headParent, leaf } = splitClausePath(headFull);
+  const headLeaf = splitClauseNo(leaf).text;
+
   return (
     <div className="policy-popup-backdrop" role="dialog" aria-modal="true" aria-label={`약관 ${title}`} onClick={onClose}>
       <div className="policy-popup policy-clause-popup" onClick={(e) => e.stopPropagation()}>
         <header className="policy-popup-head">
           <div>
-            <span>근거 약관</span>
-            <strong>{section?.title || title}</strong>
+            {/* 상위 경로는 라벨로, 말단 제목만 크게 — 둘 다 한 줄 고정이라 길면 말줄임된다.
+                전체 제목은 title 속성으로 남긴다 */}
+            <span title={headParent ?? undefined}>{headParent ?? "근거 약관"}</span>
+            <strong title={headFull}>{headLeaf}</strong>
           </div>
           <button type="button" onClick={onClose} aria-label="약관 팝업 닫기">
             <X size={18} />
@@ -1467,11 +1612,11 @@ function PolicyPopup({
 
           {state === "ready" && section && (
             <article className="policy-clause">
-              <ClauseParagraphs text={section.text} />
+              <ClauseBody text={section.text} />
               {section.subsections.map((sub) => (
                 <section key={sub.anchor}>
                   <h3>{sub.title}</h3>
-                  <ClauseParagraphs text={sub.text} />
+                  <ClauseBody text={sub.text} />
                 </section>
               ))}
             </article>
@@ -2227,7 +2372,9 @@ function Converter({
   // 계산은 백엔드(costs.py)가 한다 — 웹과 앱이 같은 상수·환산식을 쓰도록.
   // 기존의 comparisonAmount = 2292 하드코딩은 '재수종합학원 + 서울 학군지' 한 조합의
   // 결과였을 뿐이라 선택을 바꿔도 값이 변하지 않았다.
-  const catalog = useCostForms();
+  // 시연 계정은 백엔드 없이도 돈워리가 돌아야 한다 — 카탈로그·계산 모두 로컬로 뺀다.
+  const useMockData = isMockStudentId(studentId);
+  const catalog = useCostForms(useMockData);
   const pickValue = (group: string, label: string) =>
     catalog.data?.options?.[group]?.find((o) => o.label.startsWith(label))?.value ?? null;
 
@@ -2243,7 +2390,7 @@ function Converter({
     monthly_income: pickValue("income", converterChoices.income),
     sibling_count: Number(converterChoices.children.replace(/\D/g, "")) || null,
     retire_goal: pickValue("retirement", converterChoices.retirement),
-  });
+  }, useMockData);
 
   const est = estimate.data;
   const comparisonAmount = est?.total ?? 0;
@@ -3726,15 +3873,30 @@ function MyDetailPage({
           <>
             <h1 className="my-detail-title">보험상품 약관</h1>
             <article className="my-terms">
-              <h2>제1조 (목적)</h2>
-              <p>이 약관은 회사가 제공하는 ‘재수없수 스탠다드 보험상품(이하 ‘이 계약’)’의 체결과 이행에 관한 회사와 계약자, 피보험자 간의 권리와 의무를 정함을 목적으로 합니다.</p>
-              <h2>제2조 (보장 내용)</h2>
-              <p>피보험자가 대학수학능력시험 응시 결과 평소 예상 범위보다 15점 이상 하락하고, 이로 인해 재수를 하게 되는 경우 회사는 연간 재수 비용의 최대 70%, 최대 1,500만원 한도 내에서 보험금을 지급합니다.</p>
-              <h2>제3조 (보험료의 산정)</h2>
-              <p>월 보험료는 가입 시점의 성적 데이터, 성적 변동성, 재수 가능성 등을 종합적으로 반영하여 산정되며 매월 갱신 시 최근 확정 성적을 기준으로 재산정됩니다.</p>
-              <h2>제4조 (면책 사항)</h2>
-              <p>성적표의 위조·변조 또는 허위 제출이 확인되는 경우, 회사는 보험금을 지급하지 않으며 이미 지급된 보험금을 회수할 수 있습니다.</p>
-              <small>본 내용은 임시 예시이며, 실제 약관은 상품 설명서 및 계약서를 따릅니다.</small>
+              <p className="my-terms-intro">재수없수 교육보험 보통약관의 핵심 내용을 이해하기 쉽게 요약했어요.</p>
+
+              <h2>계약과 청약철회</h2>
+              <p>계약은 가입자의 청약과 회사의 승낙으로 성립합니다. 관계 법령이 정한 기간 안에는 청약을 철회할 수 있고, 약관 전달·중요내용 설명·자필서명 등 품질보증 요건이 지켜지지 않았다면 계약 성립일부터 3개월 이내에 취소를 요구할 수 있습니다.</p>
+
+              <h2>보장받는 경우</h2>
+              <p>수능 성적이 학생별 예측 밴드의 하단보다 낮아지고 실제로 재수 또는 반수를 실행한 경우 보험금을 지급합니다. 하락 정도는 단순 점수 차가 아니라 개인별 성적 변동성을 반영한 표준편차 기준으로 경증과 중증을 구분하며, 가입한 티어의 보장액과 한도는 갱신으로 바뀌지 않습니다.</p>
+
+              <h2>보험료 산정과 갱신</h2>
+              <p>보험료는 누적 모의고사 성적과 사전에 공개된 산식으로 산정합니다. 갱신은 매월이 아니라 고2 3월, 고3 3월과 9월에 총 3회 실시하고, 고3 9월 이후에는 동결합니다. 한 번의 시험만으로 결정하지 않으며 1회 변동폭과 최초 보험료 대비 누적 인상 상한을 적용합니다.</p>
+
+              <h2>보험료 납입</h2>
+              <p>최초 보험료와 이후 보험료는 약정한 납입일에 납부해야 합니다. 갱신 보험료는 사전 통지 후 다음 납입일부터 적용됩니다. 미납 시 납입최고 기간을 거쳐 계약이 해지될 수 있으며, 정해진 요건을 충족하면 부활을 청구할 수 있습니다.</p>
+
+              <h2>보험금 청구</h2>
+              <p>수능 성적표와 함께 다음 학년도 수능 응시원서, 재수 교육과정 등록 또는 반수 응시 등 실제 재수·반수 실행을 확인할 수 있는 자료를 제출해야 합니다. 회사는 서류 접수 후 정해진 기한 안에 지급하며, 추가 조사가 필요하면 사유와 지급예정일을 안내합니다. 보험금 청구권은 사고 발생일부터 통상 3년 안에 행사해야 합니다.</p>
+
+              <h2>지급 제한과 계약 해지</h2>
+              <p>수능 성적이 밴드 하단 이상인 경우, 성적표나 재수 증빙의 위·변조, 보험사기, 중대한 고지의무 위반 또는 미보장 가입 구간은 보험금 부지급이나 계약 해지 사유가 될 수 있습니다. 계약자는 언제든지 해지할 수 있으나 순수보장성 상품이므로 해약환급금은 미경과보험료에서 해지공제를 뺀 금액으로 산정됩니다.</p>
+
+              <a className="my-terms-link" href={policyLink()} target="_blank" rel="noreferrer">
+                전체 약관 원문 보기 <ArrowUpRight size={14} />
+              </a>
+              <small>이 화면은 핵심 요약이며, 세부 조건과 법적 효력은 전체 약관 및 개별 계약 내용을 따릅니다.</small>
             </article>
           </>
         )}

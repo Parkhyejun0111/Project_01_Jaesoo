@@ -34,3 +34,6 @@ api/config/collect_log.jsonl
 
 # Vercel 링크·OIDC 토큰
 .vercel/
+
+# Final_02 브랜치에서 참고용으로 받아온 app 사본 (비교·병합용, 커밋하지 않는다)
+app_jaehee/

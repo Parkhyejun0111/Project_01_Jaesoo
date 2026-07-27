@@ -5464,6 +5464,22 @@ body::-webkit-scrollbar,
   line-height: 1.7;
 }
 
+.my-terms-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 42px;
+  margin-top: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--brand-green-dark);
+  font-size: 10px;
+  font-weight: 800;
+  text-decoration: none;
+  background: var(--color-insight-positive-bg);
+}
+
 .my-terms small {
   display: block;
   margin-top: 23px;
@@ -7170,9 +7186,9 @@ a {
   padding-top: var(--space-3);
   border-top: 1px solid var(--color-border);
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
 }
 
 .chat-sources-label,
@@ -7187,6 +7203,11 @@ a {
 /* 상자 없이 글자만 — 조항 제목이 그대로 링크처럼 읽힌다 */
 .chat-sources a,
 .chat-sources button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
   font-family: inherit;
   font-size: 11px;
   font-weight: 700;
@@ -7194,28 +7215,42 @@ a {
   background: transparent;
   border: 0;
   border-radius: 0;
-  padding: 0;
+  padding: 2px 0;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
-  max-width: 100%;
+}
+
+/* 모든 항목에 똑같이 붙는 문서 아이콘 — 항목 간 위계가 없음을 보여준다 */
+.chat-sources button svg {
+  flex: none;
+  color: var(--color-text-secondary);
+}
+
+.chat-sources button > span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 상품설명서 항목의 두 자리 번호 — 제목 글자에 붙어 읽히지 않도록 떼어 표시 */
+.chat-source-no {
+  flex: none;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: var(--canvas-gray);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.02em;
 }
 
 .chat-sources a:hover,
 .chat-sources button:hover,
 .chat-sources button:focus-visible {
   text-decoration: underline;
-}
-
-/* 여러 개일 때 가운뎃점으로 끊어 준다 — 상자가 없어도 항목 경계가 보이도록 */
-.chat-sources button + button::before,
-.chat-sources a + a::before {
-  content: "·";
-  margin-right: var(--space-2);
-  color: var(--color-text-secondary);
 }
 
 /* ── 근거 약관 팝업 ─────────────────────────────────────────────────────── */
@@ -7328,6 +7363,73 @@ a {
   font-size: 12.5px;
   font-weight: 300;
   line-height: 1.6;
+}
+
+/* 약관 표 — 열이 많은 표(청약서 문항 등)는 팝업보다 넓으므로 자기 영역 안에서만 가로 스크롤 */
+.clause-table-wrap {
+  margin: 0 0 var(--space-4);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* min-width 가 핵심 — width:100% 만 주면 표가 컨테이너를 넘지 못해 가로 스크롤이
+   생기지 않고, 대신 브라우저가 첫 열을 글자 단위로 짓눌러 버린다. */
+.clause-table {
+  width: 100%;
+  min-width: 500px;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  line-height: 1.65;
+}
+
+.clause-table th,
+.clause-table td {
+  padding: 9px 11px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #cfdcd7;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 첫 열은 항목명, 마지막 열은 설명 문단 — 각각 읽을 수 있는 폭을 확보한다 */
+.clause-table th:first-child,
+.clause-table td:first-child {
+  min-width: 124px;
+  font-weight: 700;
+}
+
+/* '항목명 | 설명' 2열 표에서만 설명 칸에 읽을 수 있는 폭을 준다.
+   열이 많은 표(청약서 문항 등)의 마지막 칸은 대개 짧아서 넓히면 안 된다. */
+.clause-table-cols-2 td:last-child {
+  min-width: 300px;
+}
+
+.clause-table th + th,
+.clause-table td + td {
+  border-left: 1px solid #cfdcd7;
+}
+
+.clause-table thead th {
+  position: sticky;
+  top: 0;
+  color: var(--brand-green-dark);
+  background: var(--color-insight-positive-bg);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.clause-table tbody tr:last-child th,
+.clause-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.clause-table td {
+  color: var(--color-text-primary);
+  font-weight: 300;
 }
 
 /* 항(li) 단위로 나뉜 문단 — 굵기 한 단계 얇게, 문단 사이 간격으로 가독성 확보 */
