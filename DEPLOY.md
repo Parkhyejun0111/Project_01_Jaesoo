@@ -13,6 +13,15 @@
 워크스페이스 패키지 `packages/api-client` 를 참조해서 하위 폴더만 올리면 빌드가
 깨진다 — 저장소 루트에서 워크스페이스 빌드를 돌려야 한다.
 
+네 프로젝트 모두 이 저장소에 연결돼 있고 **Production Branch 가 `Hyejun_727`** 이다.
+`Hyejun_727` 에 푸시하면 넷이 각자 빌드해 프로덕션까지 올라간다. 다른 브랜치에
+푸시하면 프리뷰만 생긴다. Production Branch 는 CLI 로 못 바꾼다 —
+Settings → Environments → Production → Branch Tracking 에서만 된다.
+
+> 기존 `jaesoo-api` 프로젝트도 Production Branch 가 `Hyejun_727` 로 바뀌어 있어
+> 같은 코드가 https://jaesoo-api.vercel.app 에도 올라간다. 프런트 3개가 부르는
+> 곳은 `jaesoo-api-hyejun727` 이므로, 둘 중 하나를 정리하는 게 낫다.
+
 > ⚠️ **`jaesoo-api-hyejun727` 은 Root Directory 가 `api` 다.** CLI 로 수동 배포할
 > 때도 **저장소 루트에서** 해야 한다. `cd api && vercel deploy` 로 하면 Vercel 이
 > 업로드된 `api/` 를 루트로 잡고 거기서 다시 `api/` 로 내려가 `api/api/` 를
