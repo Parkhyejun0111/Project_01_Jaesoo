@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SessionProvider, useSession } from "@/lib/session-context";
-import { isMockStudentId, MOCK_DEMO_ACCOUNT } from "@/lib/mock-data";
 import { api } from "@jaesoo/api-client";
 import type {
   PolicySection,
@@ -520,14 +519,22 @@ function Splash({ onContinue }: { onContinue: () => void }) {
   );
 }
 
+/**
+ * 시연 계정 3인 — 판정 결과가 각각 다르다 (api/seed_demo_profiles.py 로 DB 에 심는다).
+ * 목록에서 이 순서로 보여야 발표 흐름(중증 → 경증 → 비대상)이 자연스럽다.
+ */
+const DEMO_ORDER = ["demo_severe", "demo_mild", "demo_none"];
+const DEMO_CASE_LABEL: Record<string, string> = {
+  demo_severe: "중증 청구 대상",
+  demo_mild: "경증 청구 대상",
+  demo_none: "청구 비대상",
+};
+
 /** 데모 자격증명 — 계약을 고르면 그 계약의 아이디·비밀번호가 자동으로 채워진다. */
-const demoCredentials = (studentId: string) =>
-  isMockStudentId(studentId)
-    ? { id: MOCK_DEMO_ACCOUNT.id, password: MOCK_DEMO_ACCOUNT.password }
-    : {
-        id: `${studentId.replace(/^stu_/, "")}_parent`,
-        password: "jaesoo1234",
-      };
+const demoCredentials = (studentId: string) => ({
+  id: `${studentId.replace(/^(stu|demo)_/, "")}_parent`,
+  password: "jaesoo1234",
+});
 
 function Login({ onLogin }: { onLogin: () => void }) {
   // 프로토타입 범위 — 실인증 대신 백엔드가 아는 학생 중에서 고른다.
@@ -535,20 +542,16 @@ function Login({ onLogin }: { onLogin: () => void }) {
   const { setStudentId, health } = useSession();
   const { students: remoteStudents, loading, error } = useStudents();
 
-  // 시연용 계정을 목록 맨 위에 얹는다. 백엔드가 꺼져 있어도 이 계정만은 항상
-  // 고를 수 있어야 발표가 막히지 않는다 — 데이터는 lib/mock-data 가 들고 있다.
-  const students = useMemo<StudentSummary[]>(
-    () => [
-      {
-        student_id: MOCK_DEMO_ACCOUNT.studentId,
-        name: MOCK_DEMO_ACCOUNT.studentName,
-        school: "시연용 계정",
-        tier: "플러스",
-      },
-      ...remoteStudents,
-    ],
-    [remoteStudents],
-  );
+  // 시연 계정(demo_*)을 목록 맨 위로 끌어올린다. 판정 결과가 각각 다른 세 계약이라
+  // 발표에서 이 순서대로 짚어 보여준다 — 데이터는 전부 실제 DB 에 있다.
+  const students = useMemo<StudentSummary[]>(() => {
+    const isDemo = (s: StudentSummary) => s.student_id.startsWith("demo_");
+    const rank = (s: StudentSummary) => DEMO_ORDER.indexOf(s.student_id);
+    return [
+      ...remoteStudents.filter(isDemo).sort((a, b) => rank(a) - rank(b)),
+      ...remoteStudents.filter((s) => !isDemo(s)),
+    ];
+  }, [remoteStudents]);
   // 계약을 고르면 자격증명 입력 단계로 넘어간다 (한 화면 안의 2단계)
   const [picked, setPicked] = useState<StudentSummary | null>(null);
 
@@ -616,7 +619,8 @@ function Login({ onLogin }: { onLogin: () => void }) {
                   <button type="button" onClick={() => pick(s)}>
                     <span className="login-account-name">{s.name}</span>
                     <span className="login-account-meta">
-                      {[s.school, s.tier].filter(Boolean).join(" · ") || "가입 정보"}
+                      {DEMO_CASE_LABEL[s.student_id]
+                        ?? ([s.school, s.tier].filter(Boolean).join(" · ") || "가입 정보")}
                     </span>
                     <ChevronRight size={16} />
                   </button>
@@ -2372,9 +2376,7 @@ function Converter({
   // 계산은 백엔드(costs.py)가 한다 — 웹과 앱이 같은 상수·환산식을 쓰도록.
   // 기존의 comparisonAmount = 2292 하드코딩은 '재수종합학원 + 서울 학군지' 한 조합의
   // 결과였을 뿐이라 선택을 바꿔도 값이 변하지 않았다.
-  // 시연 계정은 백엔드 없이도 돈워리가 돌아야 한다 — 카탈로그·계산 모두 로컬로 뺀다.
-  const useMockData = isMockStudentId(studentId);
-  const catalog = useCostForms(useMockData);
+  const catalog = useCostForms();
   const pickValue = (group: string, label: string) =>
     catalog.data?.options?.[group]?.find((o) => o.label.startsWith(label))?.value ?? null;
 
@@ -2390,7 +2392,7 @@ function Converter({
     monthly_income: pickValue("income", converterChoices.income),
     sibling_count: Number(converterChoices.children.replace(/\D/g, "")) || null,
     retire_goal: pickValue("retirement", converterChoices.retirement),
-  }, useMockData);
+  });
 
   const est = estimate.data;
   const comparisonAmount = est?.total ?? 0;

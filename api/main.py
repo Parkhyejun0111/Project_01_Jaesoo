@@ -287,6 +287,12 @@ def student_eligibility(student_id: str, actual_percentile: float | None = None,
         if not student:
             return {"error": "not_found"}
         scores = db.get_scores(student_id)
+        # 질의로 성적을 주지 않으면 DB 에 확정 등록된 수능 백분위를 쓴다.
+        # (검증·시뮬레이션용으로 넘긴 값이 있으면 그쪽이 우선한다)
+        if actual_percentile is None and actual_grade is None:
+            stored = student.get("actual_percentile")
+            if stored is not None:
+                actual_percentile = float(stored)
         return engine.eligibility(scores, student.get("enrollment"),
                                   actual_percentile=actual_percentile,
                                   actual_grade=actual_grade)

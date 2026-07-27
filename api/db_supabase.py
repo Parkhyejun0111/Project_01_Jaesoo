@@ -156,6 +156,9 @@ alter table jaesoo_enrollments  add column if not exists surrender_type text def
 --   residence_gu   : 서울 자치구 ('강남구' …). 서울이 아니면 NULL.
 alter table jaesoo_enrollments  add column if not exists residence_sido text;
 alter table jaesoo_enrollments  add column if not exists residence_gu text;
+-- 확정된 수능 성적(백분위). 이 값이 있어야 별표3 판정이 pending → determined 로 넘어간다.
+-- 비어 있으면 화면은 "수능 성적이 등록되면 판정해 드려요" 상태로 남는다.
+alter table jaesoo_students     add column if not exists actual_percentile numeric;
 """
 
 
@@ -227,6 +230,20 @@ def upsert_student(s: dict, conn=None) -> None:
                  name=excluded.name, school=excluded.school, grade_year=excluded.grade_year,
                  track=excluded.track, target_univ=excluded.target_univ, source_site=excluded.source_site""",
             s,
+        )
+        conn.commit()
+
+
+def set_actual_percentile(student_id: str, percentile: float | None, conn=None) -> None:
+    """확정된 수능 성적(백분위)을 기록한다.
+
+    이 값이 있어야 별표3 판정이 pending → determined 로 넘어간다.
+    None 을 주면 '아직 수능 전' 상태로 되돌린다.
+    """
+    with _use(conn) as conn, conn.cursor() as cur:
+        cur.execute(
+            "update jaesoo_students set actual_percentile = %s where student_id = %s",
+            (percentile, student_id),
         )
         conn.commit()
 
