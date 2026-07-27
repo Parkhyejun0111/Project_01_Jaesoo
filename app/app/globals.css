@@ -3713,6 +3713,17 @@ body::-webkit-scrollbar,
   word-break: keep-all;
 }
 
+/* 근거가 되는 세 대목(자치구 · 전국 평균 대비 배율 · 최종 예상비용)만 노랗게 짚는다.
+   결과 화면 제목의 노란 하이라이트와 같은 계열이되, 패널 바탕이 연한 초록이라
+   한 톤 진하게 둬야 묻히지 않는다. */
+.explain-answer-text mark {
+  padding: 0 2px;
+  border-radius: 3px;
+  color: inherit;
+  background: #ffe98a;
+  font-weight: 700;
+}
+
 /* 초록 배경 위에서는 회색 --muted 가 흐려 보인다 — 초록 계열로 낮춘 톤을 쓴다. */
 .explain-answer-error {
   margin: 0;

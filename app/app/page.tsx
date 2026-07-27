@@ -2994,6 +2994,48 @@ function ExplainPanel({
   );
 }
 
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * 설명 문장에서 근거가 되는 세 대목을 노란 하이라이트로 짚는다.
+ *   1) 자치구 이름 (송파구·양천구 …)
+ *   2) 전국 평균 대비 배율 — "전국 평균의 약 2.07배" / "전국 평균보다 107% 높은"
+ *   3) 최종 예상비용 금액 — "3,954만원"
+ *
+ * 문장 형태는 모델이 매번 조금씩 다르게 쓰므로 문구를 통째로 찾지 않는다.
+ * 자치구명과 금액은 breakdown 의 실제 값으로 정확히 맞히고, 배율만 문형을
+ * 정규식으로 잡는다. 값이 없으면(지역 미선택 등) 그 항목은 그냥 넘어간다.
+ */
+function highlightExplain(
+  text: string,
+  { gu, total }: { gu: string | null; total: number | null; coefficient: number | null },
+): React.ReactNode[] {
+  const patterns: string[] = [];
+
+  // 배율/증감률 — "전국 평균의 약 1.4배", "전국 평균보다 약 107% 높은"
+  patterns.push("전국\\s*평균(?:의|보다)?\\s*(?:약\\s*)?[\\d.,]+\\s*(?:배|%)");
+  // 금액은 서버가 준 값으로 정확히 — 천단위 구분이 있든 없든 받는다
+  if (typeof total === "number") {
+    const withComma = total.toLocaleString("ko-KR");
+    patterns.push(`(?:${escapeRegExp(withComma)}|${escapeRegExp(String(total))})\\s*만원`);
+  }
+  if (gu) patterns.push(escapeRegExp(gu));
+
+  if (!patterns.length) return [text];
+
+  const re = new RegExp(`(${patterns.join("|")})`, "g");
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  for (const m of text.matchAll(re)) {
+    const at = m.index ?? 0;
+    if (at > last) out.push(text.slice(last, at));
+    out.push(<mark key={`${at}-${m[0]}`}>{m[0]}</mark>);
+    last = at + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
 /**
  * 설명 본문 — 패널이 열렸을 때 그 안에 채워진다.
  *
@@ -3012,7 +3054,7 @@ function ExplainAnswerBubble({
   sido: string | null;
   gu: string | null;
 }) {
-  const { answer, reference, loading, error } = useDontworryExplain({
+  const { answer, reference, highlight, loading, error } = useDontworryExplain({
     userId,
     재수유형,
     sido,
@@ -3040,7 +3082,9 @@ function ExplainAnswerBubble({
         <p className="explain-answer-error">{error}</p>
       ) : (
         <>
-          <p className="explain-answer-text">{answer}</p>
+          <p className="explain-answer-text">
+            {answer ? highlightExplain(answer, highlight) : null}
+          </p>
           <span className="explain-answer-foot">
             {reference
               ? `${reference.replace("-", "년 ")}월 기준 공공데이터`

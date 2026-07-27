@@ -229,7 +229,16 @@ export function useCostForms() {
  * 훅 안의 useRef 로 두면 시트를 닫을 때 컴포넌트가 언마운트되면서 사라져, 다시 열
  * 때마다 요청이 나간다. 서버도 캐시하지만 왕복 자체를 없애는 게 낫다.
  */
-const explainMemo = new Map<string, { answer: string; reference: string | null }>();
+const EMPTY_HIGHLIGHT = { gu: null, total: null, coefficient: null };
+
+type ExplainEntry = {
+  answer: string;
+  reference: string | null;
+  /** 답 안에서 노란 하이라이트로 짚어줄 값들 — 문장이 아니라 숫자·지명이 근거다. */
+  highlight: { gu: string | null; total: number | null; coefficient: number | null };
+};
+
+const explainMemo = new Map<string, ExplainEntry>();
 
 /**
  * "왜 이 금액인가요?" 설명.
@@ -244,9 +253,10 @@ export function useDontworryExplain(
   const [state, setState] = useState<{
     answer: string | null;
     reference: string | null;
+    highlight: ExplainEntry["highlight"];
     loading: boolean;
     error: string | null;
-  }>({ answer: null, reference: null, loading: false, error: null });
+  }>({ answer: null, reference: null, highlight: EMPTY_HIGHLIGHT, loading: false, error: null });
 
   const key = args ? [args.userId, args.재수유형, args.sido, args.gu ?? "-"].join(":") : "";
 
@@ -260,7 +270,7 @@ export function useDontworryExplain(
     }
 
     const controller = new AbortController();
-    setState({ answer: null, reference: null, loading: true, error: null });
+    setState({ answer: null, reference: null, highlight: EMPTY_HIGHLIGHT, loading: true, error: null });
 
     api
       .dontworryExplain({ ...args, signal: controller.signal })
@@ -271,14 +281,21 @@ export function useDontworryExplain(
           setState({
             answer: null,
             reference: null,
+            highlight: EMPTY_HIGHLIGHT,
             loading: false,
             error: "설명을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
           });
           return;
         }
-        const entry = {
+        const b = res.data.breakdown;
+        const entry: ExplainEntry = {
           answer: res.data.answer,
-          reference: res.data.breakdown?.기준시점 ?? null,
+          reference: b?.기준시점 ?? null,
+          highlight: {
+            gu: b?.구 ?? null,
+            total: b?.최종예상비용_만원 ?? null,
+            coefficient: b?.최종지역계수 ?? null,
+          },
         };
         explainMemo.set(key, entry);
         setState({ ...entry, loading: false, error: null });
@@ -288,6 +305,7 @@ export function useDontworryExplain(
           setState({
             answer: null,
             reference: null,
+            highlight: EMPTY_HIGHLIGHT,
             loading: false,
             error: "설명을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
           });
