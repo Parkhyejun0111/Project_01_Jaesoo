@@ -37,3 +37,8 @@ api/config/collect_log.jsonl
 
 # Final_02 브랜치에서 참고용으로 받아온 app 사본 (비교·병합용, 커밋하지 않는다)
 app_jaehee/
+# vercel link 가 자동으로 붙인 항목. .env* 가 위쪽의 !.env.example 예외를
+# 덮어버리므로 예외를 뒤에 한 번 더 둔다 — 키 목록 파일은 커밋해야 한다.
+.vercel
+.env*
+!.env.example

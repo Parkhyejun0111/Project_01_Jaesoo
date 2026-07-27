@@ -1,0 +1,29 @@
+# 저장소 루트에서 배포할 때 올리지 않을 것.
+# web·webapp·app 은 워크스페이스 의존(packages/api-client, web/public) 때문에
+# 하위 폴더만 따로 올릴 수 없어 루트에서 빌드한다 — 그래서 이 목록이 필요하다.
+
+# 의존성·가상환경 (빌드 때 Vercel 이 새로 설치한다)
+node_modules
+.venv
+__pycache__
+*.pyc
+
+# 빌드 산출물
+.next
+dist
+out
+*.tsbuildinfo
+
+# 로컬 전용
+.env
+.env.*
+!.env.example
+.vercel
+.DS_Store
+
+# 비교용으로 받아둔 다른 브랜치 사본
+app_jaehee
+
+# 배포에 필요 없는 자료 — 계리 노트북·원본 데이터는 용량만 차지한다
+docs
+_archive
