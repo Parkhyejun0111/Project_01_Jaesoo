@@ -12,10 +12,13 @@ import {
   useEligibility,
   useRegisteredCards,
   useScrollToTop,
-  useStudents,
-  type StudentSummary,
 } from "@/lib/hooks";
 import { toVariant, useClaim, type ClaimOCRResult } from "@/lib/claim";
+import {
+  isMockStudentId,
+  MOCK_DEMO_ACCOUNT,
+  MOCK_REGISTERED_CARDS,
+} from "@/lib/mock-data";
 import {
   SUBJECT_COLOR,
   indexToX,
@@ -59,7 +62,6 @@ import {
   Plus,
   RefreshCcw,
   ShieldCheck,
-  Sun,
   Dumbbell,
   Siren,
   TriangleAlert,
@@ -102,26 +104,19 @@ type CaptureContext = "receipt" | "proof";
 type ClaimPhase = "preExam" | "postExam" | "period1" | "between" | "period2";
 type ConverterScreen = "intro" | "input" | "cost" | "loading" | "result";
 type GradeScreen = "intro" | "loading" | "result";
-type CanvasTone = "cream-white" | "gray-white";
 
-// TODO: 아래 studentProfile/policyInfo/paymentMethod는 로그인한 사용자의 DB 조회 결과로 교체될 임시 목데이터입니다.
-const studentProfile = {
-  name: "김지민",
-  grade: "고3",
-};
-
-const policyInfo = {
-  productName: "재수종합학원 안심 플랜",
+// 계약 정보는 전부 세션 프로필(pricing·enrollment)에서 온다. 이 상수는 백엔드가
+// 응답하지 않을 때 청구 화면이 0원으로 무너지지 않게 붙잡아 주는 폴백 값일 뿐이다.
+// (화면에 직접 그리지 말 것 — 실제 계약과 어긋난 값이 보인다)
+const policyFallback = {
   tier: "스탠다드",
-  joinedDate: new Date(2026, 2, 2),
   coverageCapManwon: 1400,
-  paymentDueDay: 12,
 };
 
 const paymentMethod = {
-  provider: "신한카드",
-  ownerType: "개인",
-  last4: "4821",
+  provider: MOCK_REGISTERED_CARDS[0].card_company,
+  ownerType: MOCK_REGISTERED_CARDS[0].card_holder_name,
+  last4: MOCK_REGISTERED_CARDS[0].card_last4,
 };
 
 // 청구 1단계(등록 카드 확인)가 보여주는 카드 목록은 DB(jaesoo_registered_cards)에서
@@ -161,17 +156,17 @@ function useClaimAccount(): ClaimAccount {
   const { profile } = useSession();
   const pricing = profile.data?.pricing ?? null;
   return useMemo(() => {
-    const capManwon = pricing ? Math.round(pricing.cover_severe / 10_000) : policyInfo.coverageCapManwon;
+    const capManwon = pricing ? Math.round(pricing.cover_severe / 10_000) : policyFallback.coverageCapManwon;
     const mildCapManwon = pricing
       ? Math.round(pricing.cover_mild / 10_000)
-      : Math.round(policyInfo.coverageCapManwon / 2);
+      : Math.round(policyFallback.coverageCapManwon / 2);
     const firstPaidManwon = Math.round(capManwon * FIRST_CLAIM_DEMO_RATIO);
     return {
       capManwon,
       mildCapManwon,
       firstPaidManwon,
       secondPaidManwon: capManwon - firstPaidManwon,
-      tier: pricing?.tier ?? policyInfo.tier,
+      tier: pricing?.tier ?? policyFallback.tier,
     };
   }, [pricing]);
 }
@@ -443,10 +438,38 @@ function nextRenewal(rounds: Record<string, number | null> | undefined) {
   return null;
 }
 
+/**
+ * 보험료 산정 기준일 = 가입일 (jaesoo_enrollments.created_at).
+ *
+ * engine.price() 는 가입 설문값(티어·지역·소득·교육비·잔여납입개월)만으로 계산하고
+ * 그 값들은 가입 이후 바뀌지 않는다 — 따라서 지금 보이는 월 보험료가 산정된 시점은
+ * 가입 시점이다. (갱신이 실제로 반영되면 그때 갱신일로 바꿔야 한다)
+ */
+function enrollmentDate(student?: Record<string, unknown>): Date | null {
+  const enrollment = student?.enrollment as Record<string, unknown> | undefined;
+  const raw = enrollment?.created_at;
+  if (typeof raw !== "string") return null;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 /** 오늘 이후 처음 도래하는 해당 월 1일. */
 function nextMonthStart(month: number, from = new Date()) {
   const year = from.getFullYear() + (from.getMonth() + 1 >= month ? 1 : 0);
   return new Date(year, month - 1, 1);
+}
+
+/**
+ * 다음 납부일 — 매월 자동이체이므로, 가입일과 같은 날짜가 매달 돌아온다고 본다.
+ * 청구 주기처럼 별도 필드가 DB에 없어서(잔여납입개월만 있음), 실제로 아는 유일한
+ * 기준점인 가입일(day-of-month)로부터 오늘 이후 첫 도래일을 계산한다.
+ */
+function nextPaymentDue(enrolledAt: Date, from = new Date()) {
+  const day = enrolledAt.getDate();
+  const today = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const candidate = new Date(from.getFullYear(), from.getMonth(), day);
+  if (candidate.getTime() <= today.getTime()) candidate.setMonth(candidate.getMonth() + 1);
+  return candidate;
 }
 
 const formatISODate = (date: Date) =>
@@ -512,105 +535,60 @@ function Splash({ onContinue }: { onContinue: () => void }) {
   );
 }
 
-/** 데모 자격증명 — 계약을 고르면 그 계약의 아이디·비밀번호가 자동으로 채워진다. */
-const demoCredentials = (studentId: string) => ({
-  id: `${studentId.replace(/^stu_/, "")}_parent`,
-  password: "jaesoo1234",
-});
-
 function Login({ onLogin }: { onLogin: () => void }) {
-  // 프로토타입 범위 — 실인증 대신 백엔드가 아는 학생 중에서 고른다.
-  // (웹 가입 완료 화면에서 ?student_id= 로 넘어온 경우엔 이 화면을 건너뛴다)
-  const { setStudentId, health } = useSession();
-  const { students, loading, error } = useStudents();
-  // 계약을 고르면 자격증명 입력 단계로 넘어간다 (한 화면 안의 2단계)
-  const [picked, setPicked] = useState<StudentSummary | null>(null);
-
-  const pick = (student: StudentSummary) => {
-    setStudentId(student.student_id);
-    setPicked(student);
-  };
-
-  if (picked) {
-    const cred = demoCredentials(picked.student_id);
-    return (
-      <main className="login-screen">
-        <div className="login-brand">
-          <Mascot size="md" />
-          <h1>재수없수</h1>
-          <p>{picked.name} 학생 학부모님 계정</p>
-        </div>
-        <form
-          className="login-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onLogin();
-          }}
-        >
-          <label>
-            <span>아이디</span>
-            <input value={cred.id} readOnly autoComplete="username" />
-          </label>
-          <label>
-            <span>비밀번호</span>
-            <input type="password" value={cred.password} readOnly autoComplete="current-password" />
-          </label>
-          <button className="primary-button" type="submit">
-            로그인하기
-          </button>
-        </form>
-      </main>
-    );
-  }
+  // 앱 시연 계정만 로컬에서 검증한다. 웹 가입 완료의 student_id 핸드오프와
+  // 실제 계정의 API·DB 조회 경로는 SessionProvider와 데이터 훅에 그대로 남겨 둔다.
+  const { setStudentId } = useSession();
+  const [loginId, setLoginId] = useState<string>(MOCK_DEMO_ACCOUNT.id);
+  const [password, setPassword] = useState<string>(MOCK_DEMO_ACCOUNT.password);
+  const [error, setError] = useState("");
 
   return (
     <main className="login-screen">
       <div className="login-brand">
         <Mascot size="md" />
         <h1>재수없수</h1>
-        <p>재수없는 우리 아이! 부담없는 우리집!</p>
       </div>
       <form
         className="login-form"
         onSubmit={(event) => {
           event.preventDefault();
-          if (students.length) pick(students[0]);
-          else onLogin();
+          if (
+            loginId.trim() !== MOCK_DEMO_ACCOUNT.id
+            || password !== MOCK_DEMO_ACCOUNT.password
+          ) {
+            setError("아이디 또는 비밀번호를 확인해 주세요.");
+            return;
+          }
+          setError("");
+          setStudentId(MOCK_DEMO_ACCOUNT.studentId);
+          onLogin();
         }}
       >
-        {loading && <p className="login-hint">가입된 계약을 불러오는 중이에요…</p>}
-
-        {!loading && students.length > 0 && (
-          <>
-            <span className="login-label">계약을 선택하세요</span>
-            <ul className="login-accounts">
-              {/* 시드 데이터에 student_id 가 겹치는 행이 있어 인덱스를 함께 물린다 */}
-              {students.map((s, i) => (
-                <li key={`${s.student_id}-${i}`}>
-                  <button type="button" onClick={() => pick(s)}>
-                    <span className="login-account-name">{s.name}</span>
-                    <span className="login-account-meta">
-                      {[s.school, s.tier].filter(Boolean).join(" · ") || "가입 정보"}
-                    </span>
-                    <ChevronRight size={16} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-
-        {!loading && students.length === 0 && (
-          <p className="login-hint">
-            {health.online
-              ? "아직 등록된 계약이 없어요. 인강 홈에서 보험에 가입하면 여기에 표시됩니다."
-              : "서버에 연결하지 못했어요. 데모 화면으로 둘러볼 수 있어요."}
-            {error ? <span className="login-error">{error}</span> : null}
+        <label>
+          <span>아이디</span>
+          <input
+            value={loginId}
+            onChange={(event) => setLoginId(event.target.value)}
+            autoComplete="username"
+          />
+        </label>
+        <label>
+          <span>비밀번호</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+          />
+        </label>
+        {error ? (
+          <p className="login-error" role="alert">
+            {error}
           </p>
-        )}
-
-        <button className="primary-button" type="button" onClick={onLogin}>
-          {students.length ? "선택 없이 데모로 보기" : "데모로 둘러보기"}
+        ) : null}
+        <button className="primary-button" type="submit">
+          로그인하기
         </button>
       </form>
     </main>
@@ -761,6 +739,8 @@ function HomeMain({
   const studentName = (profile.data?.student?.name as string | undefined) ?? "";
   // 재산정 시점은 약관이 정한 세 갱신 시점 중 다음 것 (제17조·별표1)
   const renewal = nextRenewal(profile.data?.analysis?.rounds);
+  // 지금 보이는 월 보험료가 산정된 날 (가입 설문 제출 시점)
+  const pricedAt = enrollmentDate(profile.data?.student);
 
   const submitQuestion = () => {
     if (!question.trim()) return;
@@ -781,7 +761,9 @@ function HomeMain({
           </button>
         </div>
         {/* 아바타를 로고로 바꾸면서 이름은 인사말에만 남는다 — 목데이터가 아니라 실제 계약자 이름으로 */}
-        <p className="home-greeting">안녕하세요, {studentName || studentProfile.name} 학생 학부모님!</p>
+        <p className="home-greeting">
+          안녕하세요, {studentName || MOCK_DEMO_ACCOUNT.studentName} 학생 학부모님!
+        </p>
         <div className="home-ai-copy">
           <Mascot size="lg" />
           <p>
@@ -848,7 +830,7 @@ function HomeMain({
               </span>
               <span>현재 월 보험료</span>
               <strong>{pricing ? 원(pricing.monthly_premium) : "—"}</strong>
-              <small>{pricing ? `${pricing.tier} · 잔여 ${pricing.remaining_months}개월` : "불러오는 중"}</small>
+              <small>{pricedAt ? `${formatDotDate(pricedAt)} 산정` : "불러오는 중"}</small>
             </article>
             <article className="metric-card dday-card">
               <span className="metric-icon lime">
@@ -1294,19 +1276,26 @@ function Chat({
                     </p>
                   )}
 
-                  {/* 근거 조항 — 누르면 그 조항만 담은 팝업이 열린다 */}
+                  {/* 근거 조항 — 서로 독립된 항목이라 한 줄에 하나씩, 같은 표시로 나열한다 */}
                   {turn.sources && turn.sources.length > 0 && (
                     <div className="chat-sources">
-                      <span className="chat-sources-label">근거 약관</span>
-                      {turn.sources.map((src) => (
-                        <button
-                          key={src.anchor}
-                          type="button"
-                          onClick={() => setPolicyView({ anchor: src.anchor, title: src.title })}
-                        >
-                          {src.title}
-                        </button>
-                      ))}
+                      <span className="chat-sources-label">
+                        근거 약관 {turn.sources.length}건
+                      </span>
+                      {turn.sources.map((src) => {
+                        const { no, text } = splitClauseNo(src.title);
+                        return (
+                          <button
+                            key={src.anchor}
+                            type="button"
+                            onClick={() => setPolicyView({ anchor: src.anchor, title: src.title })}
+                          >
+                            <FileText size={12} aria-hidden="true" />
+                            {no && <em className="chat-source-no">{no}</em>}
+                            <span>{text}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1382,17 +1371,125 @@ function Chat({
  * 원문 맥락이 필요하면 하단 링크로 전체 문서를 새 탭에서 연다.
  */
 /**
- * 조항 원문은 항(li)마다 빈 줄로 구분돼 온다 (백엔드 rag_light._clean).
- * 하나의 <p> 에 통째로 넣으면 pre-wrap 이 빈 줄만 살짝 띄우는 정도라 항이
- * 많은 조항(예: 제18조)은 글자 벽으로 보인다 — 항 단위로 나눠 각각 문단으로 그린다.
+ * 상품설명서 항목은 제목에 두 자리 번호가 붙어 온다 ("08위법계약을 해지할 수 있는 권리").
+ * 번호가 본문에 그대로 붙어 있으면 한 단어처럼 읽히므로 떼어내 따로 표시한다.
+ * (약관 원문 h4 가 그런 형태다 — rag_light._STANDALONE_H4 참고)
  */
-function ClauseParagraphs({ text }: { text: string }) {
-  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+function splitClauseNo(title: string): { no: string | null; text: string } {
+  const matched = /^(\d{2})\s*(\D.*)$/.exec(title.trim());
+  return matched ? { no: matched[1], text: matched[2].trim() } : { no: null, text: title };
+}
+
+/**
+ * 하위 소제목은 "별표3 — 성적 급락 판정 기준 (…) › 검증 방식" 처럼 상위 경로가 앞에 붙어
+ * 온다(백엔드 display_title). 한 줄에 다 넣으면 정작 중요한 말단이 잘리므로,
+ * 상위는 작은 라벨로 올리고 말단만 제목으로 쓴다.
+ */
+function splitClausePath(title: string): { parent: string | null; leaf: string } {
+  const at = title.lastIndexOf("›");
+  if (at < 0) return { parent: null, leaf: title.trim() };
+  return { parent: title.slice(0, at).trim(), leaf: title.slice(at + 1).trim() };
+}
+
+type ClauseBlock =
+  | { kind: "p"; text: string }
+  | { kind: "table"; rows: string[][] };
+
+/**
+ * 조항 원문을 문단과 표로 나눈다.
+ *
+ * 백엔드(rag_light._CellAwareParser)가 약관의 <table> 을 "| 셀 | 셀 |" 한 줄로
+ * 평문화해 보내고, _clean 이 블록 사이에 빈 줄을 넣는다. 그래서 표 한 장이
+ * '빈 줄로 갈린 파이프 문자열' 여러 개로 도착한다 — 그대로 문단으로 그리면
+ * 화면에 파이프가 그대로 보인다. 여기서 다시 표로 조립한다.
+ *
+ * 빈 줄은 문단만 끊고 표는 끊지 않는다(행 사이 빈 줄이 정상이므로).
+ * 표는 파이프가 아닌 줄을 만나야 닫힌다.
+ */
+function parseClauseBlocks(text: string): ClauseBlock[] {
+  const isRow = (line: string) => /^\|.*\|$/.test(line);
+  const toCells = (line: string) =>
+    line.replace(/^\||\|$/g, "").split("|").map((cell) => cell.trim());
+
+  const blocks: ClauseBlock[] = [];
+  let para: string[] = [];
+  let rows: string[][] = [];
+
+  const flushPara = () => {
+    const text = para.join("\n").trim();
+    if (text) blocks.push({ kind: "p", text });
+    para = [];
+  };
+  const flushTable = () => {
+    if (rows.length) blocks.push({ kind: "table", rows });
+    rows = [];
+  };
+
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line) {
+      flushPara();
+      continue;
+    }
+    if (isRow(line)) {
+      flushPara();
+      rows.push(toCells(line));
+      continue;
+    }
+    flushTable();
+    para.push(line);
+  }
+  flushPara();
+  flushTable();
+  return blocks;
+}
+
+function ClauseTable({ rows }: { rows: string[][] }) {
+  // 원문 파서가 빈 셀을 버려서 행마다 칸 수가 다를 수 있다 — 가장 긴 행에 맞춰 채운다
+  const columns = Math.max(...rows.map((row) => row.length));
+  const pad = (row: string[]) => [...row, ...Array(columns - row.length).fill("")];
+  // 행이 하나뿐이면 머리글로 볼 근거가 없으므로 본문으로만 그린다
+  const [head, ...body] = rows.length > 1 ? rows : [];
+  const bodyRows = rows.length > 1 ? body : rows;
+
+  return (
+    <div className="clause-table-wrap">
+      {/* 열 수를 클래스로 넘긴다 — '항목명 + 긴 설명' 2열 표만 설명 칸을 넓게 잡는다 */}
+      <table className={`clause-table clause-table-cols-${columns}`}>
+        {head && (
+          <thead>
+            <tr>
+              {pad(head).map((cell, i) => (
+                <th key={i}>{cell}</th>
+              ))}
+            </tr>
+          </thead>
+        )}
+        <tbody>
+          {bodyRows.map((row, i) => (
+            <tr key={i}>
+              {pad(row).map((cell, j) => (
+                <td key={j}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ClauseBody({ text }: { text: string }) {
+  const blocks = useMemo(() => parseClauseBlocks(text), [text]);
   return (
     <>
-      {paragraphs.map((p, i) => (
-        <p key={i}>{p}</p>
-      ))}
+      {blocks.map((block, i) =>
+        block.kind === "table" ? (
+          <ClauseTable key={i} rows={block.rows} />
+        ) : (
+          <p key={i}>{block.text}</p>
+        ),
+      )}
     </>
   );
 }
@@ -1436,13 +1533,20 @@ function PolicyPopup({
     };
   }, [anchor]);
 
+  // 헤더 제목 — 상위 경로("별표3 … ›")와 두 자리 항목번호를 떼어 말단만 크게 보인다
+  const headFull = section?.title || title;
+  const { parent: headParent, leaf } = splitClausePath(headFull);
+  const headLeaf = splitClauseNo(leaf).text;
+
   return (
     <div className="policy-popup-backdrop" role="dialog" aria-modal="true" aria-label={`약관 ${title}`} onClick={onClose}>
       <div className="policy-popup policy-clause-popup" onClick={(e) => e.stopPropagation()}>
         <header className="policy-popup-head">
           <div>
-            <span>근거 약관</span>
-            <strong>{section?.title || title}</strong>
+            {/* 상위 경로는 라벨로, 말단 제목만 크게 — 둘 다 한 줄 고정이라 길면 말줄임된다.
+                전체 제목은 title 속성으로 남긴다 */}
+            <span title={headParent ?? undefined}>{headParent ?? "근거 약관"}</span>
+            <strong title={headFull}>{headLeaf}</strong>
           </div>
           <button type="button" onClick={onClose} aria-label="약관 팝업 닫기">
             <X size={18} />
@@ -1460,11 +1564,11 @@ function PolicyPopup({
 
           {state === "ready" && section && (
             <article className="policy-clause">
-              <ClauseParagraphs text={section.text} />
+              <ClauseBody text={section.text} />
               {section.subsections.map((sub) => (
                 <section key={sub.anchor}>
                   <h3>{sub.title}</h3>
-                  <ClauseParagraphs text={sub.text} />
+                  <ClauseBody text={sub.text} />
                 </section>
               ))}
             </article>
@@ -2173,6 +2277,8 @@ function Converter({
   onNotification: () => void;
   hasUnread: boolean;
 }) {
+  const { studentId } = useSession();
+  const useMockData = isMockStudentId(studentId);
   const [converterChoices, setConverterChoices] = useState({
     savings: "150~250",
     children: "2명",
@@ -2185,18 +2291,21 @@ function Converter({
   // 계산은 백엔드(costs.py)가 한다 — 웹과 앱이 같은 상수·환산식을 쓰도록.
   // 기존의 comparisonAmount = 2292 하드코딩은 '재수종합학원 + 서울 학군지' 한 조합의
   // 결과였을 뿐이라 선택을 바꿔도 값이 변하지 않았다.
-  const catalog = useCostForms();
+  const catalog = useCostForms(useMockData);
   const pickValue = (group: string, label: string) =>
     catalog.data?.options?.[group]?.find((o) => o.label.startsWith(label))?.value ?? null;
 
-  const estimate = useCostEstimate({
-    form: converterChoices.academy,
-    region: converterChoices.region,
-    monthly_saving: pickValue("saving", converterChoices.savings),
-    monthly_income: pickValue("income", converterChoices.income),
-    sibling_count: Number(converterChoices.children.replace(/\D/g, "")) || null,
-    retire_goal: pickValue("retirement", converterChoices.retirement),
-  });
+  const estimate = useCostEstimate(
+    {
+      form: converterChoices.academy,
+      region: converterChoices.region,
+      monthly_saving: pickValue("saving", converterChoices.savings),
+      monthly_income: pickValue("income", converterChoices.income),
+      sibling_count: Number(converterChoices.children.replace(/\D/g, "")) || null,
+      retire_goal: pickValue("retirement", converterChoices.retirement),
+    },
+    useMockData,
+  );
 
   const est = estimate.data;
   const comparisonAmount = est?.total ?? 0;
@@ -2254,7 +2363,7 @@ function Converter({
               <b>6</b>
             </div>
           </div>
-          <p>입력하신 정보는 보험료와 무관하며 기기에만 저장돼요.</p>
+          <p>입력하신 정보는 보험료와 무관합니다.</p>
           <button className="primary-button" onClick={() => setScreen("input")}>
             1분 만에 계산하기 <ArrowRight size={18} />
           </button>
@@ -2618,7 +2727,7 @@ const myMenuGroups: { title: string; items: MyMenuItem[] }[] = [
   },
   {
     title: "기타",
-    items: [{ label: "알림 설정" }, { label: "테마 설정" }, { label: "약관 및 정책" }],
+    items: [{ label: "알림 설정" }, { label: "약관 및 정책" }],
   },
 ];
 
@@ -2810,15 +2919,11 @@ function MyDetailPage({
   close,
   onNotification,
   hasUnread,
-  canvasTone,
-  onChangeCanvasTone,
 }: {
   detail: string;
   close: () => void;
   onNotification: () => void;
   hasUnread: boolean;
-  canvasTone: CanvasTone;
-  onChangeCanvasTone: (tone: CanvasTone) => void;
 }) {
   const [notificationSettings, setNotificationSettings] = useState([true, true, true, false]);
   const [gradeSort, setGradeSort] = useState<"recent" | "past">("recent");
@@ -2837,6 +2942,12 @@ function MyDetailPage({
   const [cardForm, setCardForm] = useState<CardForm>({ provider: cardProviders[0], number: "", expiry: "", cvc: "", owner: "" });
   const isPaymentDetail = detail === "보험료 결제";
   const [paymentDataLoading, setPaymentDataLoading] = useState(isPaymentDetail);
+  // 결제 화면의 금액·납부월·납부일은 실제 가입정보 기준이다 (목데이터 45,000원·8월 고정 아님)
+  const { profile } = useSession();
+  const pricing = profile.data?.pricing;
+  const enrolledAt = enrollmentDate(profile.data?.student);
+  const dueDate = enrolledAt ? nextPaymentDue(enrolledAt) : null;
+  const premiumWon = pricing ? 원(pricing.monthly_premium) : "—";
 
   useEffect(() => {
     if (!isPaymentDetail) return;
@@ -3044,8 +3155,11 @@ function MyDetailPage({
               <p>결제 금액과 수단을 확인한 뒤 결제해 주세요.</p>
             </div>
             <section className="my-checkout-summary">
-              <div><span>2026년 8월 보험료</span><em>납부 예정일 8월 12일</em></div>
-              <strong>45,000원</strong>
+              <div>
+                <span>{dueDate ? `${dueDate.getFullYear()}년 ${dueDate.getMonth() + 1}월 보험료` : "이번 달 보험료"}</span>
+                <em>{dueDate ? `납부 예정일 ${dueDate.getMonth() + 1}월 ${dueDate.getDate()}일` : "납부 예정일 확인 중"}</em>
+              </div>
+              <strong>{premiumWon}</strong>
             </section>
             <section className="my-checkout-methods">
               <div className="my-section-heading">
@@ -3121,7 +3235,7 @@ function MyDetailPage({
               disabled={!selectedPaymentMethod || paymentMethodView === "add"}
               onClick={() => setPaymentStatus("processing")}
             >
-              45,000원 결제하기
+              {premiumWon} 결제하기
             </button>
           </>
         )}
@@ -3139,7 +3253,9 @@ function MyDetailPage({
           <section className="payment-complete-view">
             <span className="payment-complete-icon"><CircleCheck size={38} /></span>
             <h1>보험료 결제가 완료됐어요</h1>
-            <p>2026년 8월 보험료 45,000원이 정상적으로 납부됐습니다.</p>
+            <p>
+              {dueDate ? `${dueDate.getFullYear()}년 ${dueDate.getMonth() + 1}월` : "이번 달"} 보험료 {premiumWon}이 정상적으로 납부됐습니다.
+            </p>
             <div>
               <span>결제 수단<strong>{paymentMethods.find((method) => method.id === selectedPaymentMethod)?.name}</strong></span>
               <span>승인 일시<strong>2026.07.25 14:32</strong></span>
@@ -3275,49 +3391,34 @@ function MyDetailPage({
           </>
         )}
 
-        {detail === "테마 설정" && (
-          <>
-            <h1 className="my-detail-title">테마 설정</h1>
-            <p className="my-detail-desc">앱 전체에 적용할 배경 테마를 선택하세요.</p>
-            <section className="theme-option-list">
-              {[
-                { tone: "cream-white" as const, label: "크림 & 화이트", desc: "따뜻한 크림 배경 + 화이트 콘텐츠 영역", swatch: "#FFFBF2" },
-                { tone: "gray-white" as const, label: "회색 & 화이트", desc: "차분한 회색 배경 + 화이트 콘텐츠 영역", swatch: "#F3F3F3" },
-              ].map((option) => (
-                <button
-                  key={option.tone}
-                  type="button"
-                  className={`theme-option ${canvasTone === option.tone ? "active" : ""}`}
-                  onClick={() => onChangeCanvasTone(option.tone)}
-                  aria-pressed={canvasTone === option.tone}
-                >
-                  <span className="theme-swatch" style={{ background: option.swatch }}>
-                    <Sun size={16} />
-                  </span>
-                  <span className="theme-option-text">
-                    <strong>{option.label}</strong>
-                    <small>{option.desc}</small>
-                  </span>
-                  {canvasTone === option.tone && <Check size={18} />}
-                </button>
-              ))}
-            </section>
-          </>
-        )}
-
         {detail === "약관 및 정책" && (
           <>
             <h1 className="my-detail-title">보험상품 약관</h1>
             <article className="my-terms">
-              <h2>제1조 (목적)</h2>
-              <p>이 약관은 회사가 제공하는 ‘재수없수 스탠다드 보험상품(이하 ‘이 계약’)’의 체결과 이행에 관한 회사와 계약자, 피보험자 간의 권리와 의무를 정함을 목적으로 합니다.</p>
-              <h2>제2조 (보장 내용)</h2>
-              <p>피보험자가 대학수학능력시험 응시 결과 평소 예상 범위보다 15점 이상 하락하고, 이로 인해 재수를 하게 되는 경우 회사는 연간 재수 비용의 최대 70%, 최대 1,500만원 한도 내에서 보험금을 지급합니다.</p>
-              <h2>제3조 (보험료의 산정)</h2>
-              <p>월 보험료는 가입 시점의 성적 데이터, 성적 변동성, 재수 가능성 등을 종합적으로 반영하여 산정되며 매월 갱신 시 최근 확정 성적을 기준으로 재산정됩니다.</p>
-              <h2>제4조 (면책 사항)</h2>
-              <p>성적표의 위조·변조 또는 허위 제출이 확인되는 경우, 회사는 보험금을 지급하지 않으며 이미 지급된 보험금을 회수할 수 있습니다.</p>
-              <small>본 내용은 임시 예시이며, 실제 약관은 상품 설명서 및 계약서를 따릅니다.</small>
+              <p className="my-terms-intro">재수없수 교육보험 보통약관의 핵심 내용을 이해하기 쉽게 요약했어요.</p>
+
+              <h2>계약과 청약철회</h2>
+              <p>계약은 가입자의 청약과 회사의 승낙으로 성립합니다. 관계 법령이 정한 기간 안에는 청약을 철회할 수 있고, 약관 전달·중요내용 설명·자필서명 등 품질보증 요건이 지켜지지 않았다면 계약 성립일부터 3개월 이내에 취소를 요구할 수 있습니다.</p>
+
+              <h2>보장받는 경우</h2>
+              <p>수능 성적이 학생별 예측 밴드의 하단보다 낮아지고 실제로 재수 또는 반수를 실행한 경우 보험금을 지급합니다. 하락 정도는 단순 점수 차가 아니라 개인별 성적 변동성을 반영한 표준편차 기준으로 경증과 중증을 구분하며, 가입한 티어의 보장액과 한도는 갱신으로 바뀌지 않습니다.</p>
+
+              <h2>보험료 산정과 갱신</h2>
+              <p>보험료는 누적 모의고사 성적과 사전에 공개된 산식으로 산정합니다. 갱신은 매월이 아니라 고2 3월, 고3 3월과 9월에 총 3회 실시하고, 고3 9월 이후에는 동결합니다. 한 번의 시험만으로 결정하지 않으며 1회 변동폭과 최초 보험료 대비 누적 인상 상한을 적용합니다.</p>
+
+              <h2>보험료 납입</h2>
+              <p>최초 보험료와 이후 보험료는 약정한 납입일에 납부해야 합니다. 갱신 보험료는 사전 통지 후 다음 납입일부터 적용됩니다. 미납 시 납입최고 기간을 거쳐 계약이 해지될 수 있으며, 정해진 요건을 충족하면 부활을 청구할 수 있습니다.</p>
+
+              <h2>보험금 청구</h2>
+              <p>수능 성적표와 함께 다음 학년도 수능 응시원서, 재수 교육과정 등록 또는 반수 응시 등 실제 재수·반수 실행을 확인할 수 있는 자료를 제출해야 합니다. 회사는 서류 접수 후 정해진 기한 안에 지급하며, 추가 조사가 필요하면 사유와 지급예정일을 안내합니다. 보험금 청구권은 사고 발생일부터 통상 3년 안에 행사해야 합니다.</p>
+
+              <h2>지급 제한과 계약 해지</h2>
+              <p>수능 성적이 밴드 하단 이상인 경우, 성적표나 재수 증빙의 위·변조, 보험사기, 중대한 고지의무 위반 또는 미보장 가입 구간은 보험금 부지급이나 계약 해지 사유가 될 수 있습니다. 계약자는 언제든지 해지할 수 있으나 순수보장성 상품이므로 해약환급금은 미경과보험료에서 해지공제를 뺀 금액으로 산정됩니다.</p>
+
+              <a className="my-terms-link" href={policyLink()} target="_blank" rel="noreferrer">
+                전체 약관 원문 보기 <ArrowUpRight size={14} />
+              </a>
+              <small>이 화면은 핵심 요약이며, 세부 조건과 법적 효력은 전체 약관 및 개별 계약 내용을 따릅니다.</small>
             </article>
           </>
         )}
@@ -3330,16 +3431,20 @@ function MyPage({
   onLogout,
   onNotification,
   hasUnread,
-  canvasTone,
-  onChangeCanvasTone,
 }: {
   onLogout: () => void;
   onNotification: () => void;
   hasUnread: boolean;
-  canvasTone: CanvasTone;
-  onChangeCanvasTone: (tone: CanvasTone) => void;
 }) {
   const [detail, setDetail] = useState<string | null>(null);
+  // 가입 정보는 DB/계리엔진 값을 쓴다 — 예전엔 policyInfo 상수를 그려서 보장 상한과
+  // 가입일이 실제 계약과 어긋나 있었다 (청구 화면은 실제 값을 쓰고 있어 서로 달랐다)
+  const { profile } = useSession();
+  const student = profile.data?.student;
+  const pricing = profile.data?.pricing;
+  const joinedAt = enrollmentDate(student);
+  const studentName = String(student?.name ?? MOCK_DEMO_ACCOUNT.studentName);
+  const studentGrade = String(student?.grade_year ?? "");
 
   // 마이 상세는 AppShell 이 모르는 자체 상태라 여기서 따로 올린다
   useScrollToTop(detail ?? "-");
@@ -3351,8 +3456,6 @@ function MyPage({
         close={() => setDetail(null)}
         onNotification={onNotification}
         hasUnread={hasUnread}
-        canvasTone={canvasTone}
-        onChangeCanvasTone={onChangeCanvasTone}
       />
     );
   }
@@ -3362,12 +3465,18 @@ function MyPage({
       <BrandTabHeader onNotification={onNotification} hasUnread={hasUnread} />
       <main className="mypage-content">
         <div className="profile">
-          <h1>{studentProfile.name} 학생 <em>{studentProfile.grade}</em></h1>
+          <h1>{studentName} 학생 {studentGrade ? <em>{studentGrade}</em> : null}</h1>
         </div>
         <section className="membership-card" aria-label="가입 정보">
-          <div><small>가입 상품</small><strong>{policyInfo.tier}</strong></div>
-          <div><small>보장 상한</small><strong>{policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원</strong></div>
-          <div><small>가입일</small><strong>{formatDotDate(policyInfo.joinedDate)}</strong></div>
+          <div><small>가입 상품</small><strong>{pricing?.tier ?? "—"}</strong></div>
+          <div>
+            <small>보장 상한</small>
+            <strong>{pricing ? 만원(pricing.cover_severe) : "—"}</strong>
+          </div>
+          <div>
+            <small>가입일</small>
+            <strong>{joinedAt ? formatDotDate(joinedAt) : "—"}</strong>
+          </div>
         </section>
         <div className="grouped-menu">
           <section className="menu-card">
@@ -3497,7 +3606,9 @@ function ClaimFlow({
       return;
     }
     // 1단계에서 고른 카드의 카드사명 — 목록은 DB(jaesoo_registered_cards)에서 왔다
-    const cardsRes = await api.userCards(userId);
+    const cardsRes = isMockStudentId(studentId)
+      ? { ok: true as const, data: { cards: MOCK_REGISTERED_CARDS } }
+      : await api.userCards(userId);
     const selectedCard = cardsRes.ok
       ? cardsRes.data.cards.find((card) => card.card_last4 === cardLast4)
       : undefined;
@@ -3505,7 +3616,11 @@ function ClaimFlow({
       {
         company: selectedCard?.card_company ?? paymentMethod.provider,
         last4: cardLast4,
-        holderName: String(student?.name ?? studentProfile.name),
+        holderName: String(
+          selectedCard?.card_holder_name
+          ?? student?.contractor_name
+          ?? MOCK_DEMO_ACCOUNT.contractorName,
+        ),
         relationship: selectedCard?.relationship_to_student ?? "학부모",
       },
       userId,
@@ -5223,13 +5338,12 @@ export default function AppPage() {
 }
 
 function AppShell() {
-  const { studentId, fromWeb } = useSession();
+  const { studentId, fromWeb, setStudentId } = useSession();
   const [stage, setStage] = useState<Stage>("splash");
 
   const [tab, setTab] = useState<Tab>("home");
   const [homeScreen, setHomeScreen] = useState<HomeScreen>("main");
   const [chatQuestion, setChatQuestion] = useState("");
-  const [canvasTone, setCanvasTone] = useState<CanvasTone>("cream-white");
   const [gradeScreen, setGradeScreen] = useState<GradeScreen>("intro");
   const [converterScreen, setConverterScreen] = useState<ConverterScreen>("intro");
   const [claimScreen, setClaimScreen] = useState<ClaimScreen | null>(null);
@@ -5270,13 +5384,6 @@ function AppShell() {
     const order: ClaimPhase[] = ["preExam", "postExam", "period1", "between", "period2"];
     setClaimPhase((current) => order[(order.indexOf(current) + 1) % order.length]);
   };
-
-  useEffect(() => {
-    document.documentElement.dataset.canvas = canvasTone;
-    return () => {
-      delete document.documentElement.dataset.canvas;
-    };
-  }, [canvasTone]);
 
   const visibleClaimScreen = claimScreen;
 
@@ -5349,6 +5456,7 @@ function AppShell() {
             ) : (
               <MyPage
                 onLogout={() => {
+                  setStudentId(null);
                   setStage("login");
                   setTab("home");
                   setGradeScreen("intro");
@@ -5356,8 +5464,6 @@ function AppShell() {
                 }}
                 onNotification={openNotifications}
                 hasUnread={hasUnreadNotifications}
-                canvasTone={canvasTone}
-                onChangeCanvasTone={setCanvasTone}
               />
             )}
             {!notifications && homeScreen !== "chat" && visibleClaimScreen !== "submitting" && visibleClaimScreen !== "done" && <BottomNav tab={tab} setTab={changeTab} />}

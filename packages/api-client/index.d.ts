@@ -191,6 +191,19 @@ export interface EnrollResponse {
   error?: string;
 }
 
+/** 청구에 쓰는 등록 카드 (jaesoo_registered_cards). 뒤 4자리만 저장한다. */
+export interface RegisteredCard {
+  id: number;
+  user_id: number;
+  card_company: string;
+  card_last4: string;
+  card_holder_name: string;
+  relationship_to_student: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export declare class ApiClient {
   constructor(opts?: { base?: string; timeout?: number; fetchImpl?: typeof fetch });
   base: string;
@@ -203,6 +216,8 @@ export declare class ApiClient {
       body?: unknown;
       signal?: AbortSignal;
       timeout?: number;
+      /** 200 + { error } 응답이라도 쓸 만한 본문이면 성공으로 넘긴다 (폴백 결과 보존) */
+      keepBodyOnError?: (data: Record<string, unknown>) => boolean;
     },
   ): Promise<ApiResult<T>>;
   sequence<T>(key: string, fn: () => Promise<ApiResult<T>>): Promise<ApiResult<T>>;
@@ -229,6 +244,10 @@ export declare class ApiClient {
   policySections(anchors?: string[]): Promise<ApiResult<{ sections: PolicySection[]; toc?: unknown[] }>>;
   registerCard(payload: unknown): Promise<ApiResult<Record<string, unknown>>>;
   activeCard(userId: string): Promise<ApiResult<Record<string, unknown>>>;
+  userCards(
+    userId: string | number,
+    opts?: { activeOnly?: boolean },
+  ): Promise<ApiResult<{ cards: RegisteredCard[]; user_id: number }>>;
   updateCard(cardId: string, payload: unknown): Promise<ApiResult<Record<string, unknown>>>;
   createClaim(payload: unknown): Promise<ApiResult<Record<string, unknown>>>;
   claim(claimId: string): Promise<ApiResult<Record<string, unknown>>>;

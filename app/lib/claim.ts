@@ -2,6 +2,10 @@
 
 import { useCallback, useState } from "react";
 import { api, CLAIM_STATUS_VARIANT, CLAIM_VARIANT } from "@jaesoo/api-client";
+import {
+  isMockStudentId,
+  MOCK_REGISTERED_CARDS,
+} from "./mock-data";
 
 /**
  * 학원비 영수증 청구 — 백엔드 receipt_verification 연동.
@@ -99,6 +103,7 @@ export function toVariant(status?: string | null, result?: string | null): Claim
 
 export function useClaim(studentId: string | null) {
   const [state, setState] = useState<ClaimState>(EMPTY);
+  const mock = isMockStudentId(studentId);
 
   const patch = (p: Partial<ClaimState>) => setState((s) => ({ ...s, ...p }));
 
@@ -111,6 +116,12 @@ export function useClaim(studentId: string | null) {
   const ensureCard = useCallback(
     async (card: CardInput, userId: number) => {
       patch({ busy: true, error: null });
+      if (mock) {
+        const row = MOCK_REGISTERED_CARDS.find((item) => item.card_last4 === card.last4);
+        const cardId = row?.id ?? MOCK_REGISTERED_CARDS[0].id;
+        patch({ busy: false, cardId, last4: card.last4 });
+        return cardId;
+      }
       const existing = await api.activeCard(String(userId));
       if (existing.ok && (existing.data as { id?: number })?.id) {
         const found = existing.data as { id: number; card_last4?: string };
@@ -145,12 +156,16 @@ export function useClaim(studentId: string | null) {
       patch({ busy: false, cardId: row.id, last4: card.last4 });
       return row.id;
     },
-    [],
+    [mock],
   );
 
   const changeCard = useCallback(
     async (cardId: number, card: Partial<CardInput>) => {
       patch({ busy: true, error: null });
+      if (mock) {
+        patch({ busy: false, last4: card.last4 ?? state.last4, error: null });
+        return true;
+      }
       const res = await api.updateCard(String(cardId), {
         ...(card.company ? { card_company: card.company } : {}),
         ...(card.last4 ? { card_last4: card.last4 } : {}),
@@ -160,7 +175,7 @@ export function useClaim(studentId: string | null) {
       patch({ busy: false, last4: card.last4 ?? state.last4, error: res.ok ? null : res.error });
       return res.ok;
     },
-    [state.last4],
+    [mock, state.last4],
   );
 
   const createClaim = useCallback(
@@ -170,6 +185,11 @@ export function useClaim(studentId: string | null) {
         return null;
       }
       patch({ busy: true, error: null });
+      if (mock) {
+        const claimId = 2027001;
+        patch({ busy: false, claimId });
+        return claimId;
+      }
       const res = await api.createClaim({
         user_id: userId,
         student_id: studentId,
@@ -183,13 +203,61 @@ export function useClaim(studentId: string | null) {
       patch({ busy: false, claimId: claim.id });
       return claim.id;
     },
-    [studentId],
+    [mock, studentId],
   );
 
   /** 영수증 업로드 → 파일 검증 · OCR · 자동 대조까지 백엔드가 한 번에 처리한다. */
   const uploadReceipt = useCallback(
     async (claimId: number, file: File, kind: "receipt" | "proof" = "receipt") => {
       patch({ busy: true, error: null });
+      if (mock) {
+        const uploadedAt = new Date().toISOString();
+        const document: UploadedClaimDocument = {
+          id: 3000 + state.documents.length + 1,
+          original_filename: file.name,
+          content_type: file.type || "image/jpeg",
+          file_size: file.size,
+          document_type: kind,
+          uploaded_at: uploadedAt,
+        };
+        const ocrResult: ClaimOCRResult = {
+          card_last4: MOCK_REGISTERED_CARDS[0].card_last4,
+          payment_amount: 1_910_000,
+          payment_date: "2027-05-02",
+          approval_number: "48210502",
+          merchant_name: "목동 미래재수종합학원",
+          business_number: "120-88-20270",
+          confidence_score: 0.98,
+        };
+        const verification: ClaimVerificationResult = {
+          status: "VERIFIED",
+          final_result: "MATCHED",
+          anomaly_reasons: [],
+          next_action: null,
+          checks: {
+            card_matched: true,
+            merchant_matched: true,
+            amount_valid: true,
+            duplicate: false,
+          },
+        };
+        const result: ClaimUploadResult = {
+          status: "VERIFIED",
+          document,
+          ocr_result: ocrResult,
+          verification,
+        };
+        patch({
+          busy: false,
+          status: result.status ?? null,
+          variant: "matched",
+          reasons: [],
+          ocrResult,
+          verification,
+          documents: [...state.documents, document],
+        });
+        return result;
+      }
       const res = await api.uploadReceipt(claimId, file, { kind });
       if (!res.ok) {
         patch({ busy: false, error: res.error });
@@ -207,12 +275,28 @@ export function useClaim(studentId: string | null) {
       });
       return d;
     },
-    [state.documents],
+    [mock, state.documents],
   );
 
   /** 검증 결과 조회 — 업로드 후 호출한다. */
   const refreshVerification = useCallback(async (claimId: number) => {
     patch({ busy: true, error: null });
+    if (mock) {
+      const verification: ClaimVerificationResult = {
+        status: "VERIFIED",
+        final_result: "MATCHED",
+        anomaly_reasons: [],
+        next_action: null,
+      };
+      patch({
+        busy: false,
+        variant: "matched",
+        status: "VERIFIED",
+        reasons: [],
+        verification,
+      });
+      return "matched" as const;
+    }
     const res = await api.claimVerification(String(claimId));
     if (!res.ok) {
       patch({ busy: false, error: res.error });
@@ -232,7 +316,7 @@ export function useClaim(studentId: string | null) {
       verification: d,
     });
     return variant;
-  }, []);
+  }, [mock]);
 
   const reset = useCallback(() => setState(EMPTY), []);
 

@@ -12,6 +12,17 @@ import type {
   RegisteredCard,
   ScoresResponse,
 } from "@jaesoo/api-client";
+import {
+  getMockCostEstimate,
+  isMockStudentId,
+  MOCK_COST_CATALOG,
+  MOCK_DEMO_ACCOUNT,
+  MOCK_ELIGIBILITY,
+  MOCK_PREMIUM_BREAKDOWN,
+  MOCK_REGISTERED_CARDS,
+  MOCK_SCORES,
+  MOCK_STUDENT_PROFILE,
+} from "./mock-data";
 
 /**
  * 화면이 쓰는 데이터 훅.
@@ -136,35 +147,69 @@ export type StudentProfile = {
 };
 
 export function useStudentProfile(studentId: string | null) {
+  const mock = isMockStudentId(studentId);
   const fetcher = useMemo(
-    () => (studentId ? () => api.student(studentId) as Promise<ApiResult<StudentProfile>> : null),
-    [studentId],
+    () => (studentId && !mock ? () => api.student(studentId) as Promise<ApiResult<StudentProfile>> : null),
+    [studentId, mock],
   );
-  return useLoadable<StudentProfile>(fetcher, [studentId]);
+  const remote = useLoadable<StudentProfile>(fetcher, [studentId, mock]);
+  return mock
+    ? {
+        data: MOCK_STUDENT_PROFILE as StudentProfile,
+        loading: false,
+        error: null,
+        isFallback: true,
+        reload: remote.reload,
+      }
+    : remote;
 }
 
 export function useScores(studentId: string | null) {
+  const mock = isMockStudentId(studentId);
   const fetcher = useMemo(
-    () => (studentId ? () => api.scores(studentId) : null),
-    [studentId],
+    () => (studentId && !mock ? () => api.scores(studentId) : null),
+    [studentId, mock],
   );
-  return useLoadable<ScoresResponse>(fetcher, [studentId]);
+  const remote = useLoadable<ScoresResponse>(fetcher, [studentId, mock]);
+  return mock
+    ? { data: MOCK_SCORES, loading: false, error: null, isFallback: true, reload: remote.reload }
+    : remote;
 }
 
 export function usePremiumBreakdown(studentId: string | null) {
+  const mock = isMockStudentId(studentId);
   const fetcher = useMemo(
-    () => (studentId ? () => api.premiumBreakdown(studentId) : null),
-    [studentId],
+    () => (studentId && !mock ? () => api.premiumBreakdown(studentId) : null),
+    [studentId, mock],
   );
-  return useLoadable<PremiumBreakdown>(fetcher, [studentId]);
+  const remote = useLoadable<PremiumBreakdown>(fetcher, [studentId, mock]);
+  return mock
+    ? {
+        data: MOCK_PREMIUM_BREAKDOWN,
+        loading: false,
+        error: null,
+        isFallback: true,
+        reload: remote.reload,
+      }
+    : remote;
 }
 
 export function useEligibility(studentId: string | null, actualGrade?: number) {
+  const mock = isMockStudentId(studentId);
   const fetcher = useMemo(
-    () => (studentId ? () => api.eligibility(studentId, actualGrade) : null),
-    [studentId, actualGrade],
+    () => (studentId && !mock ? () => api.eligibility(studentId, actualGrade) : null),
+    [studentId, actualGrade, mock],
   );
-  return useLoadable<Eligibility>(fetcher, [studentId, actualGrade]);
+  const remote = useLoadable<Eligibility>(fetcher, [studentId, actualGrade, mock]);
+  return mock
+    ? {
+        data: MOCK_ELIGIBILITY,
+        loading: false,
+        error: null,
+        isFallback: true,
+        reload: remote.reload,
+      }
+    : remote;
 }
 
 // ── 청구 등록 카드 ─────────────────────────────────────────────────────────
@@ -181,6 +226,7 @@ export function deriveUserId(
   student?: Record<string, unknown>,
 ): number | null {
   if (!studentId) return null;
+  if (isMockStudentId(studentId)) return MOCK_DEMO_ACCOUNT.userId;
   const raw = student?.user_id;
   if (typeof raw === "number" && Number.isInteger(raw)) return raw;
   const hash = Array.from(studentId).reduce(
@@ -192,15 +238,25 @@ export function deriveUserId(
 
 /** 청구 1단계에서 고를 등록 카드 목록 — DB(jaesoo_registered_cards) 조회. */
 export function useRegisteredCards(userId: number | null) {
+  const mock = userId === MOCK_DEMO_ACCOUNT.userId;
   const fetcher = useMemo(
     () =>
-      userId === null
+      userId === null || mock
         ? null
         : () => api.userCards(userId) as Promise<ApiResult<{ cards: RegisteredCard[] }>>,
-    [userId],
+    [userId, mock],
   );
-  const res = useLoadable<{ cards: RegisteredCard[] }>(fetcher, [userId]);
-  return { ...res, cards: res.data?.cards ?? [] };
+  const res = useLoadable<{ cards: RegisteredCard[] }>(fetcher, [userId, mock]);
+  return mock
+    ? {
+        data: { cards: MOCK_REGISTERED_CARDS },
+        loading: false,
+        error: null,
+        isFallback: true,
+        reload: res.reload,
+        cards: MOCK_REGISTERED_CARDS,
+      }
+    : { ...res, cards: res.data?.cards ?? [] };
 }
 
 // ── 돈워리 계산기 ──────────────────────────────────────────────────────────
@@ -214,19 +270,40 @@ export type CostCatalog = {
   unit: string;
 };
 
-export function useCostForms() {
-  const fetcher = useCallback(() => api.costForms() as Promise<ApiResult<CostCatalog>>, []);
-  return useLoadable<CostCatalog>(fetcher, []);
+export function useCostForms(useMock = false) {
+  const fetcher = useCallback(
+    () => api.costForms() as Promise<ApiResult<CostCatalog>>,
+    [],
+  );
+  const remote = useLoadable<CostCatalog>(useMock ? null : fetcher, [useMock]);
+  return useMock
+    ? {
+        data: MOCK_COST_CATALOG as CostCatalog,
+        loading: false,
+        error: null,
+        isFallback: true,
+        reload: remote.reload,
+      }
+    : remote;
 }
 
-export function useCostEstimate(params: Record<string, unknown> | null) {
+export function useCostEstimate(params: Record<string, unknown> | null, useMock = false) {
   // 객체 아이덴티티가 매 렌더 바뀌는 것을 막기 위해 직렬화 키로 의존성을 건다
   const key = params ? JSON.stringify(params) : "";
   const fetcher = useMemo(
-    () => (params ? () => api.costEstimate(params) : null),
-    [key], // eslint-disable-line react-hooks/exhaustive-deps
+    () => (params && !useMock ? () => api.costEstimate(params) : null),
+    [key, useMock], // eslint-disable-line react-hooks/exhaustive-deps
   );
-  return useLoadable<CostEstimate>(fetcher, [key]);
+  const remote = useLoadable<CostEstimate>(fetcher, [key, useMock]);
+  return useMock && params
+    ? {
+        data: getMockCostEstimate(params),
+        loading: false,
+        error: null,
+        isFallback: true,
+        reload: remote.reload,
+      }
+    : remote;
 }
 
 // ── 약관 챗봇 ──────────────────────────────────────────────────────────────
@@ -252,7 +329,13 @@ export function useChat(studentId: string | null) {
       setBusy(true);
       setTurns((t) => [...t, { who: "me", text: q }, { who: "ai", text: "", status: "loading" }]);
 
-      const res = await api.chat({ message: q, history: historyRef.current, studentId });
+      // 목업 계정은 DB에 존재하지 않는다. 약관 RAG는 실제 백엔드를 사용하되,
+      // 존재하지 않는 student_id 로 개인화 조회를 시도하지 않도록 식별자는 뺀다.
+      const res = await api.chat({
+        message: q,
+        history: historyRef.current,
+        studentId: isMockStudentId(studentId) ? null : studentId,
+      });
 
       setTurns((t) => {
         const next = [...t];

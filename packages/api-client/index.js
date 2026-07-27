@@ -69,7 +69,7 @@ export class ApiClient {
     return url.toString();
   }
 
-  async request(path, { method = "GET", params, body, signal, timeout } = {}) {
+  async request(path, { method = "GET", params, body, signal, timeout, keepBodyOnError } = {}) {
     if (!this._fetch) return fail("fetch 를 사용할 수 없는 환경입니다", "unsupported");
 
     const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -91,9 +91,11 @@ export class ApiClient {
       });
       if (!res.ok) return fail(`HTTP ${res.status}`, "http");
       const data = await res.json();
-      // 백엔드는 200 으로 { error } 를 돌려주는 경우가 있다 (엔드포인트 관례)
+      // 백엔드는 200 으로 { error } 를 돌려주는 경우가 있다 (엔드포인트 관례).
+      // 다만 일부 엔드포인트(/api/chat)는 error 와 **함께** 쓸 수 있는 폴백 결과를
+      // 실어 보낸다 — keepBodyOnError 가 그걸 인정하면 버리지 않고 그대로 넘긴다.
       if (data && typeof data === "object" && data.error && data.ok !== true) {
-        return fail(data.error, "backend");
+        if (!keepBodyOnError || !keepBodyOnError(data)) return fail(data.error, "backend");
       }
       return ok(data);
     } catch (e) {
@@ -181,6 +183,10 @@ export class ApiClient {
         body: { message, history: history || [], student_id: studentId || null },
         timeout: 60_000,
         signal,
+        // LLM 호출이 실패해도 백엔드는 200 + { answer, sources, llm:false, error }
+        // 로 약관 발췌 폴백을 돌려준다(의도된 설계). error 만 보고 통째로 버리면
+        // 화면엔 "답변을 가져오지 못했어요"만 뜨고 폴백 답변이 사라진다.
+        keepBodyOnError: (d) => typeof d.answer === "string" && d.answer.trim() !== "",
       }),
     );
   }
@@ -195,6 +201,12 @@ export class ApiClient {
   }
   activeCard(userId) {
     return this.request(`/api/cards/users/${encodeURIComponent(userId)}/active`);
+  }
+  /** 등록 카드 목록 — 청구 1단계에서 고를 카드들. 없으면 { cards: [] }. */
+  userCards(userId, { activeOnly = false } = {}) {
+    return this.request(`/api/cards/users/${encodeURIComponent(userId)}`, {
+      params: { active_only: activeOnly ? "true" : undefined },
+    });
   }
   updateCard(cardId, payload) {
     return this.request(`/api/cards/${encodeURIComponent(cardId)}`, {
