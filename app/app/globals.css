@@ -3652,9 +3652,6 @@ body::-webkit-scrollbar,
 
 .explain-dock > * {
   max-width: min(300px, 100%);
-}
-
-.explain-dock > * {
   pointer-events: auto;
 }
 
@@ -3668,7 +3665,16 @@ body::-webkit-scrollbar,
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 6px 18px rgb(17 34 28 / 14%);
-  cursor: pointer;
+  /* 끌어서 옮길 수 있다는 걸 커서로 알린다. */
+  cursor: grab;
+  /* 드래그 중 브라우저가 스크롤·이미지 끌기를 가로채면 포인터 이벤트가 끊긴다. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.explain-mascot:active {
+  cursor: grabbing;
 }
 
 .explain-mascot img {
@@ -3682,15 +3688,18 @@ body::-webkit-scrollbar,
   background: #effaf6;
 }
 
-/* 말풍선 — 오른쪽 아래 마스코트를 향해 꼬리를 단다. */
+/* 말풍선 — 오른쪽 아래 마스코트를 향해 꼬리를 단다.
+   앱의 초록 계열 연한 톤(#effaf6)을 쓴다. 흰 배경이면 결과 카드들과 섞여서
+   "노재수가 하는 말"이라는 게 읽히지 않는다. 선택된 타일·마스코트 열림 상태와
+   같은 색이라 초록 = 노재수/선택 이라는 규칙이 화면 안에서 일관된다. */
 .explain-bubble {
   position: relative;
   margin: 0;
   padding: 11px 14px;
-  border: 1px solid var(--line);
+  border: 1px solid #bfe9d8;
   border-radius: 16px;
   border-bottom-right-radius: 5px;
-  background: #fff;
+  background: #effaf6;
   box-shadow: 0 6px 18px rgb(17 34 28 / 12%);
   font-size: 12px;
   line-height: 1.6;
@@ -3698,8 +3707,8 @@ body::-webkit-scrollbar,
 }
 
 .explain-bubble-teaser {
-  color: var(--muted);
-  font-weight: 600;
+  color: var(--brand-green-dark);
+  font-weight: 700;
 }
 
 .explain-bubble-answer {
@@ -3714,43 +3723,40 @@ body::-webkit-scrollbar,
   line-height: 1.65;
 }
 
+/* 초록 배경 위에서는 회색 --muted 가 흐려 보인다 — 초록 계열로 낮춘 톤을 쓴다. */
 .explain-bubble-error {
   margin: 0;
-  color: var(--muted);
+  color: #4a8a72;
 }
 
 .explain-bubble-foot {
-  color: var(--muted);
+  color: #4a8a72;
   font-size: 9.5px;
   font-weight: 600;
 }
 
-/* 로딩 스켈레톤. 캐시 히트면 거의 보이지 않는다. */
-.explain-skeleton {
-  display: grid;
-  gap: 7px;
-  min-width: 168px;
+/* 로딩 표시 — 챗봇 대화창의 발자국 러너를 말풍선 크기에 맞춰 줄여 쓴다.
+   같은 마크업(.chat-loading-runner)을 재사용하므로 애니메이션은 그대로다. */
+.explain-runner {
+  width: 148px;
+  height: 40px;
+  flex: none;
 }
 
-.explain-skeleton .skeleton-line {
-  height: 11px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #eef3f0 25%, #f7faf8 37%, #eef3f0 63%);
-  background-size: 400% 100%;
-  animation: explain-skeleton-shimmer 1.4s linear infinite;
+.explain-runner .paw-print {
+  width: 14px;
+  height: 14px;
 }
 
-.explain-skeleton .skeleton-line.short {
-  width: 62%;
-}
+.explain-runner .paw-one   { left: 2px; }
+.explain-runner .paw-two   { left: 26px; bottom: 6px; }
+.explain-runner .paw-three { left: 50px; }
+.explain-runner .paw-four  { left: 74px; bottom: 6px; }
 
-@keyframes explain-skeleton-shimmer {
-  from { background-position: 100% 50%; }
-  to   { background-position: 0 50%; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .explain-skeleton .skeleton-line { animation: none; }
+.explain-runner .runner-mascot {
+  width: 27px;
+  height: 27px;
+  right: 10px;
 }
 
 

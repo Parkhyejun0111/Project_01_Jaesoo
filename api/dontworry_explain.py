@@ -170,6 +170,12 @@ def get_dontworry_breakdown(user_id: str,
         "구보정계수": gu_coefficient,
         "최종지역계수": coefficient["coefficient"],
         "전국평균비용_만원": national,
+        # 이 금액이 무엇의 평균인지 — STEP2 에서 유형을 고르면 뜨는 초록 카드의
+        # 문구와 같은 값(costs.COST_FORMS[...]["note"])이다. "전국 평균"이라고만
+        # 하면 무슨 표본의 평균인지 알 수 없어 설명이 뜬다.
+        #   재수종합학원 → "메이저 재종합반 5개사 평균(시대인재·강남대성 등)"
+        #   독학재수     → "인강 패스 평균(메가스터디·대성마이맥) 기준"
+        "기준설명": costs.COST_FORMS[form_key].get("note", ""),
         "최종예상비용_만원": total,
         # 전국 평균 대비 증감률. 화면의 배율과 같은 근거(adjust_pct)에서 뽑는다.
         # 음수면 전국 평균보다 싸다는 뜻이다.
@@ -198,8 +204,12 @@ SYSTEM_PROMPT = """당신은 재수없수 앱의 '돈워리 탭' 설명 도우�
 - get_dontworry_breakdown 툴로 받은 값만 사용해서 설명한다. 툴에 없는 숫자를 지어내거나 재계산하지 않는다.
 - 반드시 아래 내용을 이 순서로 담는다. 화면에는 최종 금액만 크게 떠 있고
   전국 평균도 배율도 따로 표시하지 않으므로, 이 문장이 유일한 근거 설명이다:
-  1) 전국 평균이 얼마인지 (전국평균비용_만원)
-  2) 어떤 데이터로 분석했는지 — 통계청 사교육비조사(시도계수)와,
+  1) 기준이 되는 평균 금액이 얼마이고 그게 **무엇의 평균인지** — 금액은
+     전국평균비용_만원, 표본 설명은 기준설명 을 그대로 쓴다.
+     "전국 평균"이라고만 하지 말 것. 무슨 표본의 평균인지 밝혀야 한다.
+       예) "메이저 재종합반 5개사 평균(시대인재·강남대성 등)이 1,910만원인데"
+       예) "인강 패스 평균(메가스터디·대성마이맥) 기준 36만원인데"
+  2) 어떤 데이터로 지역을 분석했는지 — 통계청 사교육비조사(시도계수)와,
      서울이면 서울시 학원 수강료(구보정계수)
   3) 그래서 이 지역이 전국 평균의 몇 배인지 (최종지역계수)
   4) 그 결과 최종 예상비용이 얼마인지 (최종예상비용_만원)
@@ -255,7 +265,10 @@ def fallback_template(breakdown: dict) -> str:
         basis = (f"고객님 지역({breakdown['시도']})은 "
                  f"시도계수 {sido_coefficient}{_subject_particle(sido_coefficient)} 적용돼서")
 
-    text = (f"{basis}, 전국 평균({national:,}만원)보다 {abs(percent)}% {direction} "
+    # 기준 금액이 무엇의 평균인지 밝힌다 — "전국 평균"이라고만 하면 무슨 표본인지
+    # 알 수 없다. STEP2 의 초록 카드에 뜨는 문구와 같은 값이다.
+    basis_label = breakdown.get("기준설명") or "전국 평균"
+    text = (f"{basis}, {basis_label} {national:,}만원보다 {abs(percent)}% {direction} "
             f"{final:,}만원으로 나왔어요.")
     if breakdown["학군지여부"]:
         text += " 학군지라 학원비 자체가 높은 편이에요."
@@ -288,9 +301,14 @@ def _allowed_numbers(breakdown: dict) -> set[str]:
             allowed.add(_norm_number(round(float(value))))
 
     for key, value in breakdown.items():
-        if key in ("기준시점", "시도", "구", "재수유형"):
+        if key in ("기준시점", "시도", "구", "재수유형", "기준설명"):
             continue
         add(value)
+
+    # 기준설명을 그대로 인용하면 그 안의 숫자도 화면에 나온다
+    # ("메이저 재종합반 5개사 평균" → 5). 툴이 준 문자열이므로 지어낸 값이 아니다.
+    for raw in _NUMBER.findall(str(breakdown.get("기준설명") or "")):
+        allowed.add(_norm_number(raw))
 
     # 계수를 퍼센트로 옮겨 말하는 표현 (1.45 → 45%) 및 배율 표현
     coefficient = breakdown.get("최종지역계수")

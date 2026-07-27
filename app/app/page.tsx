@@ -2815,8 +2815,83 @@ function ExplainDock({
   open: boolean;
   onToggle: () => void;
 }) {
+  // 기본 위치에서 얼마나 끌어 옮겼는지. 화면 좌표가 아니라 오프셋으로 들고 있어야
+  // 회전·리사이즈로 기본 위치가 달라져도 상대 위치가 유지된다.
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dockRef = useRef<HTMLDivElement | null>(null);
+  // 드래그 도중 값. 리렌더를 부르지 않아야 해서 ref 에 둔다.
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    baseX: number;
+    baseY: number;
+    moved: boolean;
+    min: { x: number; y: number };
+    max: { x: number; y: number };
+  } | null>(null);
+
+  const clamp = (value: number, min: number, max: number) =>
+    Math.min(Math.max(value, min), max);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const dock = dockRef.current;
+    if (!dock) return;
+    const rect = dock.getBoundingClientRect();
+    const margin = 8;
+    // 지금 오프셋 기준으로 화면 안에 남아 있으려면 얼마나 더 움직일 수 있는지.
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      baseX: offset.x,
+      baseY: offset.y,
+      moved: false,
+      min: {
+        x: offset.x - rect.left + margin,
+        y: offset.y - rect.top + margin,
+      },
+      max: {
+        x: offset.x + (window.innerWidth - rect.right) - margin,
+        y: offset.y + (window.innerHeight - rect.bottom) - margin,
+      },
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    // 손가락이 살짝 흔들린 것까지 드래그로 치면 탭이 먹히지 않는다.
+    if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+    drag.moved = true;
+    setOffset({
+      x: clamp(drag.baseX + dx, drag.min.x, drag.max.x),
+      y: clamp(drag.baseY + dy, drag.min.y, drag.max.y),
+    });
+  };
+
+  const onPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    dragRef.current = null;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    // 끌었으면 클릭이 아니다 — 옮기려다 말풍선이 열리면 성가시다.
+    if (!drag.moved) onToggle();
+  };
+
   return (
-    <div className="explain-dock">
+    <div
+      className="explain-dock"
+      ref={dockRef}
+      style={
+        offset.x || offset.y
+          ? { transform: `translateX(-50%) translate(${offset.x}px, ${offset.y}px)` }
+          : undefined
+      }
+    >
       {open ? (
         <ExplainAnswerBubble userId={userId} 재수유형={재수유형} sido={sido} gu={gu} />
       ) : (
@@ -2828,11 +2903,21 @@ function ExplainDock({
       <button
         type="button"
         className="explain-mascot"
-        onClick={onToggle}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        // 포인터를 지원하지 않는 보조기술·키보드는 클릭 경로가 따로 필요하다.
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
         aria-expanded={open}
         aria-label={open ? "설명 닫기" : "지역별 시세 계산데이터 설명 듣기"}
       >
-        <img src="/jaesoo_character.png" alt="" />
+        <img src="/jaesoo_character.png" alt="" draggable={false} />
       </button>
     </div>
   );
@@ -2866,10 +2951,19 @@ function ExplainAnswerBubble({
   return (
     <div className="explain-bubble explain-bubble-answer" role="status" aria-live="polite">
       {loading ? (
-        // 캐시 히트면 이 스켈레톤은 거의 보이지 않는다.
-        <div className="explain-skeleton" aria-label="설명을 불러오는 중">
-          <span className="skeleton-line" />
-          <span className="skeleton-line short" />
+        // 챗봇 대화창과 같은 발자국 러너를 쓴다 — 노재수가 답을 준비하는 표시가
+        // 앱 안에서 하나로 읽혀야 한다. 캐시 히트면 거의 보이지 않는다.
+        <div
+          className="chat-loading-runner explain-runner"
+          aria-label="노재수가 답변을 준비하고 있어요"
+        >
+          <div className="runner-track" aria-hidden="true">
+            <span className="paw-print paw-one"><img src="/paw-loader.png" alt="" /></span>
+            <span className="paw-print paw-two"><img src="/paw-loader.png" alt="" /></span>
+            <span className="paw-print paw-three"><img src="/paw-loader.png" alt="" /></span>
+            <span className="paw-print paw-four"><img src="/paw-loader.png" alt="" /></span>
+            <div className="runner-mascot"><Mascot size="sm" /></div>
+          </div>
         </div>
       ) : error ? (
         <p className="explain-bubble-error">{error}</p>
