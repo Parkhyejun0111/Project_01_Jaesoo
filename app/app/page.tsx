@@ -2623,6 +2623,20 @@ function Converter({
             </p>
           </div>
 
+          {/* 지역을 고르지 않았어도 띄운다 — 그때는 "전국 평균으로 계산했다"는 것 자체가
+              설명해야 할 근거다. region_coefficient 유무로 막으면 미선택 상태에서
+              노재수가 통째로 사라진다. */}
+          {est && (
+            <ExplainPanel
+              userId={explainUserId}
+              재수유형={converterChoices.academy}
+              sido={converterChoices.sido}
+              gu={isSeoul ? converterChoices.gu : null}
+              open={explainOpen}
+              onToggle={() => setExplainOpen((v) => !v)}
+            />
+          )}
+
           <button
             type="button"
             className="converter-restart"
@@ -2636,20 +2650,6 @@ function Converter({
 
           <RegionSourceNote sources={regionCatalog?.sources} />
         </main>
-
-        {/* 지역을 고르지 않았어도 띄운다 — 그때는 "전국 평균으로 계산했다"는 것 자체가
-            설명해야 할 근거다. region_coefficient 유무로 막으면 미선택 상태에서
-            노재수가 통째로 사라진다. */}
-        {est && (
-          <ExplainDock
-            userId={explainUserId}
-            재수유형={converterChoices.academy}
-            sido={converterChoices.sido}
-            gu={isSeoul ? converterChoices.gu : null}
-            open={explainOpen}
-            onToggle={() => setExplainOpen((v) => !v)}
-          />
-        )}
       </div>
     );
   }
@@ -2940,16 +2940,20 @@ function RegionChoice({
 }
 
 /**
- * 결과 화면 우하단의 노재수 — 눌러서 산출 근거를 듣는다.
+ * 결과 화면의 노재수 설명 버튼 — 재계산 버튼 바로 위에 고정으로 놓인다.
  *
- * 닫힌 상태에서는 "설명해드려요" 권유 말풍선만 띄우고, 누르면 그 자리에 실제
- * 설명 말풍선이 뜬다. 한 번 더 누르면 답이 사라지고 다시 권유 문구로 돌아간다.
+ * 예전에는 화면 우하단에 떠 있는 독(fixed)이었고 끌어서 옮길 수 있었는데,
+ * 지역계수 각주 위에 겹쳐 앉아 글을 가렸다. 이제 문서 흐름 안에 들어가
+ * 아무것도 가리지 않고 위치도 움직이지 않는다.
  *
- * 답 말풍선은 열렸을 때만 마운트한다 — useDontworryExplain 이 마운트 시점에
- * 요청하므로, 이렇게 해야 화면에 들어오자마자 LLM 을 부르지 않는다. 대신 한 번
+ * 접힌 상태에서는 마스코트 + 권유 문구가 한 줄짜리 알약 버튼이고, 누르면
+ * 같은 상자가 아래로 늘어나며 그 안에 설명이 채워진다.
+ *
+ * 답 본문은 열렸을 때만 마운트한다 — useDontworryExplain 이 마운트 시점에
+ * 요청하므로, 이렇게 해야 화면에 들어오자마자 LLM 을 부르지 않는다. 한 번
  * 받아온 답은 훅 안의 메모에 남아 다시 열 때 즉시 뜬다.
  */
-function ExplainDock({
+function ExplainPanel({
   userId,
   재수유형,
   sido,
@@ -2964,116 +2968,34 @@ function ExplainDock({
   open: boolean;
   onToggle: () => void;
 }) {
-  // 기본 위치에서 얼마나 끌어 옮겼는지. 화면 좌표가 아니라 오프셋으로 들고 있어야
-  // 회전·리사이즈로 기본 위치가 달라져도 상대 위치가 유지된다.
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const dockRef = useRef<HTMLDivElement | null>(null);
-  // 드래그 도중 값. 리렌더를 부르지 않아야 해서 ref 에 둔다.
-  const dragRef = useRef<{
-    pointerId: number;
-    startX: number;
-    startY: number;
-    baseX: number;
-    baseY: number;
-    moved: boolean;
-    min: { x: number; y: number };
-    max: { x: number; y: number };
-  } | null>(null);
-
-  const clamp = (value: number, min: number, max: number) =>
-    Math.min(Math.max(value, min), max);
-
-  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    const dock = dockRef.current;
-    if (!dock) return;
-    const rect = dock.getBoundingClientRect();
-    const margin = 8;
-    // 지금 오프셋 기준으로 화면 안에 남아 있으려면 얼마나 더 움직일 수 있는지.
-    dragRef.current = {
-      pointerId: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
-      baseX: offset.x,
-      baseY: offset.y,
-      moved: false,
-      min: {
-        x: offset.x - rect.left + margin,
-        y: offset.y - rect.top + margin,
-      },
-      max: {
-        x: offset.x + (window.innerWidth - rect.right) - margin,
-        y: offset.y + (window.innerHeight - rect.bottom) - margin,
-      },
-    };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-
-  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== e.pointerId) return;
-    const dx = e.clientX - drag.startX;
-    const dy = e.clientY - drag.startY;
-    // 손가락이 살짝 흔들린 것까지 드래그로 치면 탭이 먹히지 않는다.
-    if (!drag.moved && Math.hypot(dx, dy) < 5) return;
-    drag.moved = true;
-    setOffset({
-      x: clamp(drag.baseX + dx, drag.min.x, drag.max.x),
-      y: clamp(drag.baseY + dy, drag.min.y, drag.max.y),
-    });
-  };
-
-  const onPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== e.pointerId) return;
-    dragRef.current = null;
-    e.currentTarget.releasePointerCapture(e.pointerId);
-    // 끌었으면 클릭이 아니다 — 옮기려다 말풍선이 열리면 성가시다.
-    if (!drag.moved) onToggle();
-  };
-
   return (
-    <div
-      className="explain-dock"
-      ref={dockRef}
-      style={
-        offset.x || offset.y
-          ? { transform: `translateX(-50%) translate(${offset.x}px, ${offset.y}px)` }
-          : undefined
-      }
-    >
-      {open ? (
-        <ExplainAnswerBubble userId={userId} 재수유형={재수유형} sido={sido} gu={gu} />
-      ) : (
-        <p className="explain-bubble explain-bubble-teaser" aria-hidden="true">
-          지역별 사교육 평균비 계산 근거를 설명해드려요!
-        </p>
-      )}
-
+    <section className={`explain-panel${open ? " open" : ""}`}>
       <button
         type="button"
-        className="explain-mascot"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        // 포인터를 지원하지 않는 보조기술·키보드는 클릭 경로가 따로 필요하다.
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onToggle();
-          }
-        }}
+        className="explain-panel-trigger"
+        onClick={onToggle}
         aria-expanded={open}
-        aria-label={open ? "설명 닫기" : "지역별 시세 계산데이터 설명 듣기"}
       >
-        <img src="/jaesoo_character.png" alt="" draggable={false} />
+        <span className="explain-panel-mascot" aria-hidden="true">
+          <img src="/jaesoo_character.png" alt="" draggable={false} />
+        </span>
+        <span className="explain-panel-label">
+          계산 된 재수 비용 계산 근거를 설명해드려요!
+        </span>
+        <ChevronDown size={16} className="explain-panel-caret" aria-hidden="true" />
       </button>
-    </div>
+
+      {open && (
+        <div className="explain-panel-body">
+          <ExplainAnswerBubble userId={userId} 재수유형={재수유형} sido={sido} gu={gu} />
+        </div>
+      )}
+    </section>
   );
 }
 
 /**
- * 설명 말풍선.
+ * 설명 본문 — 패널이 열렸을 때 그 안에 채워진다.
  *
  * 문구는 백엔드가 만든다 — 지역계수는 배치가 계산해 둔 값이고, LLM 은 그 숫자를
  * 문장으로 옮기는 역할만 한다. 실패하면 백엔드가 템플릿 문구를 주므로 여기에
@@ -3098,7 +3020,7 @@ function ExplainAnswerBubble({
   });
 
   return (
-    <div className="explain-bubble explain-bubble-answer" role="status" aria-live="polite">
+    <div className="explain-answer" role="status" aria-live="polite">
       {loading ? (
         // 챗봇 대화창과 같은 발자국 러너를 쓴다 — 노재수가 답을 준비하는 표시가
         // 앱 안에서 하나로 읽혀야 한다. 캐시 히트면 거의 보이지 않는다.
@@ -3115,11 +3037,11 @@ function ExplainAnswerBubble({
           </div>
         </div>
       ) : error ? (
-        <p className="explain-bubble-error">{error}</p>
+        <p className="explain-answer-error">{error}</p>
       ) : (
         <>
-          <p className="explain-bubble-text">{answer}</p>
-          <span className="explain-bubble-foot">
+          <p className="explain-answer-text">{answer}</p>
+          <span className="explain-answer-foot">
             {reference
               ? `${reference.replace("-", "년 ")}월 기준 공공데이터`
               : "공공데이터 기준"}

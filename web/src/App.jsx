@@ -1100,21 +1100,24 @@ class Component extends React.Component {
                             <div style={S(`position:absolute;right:16px;bottom:64px;width:104px;height:104px;border-radius:50%;background:${bc}18;display:flex;align-items:center;justify-content:center`)}>{this.subjectIcon(t.icon, 54, bc)}</div>
                           )}
                           <div style={S(`position:absolute;left:0;bottom:0;width:48%;height:48%;background:linear-gradient(90deg,${bc}12 0%,${bc}12 62%,${bc}00 100%);z-index:2;pointer-events:none`)} />
-                          <div style={S("position:absolute;left:18px;top:20px;right:36%;z-index:2")}>
+                          <div style={S("position:absolute;left:18px;top:20px;right:36%;bottom:132px;z-index:2;overflow:hidden")}>
                             <span style={S(`display:inline-block;font-size:12.5px;font-weight:800;color:${bc}`)}>{t.cardSubject || t.s}</span>
                             <div style={S("font-size:23px;font-weight:900;color:#16181D;line-height:1.32;letter-spacing:-0.5px;word-break:keep-all;margin-top:11px")}>
                               {/* 슬로건 마지막 단어(과목명)는 자연 줄바꿈에 기대지 않고 항상 따로 떨어뜨린다 */}
                               {t.slogan.slice(0, t.slogan.lastIndexOf(' '))}<br/>{t.slogan.slice(t.slogan.lastIndexOf(' ') + 1)}
                             </div>
                             <div style={S("font-size:13.5px;color:#6B7280;line-height:1.55;margin-top:9px;word-break:keep-all")}>{t.blurb}</div>
-                            {/* 배너 안 빈 공간을 채우는 누적 수강생 강조 숫자 */}
-                            <div style={S("margin-top:26px")}>
-                              <div style={S("font-size:11px;font-weight:700;color:#9AA0AB")}>누적 수강생</div>
-                              <div style={S(`font-size:32px;font-weight:900;color:${bc};letter-spacing:-1px;margin-top:3px`)}>{t.students}</div>
-                            </div>
                           </div>
-                          <div style={S(`position:absolute;left:18px;bottom:16px;z-index:3;font-size:15px;font-weight:700;color:#2A2E34;${['차미래','이윤서','한희지','최지현','노재희'].includes(t.n) ? `text-shadow:0 1px 0 ${bc}12,1px 0 0 ${bc}12,0 -1px 0 ${bc}12,-1px 0 0 ${bc}12,0 2px 8px rgba(0,0,0,0.06);` : ''}`)}>
-                            {t.n}
+                          {/* 누적 수강생과 강사 이름은 하나의 하단 정렬 그룹으로 묶는다.
+                              예전엔 수강생 숫자가 위쪽 스택(슬로건·소개)에 얹혀 있어서, 소개 문구가
+                              세 줄이 되는 강사에서는 아래로 밀려 이름과 겹쳤다(배너 높이 300px 고정).
+                              같은 흐름에 두면 문구 길이와 무관하게 간격이 유지된다. */}
+                          <div style={S("position:absolute;left:18px;right:36%;bottom:16px;z-index:3")}>
+                            <div style={S("font-size:11px;font-weight:700;color:#9AA0AB")}>누적 수강생</div>
+                            <div style={S(`font-size:32px;font-weight:900;color:${bc};letter-spacing:-1px;margin-top:3px;line-height:1.1`)}>{t.students}</div>
+                            <div style={S(`margin-top:12px;font-size:15px;font-weight:700;color:#2A2E34;${['차미래','이윤서','한희지','최지현','노재희'].includes(t.n) ? `text-shadow:0 1px 0 ${bc}12,1px 0 0 ${bc}12,0 -1px 0 ${bc}12,-1px 0 0 ${bc}12,0 2px 8px rgba(0,0,0,0.06);` : ''}`)}>
+                              {t.n}
+                            </div>
                           </div>
                         </div>
                         <div style={S("padding:14px 20px 0;font-size:12px;color:#7A808B")}>{t.field}</div>
