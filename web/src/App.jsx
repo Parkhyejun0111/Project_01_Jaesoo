@@ -391,47 +391,84 @@ class Component extends React.Component {
   //   career~quote : 전체 강사 페이지에서만 쓰는 상세 소개
   instructors = [
     { n:'차미래', s:'국어', c:'#5B7CFA', icon:'book',
-      tag:'국어의 기준을\n세우는\n미래 CLASS', img:'/instructors/cha-mirae-angled-clean.png',
+      tag:'국어의 기준을\n세우는\n미래 CLASS', img:'/instructors/cha-mirae-angled-clean.png', thumb:'/instructors/thumb/cha-mirae-angled-clean.png', cut:'/instructors/cutout/cha-mirae-angled-clean.png', focusX:71,
       years:'강의 12년', field:'문학 · 독서 · 화법과 작문',
       career:['前 대치 국어논술 대표강사', '수능 국어 분석서 「기준」 집필', '누적 수강생 21만 명'],
       style:'지문을 읽는 순서와 선지를 지우는 기준부터 세웁니다. 감으로 고르던 판단을 문장 근거로 바꾸는 데 한 학기를 씁니다.',
       courses:['개념의 기준 — 문학 전 갈래', '독서 지문 구조 훈련', '수능 실전 화작 100제'],
-      quote:'국어는 재능이 아니라 기준의 문제예요. 기준이 서면 점수는 흔들리지 않습니다.' },
+      quote:'국어는 재능이 아니라 기준의 문제예요. 기준이 서면 점수는 흔들리지 않습니다.',
+      // 상세 페이지 전용 — 슬로건 · 한 줄 설명 · 요약 경력 3블록 · 짧은 태그 · 짧은 인용
+      slogan:'감이 아닌 근거로 답을 찾는 국어',
+      blurb:'지문을 읽는 순서부터 선지를 판단하는 기준까지 체계적으로 훈련합니다.',
+      careerBlocks:[['경력','12년'],['수강생','21만 명'],['전문 영역','문학·독서']],
+      chips:['문학의 기준', '독서 구조 분석', '수능 실전 100제'],
+      quoteShort:'불안한 순간에도 끝까지 흔들리지 않는 기준을 만들어 드리겠습니다.',
+      students:'218만 명', mainCourse:'[고3·2·N수] 수능 (문제풀이)' },
     { n:'이윤서', s:'수학', c:'#0B8F58', icon:'graph',
-      tag:'막힌 수학을\n뚫어내는\n윤서 ROUTE', img:'/instructors/yunseo-math-card-polished.png?v=3',
+      tag:'막힌 수학을\n뚫어내는\n윤서 ROUTE', img:'/instructors/yunseo-math-card-polished.png?v=3', thumb:'/instructors/thumb/yunseo-math-card-polished.png', cut:'/instructors/cutout/yunseo-math-card-polished.png', focusX:48,
       years:'강의 10년', field:'수학Ⅰ · 수학Ⅱ · 미적분',
       career:['前 강남대성 수학과 전임', '「루트」 시리즈 저자', '학습 상담 누적 8천 건'],
       style:'막히는 지점을 유형이 아니라 풀이 순서로 정리합니다. 손이 멈췄을 때 다음에 무엇을 할지 알게 만드는 수업입니다.',
       courses:['수학Ⅰ·Ⅱ 개념 루트', '4점 문항 접근법', '미적분 킬러 해체'],
-      quote:'안 풀리는 게 아니라 순서를 모르는 겁니다. 순서만 잡아도 절반은 풀려요.' },
+      quote:'안 풀리는 게 아니라 순서를 모르는 겁니다. 순서만 잡아도 절반은 풀려요.',
+      slogan:'막힘이 아니라 순서로 푸는 수학',
+      blurb:'풀이가 멈추는 지점마다 다음 단계를 판단하는 순서를 세워 훈련합니다.',
+      careerBlocks:[['경력','10년'],['상담 누적','8천 건'],['전문 영역','수학Ⅰ·Ⅱ·미적분']],
+      chips:['개념 루트', '4점 공략', '킬러 해체'],
+      quoteShort:'막힌 문제 앞에서도 다음 순서가 보이게 만들어 드리겠습니다.',
+      students:'203만 명', mainCourse:'약점체크 2027 드릴 ◆ 실전 문제풀이 훈련' },
     { n:'박혜준', s:'영어', c:'#2B4FE8', icon:'globe',
-      tag:'영어 고민을\n때려잡는\n혜준 CRUSH', img:'/instructors/park-hyejun.png',
+      tag:'영어 고민을\n때려잡는\n혜준 CRUSH', img:'/instructors/park-hyejun.png', thumb:'/instructors/thumb/park-hyejun.png', cut:'/instructors/cutout/park-hyejun.png', focusX:66,
       years:'강의 9년', field:'독해 · 어법 · 듣기',
       career:['前 종로학원 영어과 강사', 'EBS 연계교재 집필 참여', '모의고사 해설 누적 400회'],
       style:'구문을 외우게 하지 않습니다. 문장이 이어지는 흐름을 따라가 지문 끝까지 밀고 가는 힘을 만듭니다.',
       courses:['구문 독해 크러시', '빈칸·순서 집중반', '수능 어법 30제'],
-      quote:'해석이 아니라 흐름입니다. 흐름을 잡으면 모르는 단어가 나와도 안 멈춰요.' },
+      quote:'해석이 아니라 흐름입니다. 흐름을 잡으면 모르는 단어가 나와도 안 멈춰요.',
+      slogan:'해석이 아니라 흐름으로 읽는 영어',
+      blurb:'문장이 이어지는 흐름을 따라가 지문 끝까지 밀고 가는 힘을 기릅니다.',
+      careerBlocks:[['경력','9년'],['해설 누적','400회'],['전문 영역','독해·어법·듣기']],
+      chips:['구문 독해', '빈칸·순서', '어법 30제'],
+      quoteShort:'모르는 단어가 나와도 끝까지 흐름을 놓치지 않게 만들어 드리겠습니다.',
+      students:'227만 명', mainCourse:'고1, 고2, 고3을 위한 2026년 모의고사 변형 강좌◆' },
     { n:'한희지', s:'한국사', c:'#B7791F', icon:'temple',
-      tag:'역사의 흐름을\n한눈에 잡는\n희지 FLOW', img:'/instructors/han-heeji-history-card.png?v=1',
+      tag:'역사의 흐름을\n한눈에 잡는\n희지 FLOW', img:'/instructors/han-heeji-history-card.png?v=1', thumb:'/instructors/thumb/han-heeji-history-card.png', cut:'/instructors/cutout/han-heeji-history-card.png', focusX:57,
       years:'강의 8년', field:'한국사 · 동아시아사',
       career:['한국사능력검정 대비서 집필', '역사 교양 채널 구독 12만', '고교 특강 300회'],
       style:'연표를 외우는 대신 사건을 원인과 결과로 잇습니다. 한 번 이어두면 문제에서 먼저 떠오릅니다.',
       courses:['흐름으로 잡는 한국사', '사료 독해 특강', '수능 한국사 파이널'],
-      quote:'외운 역사는 시험장에서 사라져요. 이어진 역사는 남습니다.' },
-    { n:'최지현', s:'사회문화', c:'#B03A5B', icon:'temple',
-      tag:'사탐 개념을\n꿰뚫는\n지현 READ', img:'/instructors/choi-jihyun-fixed.png',
+      quote:'외운 역사는 시험장에서 사라져요. 이어진 역사는 남습니다.',
+      slogan:'외우지 않고 이어서 기억하는 한국사',
+      blurb:'사건을 원인과 결과로 이어두면 문제에서 먼저 떠오르게 만듭니다.',
+      careerBlocks:[['경력','8년'],['채널 구독','12만'],['전문 영역','한국사·동아시아사']],
+      chips:['흐름 정리', '사료 독해', '파이널 정리'],
+      quoteShort:'시험장에서도 잊히지 않는 역사의 흐름을 만들어 드리겠습니다.',
+      students:'201만 명', mainCourse:'[한국사 수능] 평가원과 수험생을 연결하다' },
+    { n:'최지현', s:'사회탐구', c:'#B03A5B', icon:'temple',
+      tag:'사탐 개념을\n꿰뚫는\n지현 READ', img:'/instructors/choi-jihyun-fixed.png', thumb:'/instructors/thumb/choi-jihyun-fixed.png', cut:'/instructors/cutout/choi-jihyun-fixed.png', focusX:71,
       years:'강의 11년', field:'사회문화 · 생활과 윤리',
       career:['前 메가스터디 사탐 대표강사', '「도표로 읽는 사회문화」 저자', '오답 유형 데이터 6만 건 분석'],
       style:'개념을 사례와 붙여 정리합니다. 헷갈리던 선지가 눈에 걸리기 시작하면 실전에서 시간이 줄어듭니다.',
       courses:['사회문화 개념 리드', '도표 분석 집중반', '실전 선지 훈련'],
-      quote:'사탐은 암기 과목이 아니라 구분 과목이에요. 구분이 되면 빨라집니다.' },
+      quote:'사탐은 암기 과목이 아니라 구분 과목이에요. 구분이 되면 빨라집니다.',
+      slogan:'암기가 아니라 구분으로 푸는 사회탐구',
+      blurb:'개념을 사례와 함께 정리해 헷갈리던 선지를 구분하는 눈을 길러줍니다.',
+      careerBlocks:[['경력','11년'],['오답 데이터','6만 건'],['전문 영역','사회문화·생활과 윤리']],
+      chips:['개념 정리', '도표 분석', '선지 훈련'],
+      quoteShort:'헷갈리는 선지도 망설임 없이 구분할 수 있게 만들어 드리겠습니다.',
+      students:'212만 명', mainCourse:'[사회문화 개념완성] 시작부터 탄탄하게 최적의 시작!' },
     { n:'노재희', s:'과학탐구', c:'#7A5BFA', icon:'flask',
-      tag:'과탐 고민을\n뿌리뽑는\n재희 SOLVE', img:'/instructors/no-jaehee.png',
+      tag:'과탐 고민을\n뿌리뽑는\n재희 SOLVE', img:'/instructors/no-jaehee.png', thumb:'/instructors/thumb/no-jaehee.png', cut:'/instructors/cutout/no-jaehee.png', focusX:68,
       years:'강의 9년', field:'생명과학Ⅰ · 지구과학Ⅰ',
       career:['前 시대인재 과탐 전임', '수능 과탐 자료해석 특강 개설', '재수생 대상 강의 6년'],
       style:'공식보다 원리를 먼저 세웁니다. 처음 보는 자료가 나와도 어디부터 읽을지 알게 만드는 게 목표입니다.',
       courses:['생명과학Ⅰ 원리 솔브', '유전 계산 집중반', '지구과학 자료해석'],
-      quote:'낯선 자료는 늘 나옵니다. 당황하지 않는 훈련이 곧 점수예요.' },
+      quote:'낯선 자료는 늘 나옵니다. 당황하지 않는 훈련이 곧 점수예요.',
+      slogan:'공식이 아니라 원리로 푸는 과학탐구',
+      blurb:'처음 보는 자료가 나와도 어디부터 읽어야 할지 판단하는 힘을 기릅니다.',
+      careerBlocks:[['경력','9년'],['재수생 강의','6년'],['전문 영역','생명과학Ⅰ·지구과학Ⅰ']],
+      chips:['원리 정리', '유전 계산', '자료 해석'],
+      quoteShort:'낯선 자료 앞에서도 당황하지 않는 힘을 길러 드리겠습니다.',
+      students:'209만 명', mainCourse:'[수능 생명과학I] 점수를 끌어올리는 기출·문제 풀이', cardSubject:'생명과학' },
   ];
   // 티어별 색 — 보장이 커질수록 이화그린이 진해지도록 라이트→프리미엄 순으로 명도를 낮춘다.
   //   ink   : 티어명·금액 등 글자색   line: 테두리   tint: 셀 배경   btn: 버튼 그라디언트
@@ -729,7 +766,7 @@ class Component extends React.Component {
                     <div style={S("width:min(300px,100%);height:60px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;margin-top:26px;background:linear-gradient(135deg,#2B4FE8,#4E7CFF);color:#fff;font-size:17px;font-weight:900;border-radius:16px;cursor:default;box-shadow:0 14px 26px rgba(43,79,232,0.28)")}>메가패스 수강신청 →</div>
                   </div>
                   <div style={S("flex:1 1 280px;max-width:380px;display:flex;flex-direction:column;gap:12px")}>
-                    {[['누적 수강생','1,240,000+'],['대표 강사','48명'],['평균 만족도','4.9 / 5.0']].map((r,ri)=>(<React.Fragment key={ri}>
+                    {[['누적 수강생','1,240,000+'],['전체 강사진','48명'],['평균 만족도','4.9 / 5.0']].map((r,ri)=>(<React.Fragment key={ri}>
                       <div style={S("background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between")}>
                         <span style={S("font-size:13px;color:#AEB4C0;font-weight:600")}>{r[0]}</span>
                         <span style={S("font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px")}>{r[1]}</span>
@@ -857,7 +894,7 @@ class Component extends React.Component {
                     ))}>대표 강사 라인업</div>
                   </div>
                   <span className="hov-link" style={S("font-size:13px;color:#7A808B;cursor:pointer;white-space:nowrap")}
-                        onClick={() => vm.entryGo('instructors')}>전체 강사 보기 ›</span>
+                        onClick={() => vm.entryGo('instructors')}>자세히 보기 ›</span>
                 </div>
                 <div className={app ? "app-rail app-rail-instructors" : undefined}
                      style={S(A("display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px;margin-top:24px", "margin-top:18px"))}>
@@ -1028,76 +1065,75 @@ class Component extends React.Component {
                 ))}>
                   <span className="hov-link" style={S("font-size:13.5px;font-weight:700;color:#5C626C;cursor:pointer;flex:none")}
                         onClick={() => vm.entryGo('landing')}>‹ 메가에듀패스</span>
-                  <span style={S("font-size:15px;font-weight:900;color:#16181D;letter-spacing:-0.5px;white-space:nowrap")}>대표 강사 전체보기</span>
                 </div>
               </div>
 
               <div style={S(A(
-                "width:100%;max-width:900px;margin:0 auto;padding:clamp(28px,4vw,44px) 20px 60px;box-sizing:border-box",
-                "width:100%;margin:0 auto;padding:22px 16px 32px;box-sizing:border-box",
+                "width:100%;max-width:900px;margin:0 auto;padding:clamp(18px,2.4vw,26px) 20px 60px;box-sizing:border-box",
+                "width:100%;margin:0 auto;padding:14px 16px 32px;box-sizing:border-box",
               ))}>
-                <div style={S("font-size:13px;font-weight:800;color:#2B4FE8")}>TOP INSTRUCTORS</div>
                 <div style={S(A(
-                  "font-size:clamp(22px,3vw,28px);font-weight:900;color:#16181D;letter-spacing:-1px;margin-top:6px",
-                  "font-size:22px;font-weight:900;color:#16181D;letter-spacing:-1px;margin-top:5px",
-                ))}>메가에듀패스 대표 강사 {this.instructors.length}인</div>
-                <div style={S("font-size:13px;color:#7A808B;margin-top:8px;line-height:1.7;word-break:keep-all")}>
-                  전 강좌 무제한 패스에 포함된 과목별 대표 강사입니다. 커리큘럼과 강의 스타일을 확인해 보세요.
+                  "font-size:clamp(23px,3.2vw,30px);font-weight:900;color:#16181D;letter-spacing:-1px",
+                  "font-size:23px;font-weight:900;color:#16181D;letter-spacing:-1px",
+                ))}>과목별 대표 강사</div>
+                <div style={S("font-size:13px;color:#7A808B;margin-top:8px;line-height:1.6;word-break:keep-all")}>
+                  전체 강사진 48명 중 과목별 대표 강사를 소개합니다.
                 </div>
 
-                <div style={S("display:flex;flex-direction:column;gap:14px;margin-top:22px")}>
-                  {this.instructors.map((t, ti) => (
+                <div style={S("display:flex;flex-direction:column;gap:22px;margin-top:28px")}>
+                  {this.instructors.map((t, ti) => {
+                    const bc = '#2B4FE8'; // 카드마다 다른 과목색 대신, 6장 모두 같은 메인 브랜드 컬러로 통일
+                    return (
                     <React.Fragment key={ti}>
-                      {/* 카드끼리 구분되도록 과목 색을 옅게 깐다 (연했을 때 경계가 안 보였다) */}
-                      <section style={S(`border:1px solid ${t.c}33;border-radius:18px;background:${t.c}0A;overflow:hidden`)}>
-                        {/* 상단 — 사진 + 이름·과목 */}
-                        <div style={S(`display:flex;align-items:stretch;gap:14px;padding:16px;background:linear-gradient(180deg,${t.c}30,${t.c}0A)`)}>
-                          <div style={S(`width:${app ? '92px' : '110px'};height:${app ? '112px' : '132px'};flex:none;border-radius:14px;background:#F1F0EE;overflow:hidden;display:flex;align-items:flex-end;justify-content:center`)}>
-                            <img src={t.img} alt={`${t.n} 선생님`}
-                                 style={S("width:100%;height:100%;object-fit:cover;object-position:top center")} />
+                      {/* 카드 — 흰 배경 + 연한 회색 테두리 + 옅은 그림자만. 색은 프로필 영역 안에서만 쓴다 */}
+                      <section style={S("border:1px solid #E9EAEC;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(16,24,40,0.04);overflow:hidden")}>
+                        {/* 프로필 — 첨부해주신 실제 강사 소개 배너 참고: 과목색으로 옅게 물든 배경,
+                            좌측 상단 과목 배지 → 슬로건(헤드라인) → 한 줄 설명 순, 좌하단은 '과목 이름'만
+                            군더더기 없이. 사진 크기·배치는 그대로 유지. */}
+                        <div style={S(`height:300px;position:relative;overflow:hidden;background:${bc}12`)}>
+                          {t.img ? (
+                            <img src={t.cut || t.img} alt={`${t.n} 선생님`} style={S(t.n === '한희지'
+                              ? "position:absolute;right:-10px;bottom:-62px;height:110%;width:auto;object-position:bottom right;z-index:1"
+                              : `position:absolute;right:${t.n === '차미래' ? '-4px' : t.n === '이윤서' ? '-34px' : t.n === '최지현' ? '-10px' : t.n === '노재희' ? '0' : '-2px'};bottom:${t.n === '차미래' ? '-27px' : t.n === '이윤서' ? '-2px' : t.n === '박혜준' ? '-7px' : t.n === '최지현' ? '-7px' : t.n === '노재희' ? '3px' : '0'};height:${t.n === '최지현' ? '94%' : t.n === '차미래' ? '102%' : t.n === '이윤서' ? '96%' : t.n === '노재희' ? '90%' : '94%'};width:auto;object-position:bottom right;z-index:1`
+                            )} />
+                          ) : (
+                            <div style={S(`position:absolute;right:16px;bottom:64px;width:104px;height:104px;border-radius:50%;background:${bc}18;display:flex;align-items:center;justify-content:center`)}>{this.subjectIcon(t.icon, 54, bc)}</div>
+                          )}
+                          <div style={S(`position:absolute;left:0;bottom:0;width:48%;height:48%;background:linear-gradient(90deg,${bc}12 0%,${bc}12 62%,${bc}00 100%);z-index:2;pointer-events:none`)} />
+                          <div style={S("position:absolute;left:18px;top:20px;right:36%;z-index:2")}>
+                            <span style={S(`display:inline-block;font-size:12.5px;font-weight:800;color:${bc}`)}>{t.cardSubject || t.s}</span>
+                            <div style={S("font-size:23px;font-weight:900;color:#16181D;line-height:1.32;letter-spacing:-0.5px;word-break:keep-all;margin-top:11px")}>
+                              {/* 슬로건 마지막 단어(과목명)는 자연 줄바꿈에 기대지 않고 항상 따로 떨어뜨린다 */}
+                              {t.slogan.slice(0, t.slogan.lastIndexOf(' '))}<br/>{t.slogan.slice(t.slogan.lastIndexOf(' ') + 1)}
+                            </div>
+                            <div style={S("font-size:13.5px;color:#6B7280;line-height:1.55;margin-top:9px;word-break:keep-all")}>{t.blurb}</div>
+                            {/* 배너 안 빈 공간을 채우는 누적 수강생 강조 숫자 */}
+                            <div style={S("margin-top:26px")}>
+                              <div style={S("font-size:11px;font-weight:700;color:#9AA0AB")}>누적 수강생</div>
+                              <div style={S(`font-size:32px;font-weight:900;color:${bc};letter-spacing:-1px;margin-top:3px`)}>{t.students}</div>
+                            </div>
                           </div>
-                          <div style={S("flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center")}>
-                            <span style={S(`display:inline-flex;align-self:flex-start;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:${t.c};background:${t.c}14;border-radius:20px;padding:5px 11px`)}>
-                              {this.subjectIcon(t.icon, 14, t.c)}{t.s}
-                            </span>
-                            <div style={S("font-size:20px;font-weight:900;color:#16181D;letter-spacing:-0.6px;margin-top:9px")}>
-                              {t.n} <span style={S("font-size:13px;font-weight:600;color:#7A808B")}>선생님</span>
-                            </div>
-                            <div style={S("font-size:12px;color:#7A808B;margin-top:5px;line-height:1.6;word-break:keep-all")}>
-                              {t.years} · {t.field}
-                            </div>
+                          <div style={S(`position:absolute;left:18px;bottom:16px;z-index:3;font-size:15px;font-weight:700;color:#2A2E34;${['차미래','이윤서','한희지','최지현','노재희'].includes(t.n) ? `text-shadow:0 1px 0 ${bc}12,1px 0 0 ${bc}12,0 -1px 0 ${bc}12,-1px 0 0 ${bc}12,0 2px 8px rgba(0,0,0,0.06);` : ''}`)}>
+                            {t.n}
                           </div>
                         </div>
+                        <div style={S("padding:14px 20px 0;font-size:12px;color:#7A808B")}>{t.field}</div>
 
-                        {/* 본문 — 강의 스타일 · 이력 · 대표 강좌 */}
-                        <div style={S("padding:2px 16px 16px;background:#fff")}>
-                          {/* 카드마다 첫 문장이 그 강사를 요약하므로 강조체로 키운다 */}
-                          <p style={S("font-size:15px;color:#16181D;line-height:1.7;font-weight:800;letter-spacing:-0.35px;word-break:keep-all;margin-top:14px")}>
-                            {t.style}
-                          </p>
-
-                          <div style={S("margin-top:14px;display:flex;flex-direction:column;gap:6px")}>
-                            {t.career.map((c, ci) => (
-                              <div key={ci} style={S("display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:#5C626C;line-height:1.6;word-break:keep-all")}>
-                                <span style={S(`width:4px;height:4px;border-radius:50%;background:${t.c};flex:none;margin-top:7px`)} />
-                                {c}
-                              </div>
-                            ))}
+                        <div style={S("padding:0 20px 20px")}>
+                          {/* 누적 수강생은 배너 안으로 옮겨 여기서는 대표 강의만 */}
+                          <div style={S("font-size:13px;color:#4F5662;margin-top:12px;line-height:1.6;word-break:keep-all")}>
+                            대표 강의 <span style={S("font-weight:800;color:#16181D")}>{t.mainCourse}</span>
                           </div>
 
-                          <div style={S("display:flex;flex-wrap:wrap;gap:6px;margin-top:14px")}>
-                            {t.courses.map((c, ci) => (
-                              <span key={ci} style={S("font-size:11.5px;font-weight:700;color:#4F5662;background:#F3F5F8;border-radius:8px;padding:6px 10px;word-break:keep-all")}>{c}</span>
-                            ))}
-                          </div>
-
-                          <div style={S(`margin-top:14px;padding:12px 14px;border-left:3px solid ${t.c};background:#FAFBFC;border-radius:0 10px 10px 0;font-size:12.5px;color:#3A3E46;line-height:1.7;word-break:keep-all`)}>
-                            “{t.quote}”
+                          {/* 버튼 2개 — 동일 크기, 대표 강의 보기만 메인 컬러로 강조 */}
+                          <div style={S("display:flex;gap:8px;margin-top:16px")}>
+                            <div style={S("flex:1;height:44px;border-radius:10px;border:1px solid #E2E4E8;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#4F5662;cursor:default")}>커리큘럼 보기</div>
+                            <div style={S(`flex:1;height:44px;border-radius:10px;background:${bc};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;cursor:default`)}>대표 강의 보기</div>
                           </div>
                         </div>
                       </section>
                     </React.Fragment>
-                  ))}
+                  );})}
                 </div>
 
                 <div style={S("text-align:center;margin-top:24px")}>
@@ -1669,7 +1705,7 @@ class Component extends React.Component {
                       {/* Ⅰ 계약 관계자 */}
                       <div>
                         <div style={S("font-size:11.5px;font-weight:800;color:#0B7A4A;border-bottom:2px solid #0B7A4A;padding-bottom:4px")}>3. 계약 관계자</div>
-                        <div style={S("font-size:8.5px;color:#B45309;margin-top:5px")}>※ 피보험자가 미성년자이므로 계약자는 법정대리인(보호자)이 됩니다</div>
+                        <div style={S("font-size:8.5px;color:#C0304A;margin-top:5px")}>※ 피보험자가 미성년자이므로 계약자는 법정대리인(보호자)이 됩니다</div>
                         <div style={S("margin-top:9px")}>
                           <div style={S("font-size:10px;font-weight:700;color:#333;margin-bottom:5px")}>계약자 (법정대리인)</div>
                           <div style={S("display:flex;gap:6px;flex-wrap:wrap")}>
@@ -1695,7 +1731,7 @@ class Component extends React.Component {
                               <div style={S("display:flex;gap:6px;flex-wrap:wrap;margin-top:5px")}>
                                 {q[2].map((o,oi)=>(<div key={oi} onClick={()=>vm.setApply({[q[1]]:o})} style={S(`font-size:10.5px;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer;border:1.5px solid ${vm.apply[q[1]]===o?'#0B7A4A':'#DDD'};background:${vm.apply[q[1]]===o?'#0B7A4A':'#fff'};color:${vm.apply[q[1]]===o?'#fff':'#555'}`)}>{o}</div>))}
                               </div>
-                              <div style={S(`font-size:9px;color:${(q[1] === 'q_data' || q[1] === 'q_evidence') ? '#C0304A' : '#999'};font-weight:${(q[1] === 'q_data' || q[1] === 'q_evidence') ? '800' : '400'};margin-top:3px`)}>{q[3]}</div>
+                              <div style={S(`font-size:9px;color:${(q[1] === 'q_data' || q[1] === 'q_evidence') ? '#C0304A' : '#999'};margin-top:3px`)}>{q[3]}</div>
                             </div>
                           </React.Fragment>
                         ))}
@@ -1913,7 +1949,7 @@ class Component extends React.Component {
             <div role="dialog" aria-modal="true" aria-labelledby="enroll-error-title"
                  style={S("position:fixed;inset:0;background:rgba(16,24,20,0.55);z-index:80;display:flex;align-items:center;justify-content:center;padding:22px")}>
               <div style={S("width:100%;max-width:380px;background:#fff;border-radius:20px;padding:22px 20px;box-sizing:border-box;box-shadow:0 24px 60px rgba(0,0,0,0.22)")}>
-                <div style={S("width:46px;height:46px;border-radius:50%;background:#FEF0F0;display:flex;align-items:center;justify-content:center;font-size:22px")}>⚠️</div>
+                <div style={S("font-size:42px;line-height:1")}>⚠️</div>
                 <div id="enroll-error-title" style={S("font-size:15.5px;font-weight:900;color:#1A1C22;margin-top:13px")}>청약서를 제출하지 못했어요</div>
                 <div style={S("font-size:11.5px;color:#6B7280;line-height:1.6;margin-top:8px;word-break:keep-all")}>
                   작성하신 내용은 그대로 남아 있어요. 잠시 후 다시 시도해 주세요.
@@ -1927,9 +1963,6 @@ class Component extends React.Component {
                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') vm.dismissEnrollError(); }}
                        style={S("flex:1;background:#fff;border:1.5px solid #DDE1E6;color:#4B5563;font-size:12.5px;font-weight:800;border-radius:12px;height:46px;display:flex;align-items:center;justify-content:center;cursor:pointer")}>청약서로 돌아가기</div>
                 </div>
-                <div role="button" tabIndex={0} onClick={vm.skipEnrollError}
-                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') vm.skipEnrollError(); }}
-                     style={S("margin-top:11px;text-align:center;font-size:10.5px;color:#9AA0AB;cursor:pointer;text-decoration:underline")}>저장 없이 데모 화면만 계속 보기</div>
               </div>
             </div>
           </>)}
