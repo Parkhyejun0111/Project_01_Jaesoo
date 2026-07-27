@@ -1,0 +1,17 @@
+# Vercel Python 런타임이 읽는 의존성 목록. pyproject.toml 의 기본 dependencies 와
+# 동일하게 유지할 것 (Vercel 은 빌더 버전에 따라 둘 중 하나를 사용한다).
+#
+# torch/sentence-transformers/chromadb 같은 무거운 RAG 의존성은 절대 여기에 넣지 말 것.
+# 번들이 5GB를 넘어 Vercel 함수 크기 제한(500MB)에 걸린다.
+# RAG 로컬 실행은: uv sync --extra rag
+fastapi>=0.115.0
+uvicorn>=0.34.0
+python-dotenv>=1.0
+python-multipart>=0.0.20
+psycopg[binary]>=3.2
+# 업로드 저장소(Vercel Blob·Supabase Storage) 호출용
+httpx>=0.27
+# 챗봇 LLM SDK — LLM_PROVIDER 에 맞는 것만 있으면 된다.
+# (키가 없으면 약관 발췌 폴백으로 동작하므로 배포 자체는 실패하지 않는다)
+anthropic>=0.40
+openai>=1.50

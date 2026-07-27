@@ -1,0 +1,23 @@
+{
+  "name": "jaesoo-frontend-webapp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "재수없수 — 인강 임베디드 보험 웹의 앱(모바일) 버전. web 의 App.jsx 를 그대로 쓰고 레이아웃만 앱 모드로 켠다",
+  "scripts": {
+    "predev": "node ../scripts/sync-policy.mjs",
+    "dev": "vite --port 5174",
+    "prebuild": "node ../scripts/sync-policy.mjs && node ../scripts/check-assets.mjs ../web/public",
+    "build": "vite build",
+    "preview": "vite preview --port 5174"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@jaesoo/api-client": "*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.10"
+  }
+}

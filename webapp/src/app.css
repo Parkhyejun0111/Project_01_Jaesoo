@@ -1,0 +1,35 @@
+/* 앱 셸 — web/src/index.css 위에 얹는 얇은 층.
+   화면 안쪽 레이아웃은 App.jsx 의 appMode 와 index.css 의 .app-mode 규칙이 맡는다. */
+
+html,
+body {
+  background: #eef0f4;
+  overscroll-behavior-y: none;      /* 당겨서 새로고침·바운스로 셸이 들리는 것 방지 */
+  -webkit-text-size-adjust: 100%;   /* 가로 회전 시 글자 크기 자동 확대 방지 */
+}
+
+/* 넓은 화면에서 열어도 앱 화면으로 읽히도록 폰 폭으로 잡아둔다.
+   (모바일에서는 520px 를 넘길 일이 없어 그대로 전체 폭) */
+#root {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  background: #fff;
+  min-height: 100dvh;
+  box-shadow: 0 0 0 1px rgba(20, 25, 40, 0.06);
+}
+
+/* 하단 탭바도 같은 폭 안에 머물러야 한다 (position:fixed 는 뷰포트 기준) */
+.app-mode .app-tabbar {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* 터치 지연 제거 + 길게 눌렀을 때 나오는 선택 하이라이트 정리 */
+button,
+[role="button"],
+.hov-link,
+.hov-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

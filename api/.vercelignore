@@ -1,0 +1,20 @@
+# 배포 번들에서 제외 — Vercel Python 함수는 250MB(압축 해제) 제한이 있다.
+
+.venv/
+__pycache__/
+*.pyc
+tests/
+uploads/
+.data/
+*.sqlite
+*.db
+
+# 로컬 전용 도구·문서
+mywork1.py
+langgraph.json
+run-backend.ps1
+requirements-rag.txt
+requirements-test.txt
+uv.lock
+
+# ※ policy/ 는 반드시 포함해야 한다 — 약관 RAG 가 인덱싱하는 원문이다.

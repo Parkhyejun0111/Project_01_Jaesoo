@@ -1,0 +1,180 @@
+@font-face {
+  font-family: "KoddiUDOnGothic";
+  src: url("/fonts/KoddiUDOnGothic-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "KoddiUDOnGothic";
+  src: url("/fonts/KoddiUDOnGothic-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "KoddiUDOnGothic";
+  src: url("/fonts/KoddiUDOnGothic-ExtraBold.ttf") format("truetype");
+  font-weight: 800 900;
+  font-display: swap;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "KoddiUDOnGothic", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@keyframes riseIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* 히어로 캐러셀 전용 — 8초에 한 번만 도는 큰 배너라 riseIn 보다 느리고 여유 있게 */
+@keyframes heroIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.35; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+/* ── 웹 랜딩 전용 hover 피드백 ──────────────────────────────────────────
+   인라인 스타일로는 :hover 를 표현할 수 없어 최소한의 클래스만 둔다.
+   기존 인라인 스타일은 그대로 두고 className 만 덧붙여 사용할 것. */
+.hov-lift {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.hov-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(20, 25, 40, 0.1);
+}
+.hov-btn {
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+.hov-btn:hover {
+  filter: brightness(1.07);
+  transform: translateY(-1px);
+}
+.hov-btn:active {
+  transform: translateY(0);
+}
+.hov-link {
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+.hov-link:hover {
+  color: #2B4FE8;
+  opacity: 0.85;
+}
+
+/* 히어로 캐러셀 좌우 화살표 — translateY(-50%)로 세로 중앙을 잡으므로
+   transform 을 건드리는 .hov-btn 대신 별도 규칙을 쓴다. 좁은 화면에선 본문과 겹쳐 숨긴다. */
+.hero-arrow {
+  transition: filter 0.15s ease, background 0.3s ease, color 0.3s ease;
+}
+.hero-arrow:hover {
+  filter: brightness(1.06);
+}
+@media (max-width: 760px) {
+  .hero-arrow {
+    display: none !important;
+  }
+}
+
+/* 모션을 줄이도록 설정한 사용자에게는 히어로 전환 연출을 걷어낸다.
+   (자동 전환 타이머 자체도 App.jsx 에서 같은 조건으로 꺼진다) */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background: #EDEFF3;
+  min-height: 100vh;
+  font-family: "KoddiUDOnGothic", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ══ 앱 모드 (webapp 빌드) ══════════════════════════════════════════════
+   같은 App.jsx 를 폰 폭에서 쓰기 위한 레이아웃 보정.
+   레이아웃이 갈리는 곳은 App.jsx 가 appMode 로 분기하고, 여기서는 인라인
+   스타일로 표현할 수 없는 것(스크롤 스냅·고정 탭바·hover 제거)만 맡는다.
+   카드 폭은 인라인 값을 이겨야 해서 !important 를 쓴다. */
+.app-mode .app-topbar {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* 헤더 아래 메뉴 줄 — 줄바꿈 대신 가로 스크롤 */
+.app-mode .app-navchips {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.app-mode .app-navchips::-webkit-scrollbar { display: none; }
+
+/* 가로 나열 섹션(강사·후기) — 눌려서 찌그러지는 대신 스와이프 캐러셀로 */
+.app-mode .app-rail {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 16px 12px;
+}
+.app-mode .app-rail::-webkit-scrollbar { display: none; }
+.app-mode .app-rail > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+.app-mode .app-rail-instructors > * {
+  width: 62vw;
+  max-width: 240px;
+  height: 280px !important;
+}
+.app-mode .app-rail-reviews > * {
+  width: 80vw;
+  max-width: 330px;
+  min-width: 0;
+  white-space: normal;
+}
+/* 터치 화면에서 hover 리프트는 눌린 뒤에도 남아 어색하다 */
+.app-mode .hov-lift:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* 하단 탭바 */
+.app-mode .app-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-top: 1px solid #ECEEF1;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.app-mode .app-tabbar button {
+  appearance: none;
+  border: 0;
+  background: none;
+  height: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  color: #9AA0AB;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.app-mode .app-tabbar button.active {
+  color: #2B4FE8;
+}
+.app-mode .app-tabbar button:active {
+  background: #F3F5F8;
+}

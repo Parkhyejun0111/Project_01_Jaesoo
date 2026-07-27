@@ -1,0 +1,55 @@
+[project]
+name = "project-1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+
+# 기본 의존성 = Vercel 서버리스 함수(main.py)를 띄우는 데 필요한 최소 패키지.
+# torch/chromadb 같은 무거운 RAG 의존성을 여기 넣으면 번들이 5GB를 넘어
+# Vercel의 500MB 함수 크기 제한에 걸린다.
+# ★ requirements.txt 와 반드시 동일하게 유지할 것.
+#   Vercel Python 빌더는 pyproject.toml 이 있으면 이쪽을 우선 사용한다 —
+#   여기에만 빠진 패키지는 배포본에서 ImportError 가 난다(챗봇이 조용히 폴백으로 떨어짐).
+dependencies = [
+    "anthropic>=0.40",
+    "fastapi>=0.115.0",
+    "httpx>=0.27",
+    "openai>=1.50",
+    "psycopg[binary]>=3.2",
+    "python-dotenv>=1.0",
+    "python-multipart>=0.0.20",
+    "uvicorn>=0.34.0",
+]
+
+# RAG 에이전트(terms_reader_agent.py) 로컬 실행용 의존성.
+#   설치: uv sync --extra rag
+[project.optional-dependencies]
+rag = [
+    "chromadb>=1.5.9",
+    "gradio>=6.20.0",
+    "langchain-chroma>=1.1.0",
+    "langchain-community>=0.4.2",
+    "langchain-core>=1.4.9",
+    "langchain-google-genai>=4.2.7",
+    "langchain-huggingface>=1.2.2",
+    "langchain-text-splitters>=1.1.2",
+    "langsmith>=0.10.5",
+    "openai>=2.46.0",
+    "pypdf>=6.14.2",
+    "python-dotenv>=1.2.2",
+    "sentence-transformers>=5.6.0",
+]
+
+# mywork1.py(LangGraph 모델 비교/LangSmith 실습) 로컬 실행용 의존성.
+#   설치: uv sync --extra langgraph
+langgraph = [
+    "langchain-anthropic>=1.5.0",
+    "langchain-openai>=1.4.0",
+    "langgraph>=1.2.9",
+]
+
+test = [
+    "httpx>=0.27.0",
+    "pytest>=8.0.0",
+]

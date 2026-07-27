@@ -1,0 +1,10 @@
+# 지역계수 월간 배치(regional.collect) 전용 의존성.
+#
+# 런타임(main.py)은 이 파일이 필요 없다 — regional.coefficients 는 표준 라이브러리로
+# config/*.json 만 읽는다. 배치가 쓰는 httpx·python-dotenv 는 이미 requirements.txt
+# 에 있으므로 그것을 그대로 상속한다.
+#
+# ★ 여기에 pandas 같은 무거운 패키지를 넣더라도 requirements.txt 로는 옮기지 말 것.
+#   Vercel Python 빌더는 requirements.txt / pyproject.toml 을 보므로, 배치 전용
+#   의존성이 그쪽에 섞이면 함수 번들이 불필요하게 커진다.
+-r requirements.txt
