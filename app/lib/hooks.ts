@@ -9,6 +9,7 @@ import type {
   CostEstimate,
   Eligibility,
   PremiumBreakdown,
+  RegisteredCard,
   ScoresResponse,
 } from "@jaesoo/api-client";
 
@@ -166,6 +167,42 @@ export function useEligibility(studentId: string | null, actualGrade?: number) {
   return useLoadable<Eligibility>(fetcher, [studentId, actualGrade]);
 }
 
+// ── 청구 등록 카드 ─────────────────────────────────────────────────────────
+/**
+ * 가입자 ID — 청구 API(jaesoo_registered_cards.user_id, jaesoo_claims.user_id)가
+ * 정수를 쓰는데 앱이 아는 식별자는 student_id(문자열)뿐이다. 프로필에 user_id 가
+ * 있으면 그것을 쓰고, 없으면 student_id 를 해시해 안정적인 정수로 만든다.
+ * 같은 학생은 항상 같은 값이 나와야 카드·청구가 이어진다.
+ *
+ * TODO(인증 연동): 실제 로그인이 붙으면 이 파생은 통째로 사라진다.
+ */
+export function deriveUserId(
+  studentId: string | null,
+  student?: Record<string, unknown>,
+): number | null {
+  if (!studentId) return null;
+  const raw = student?.user_id;
+  if (typeof raw === "number" && Number.isInteger(raw)) return raw;
+  const hash = Array.from(studentId).reduce(
+    (acc, character) => (acc * 31 + character.charCodeAt(0)) >>> 0,
+    17,
+  );
+  return hash || 1;
+}
+
+/** 청구 1단계에서 고를 등록 카드 목록 — DB(jaesoo_registered_cards) 조회. */
+export function useRegisteredCards(userId: number | null) {
+  const fetcher = useMemo(
+    () =>
+      userId === null
+        ? null
+        : () => api.userCards(userId) as Promise<ApiResult<{ cards: RegisteredCard[] }>>,
+    [userId],
+  );
+  const res = useLoadable<{ cards: RegisteredCard[] }>(fetcher, [userId]);
+  return { ...res, cards: res.data?.cards ?? [] };
+}
+
 // ── 돈워리 계산기 ──────────────────────────────────────────────────────────
 export type CostCatalog = {
   forms: Array<{ name: string; monthly: number; total: number; cap: number; voucher_pct: number; note: string }>;
@@ -199,6 +236,8 @@ export type ChatTurn = {
   sources?: ChatSource[];
   suggestions?: string[];
   status?: "loading" | "complete" | "error";
+  /** LLM 없이 약관 발췌만으로 만든 답변인가 (백엔드 llm:false 폴백) */
+  fallback?: boolean;
 };
 
 export function useChat(studentId: string | null) {
@@ -236,6 +275,8 @@ export function useChat(studentId: string | null) {
           sources: d.sources ?? [],
           suggestions: d.suggestions ?? [],
           status: "complete",
+          // llm:false = LLM 호출이 실패해 약관 발췌 폴백으로 답한 경우
+          fallback: d.llm === false,
         };
         return next;
       });
@@ -258,6 +299,27 @@ export function useChat(studentId: string | null) {
   }, []);
 
   return { turns, busy, ask, reset };
+}
+
+// ── 화면 전환 ──────────────────────────────────────────────────────────────
+/**
+ * 화면이 바뀌면 스크롤을 맨 위로 되돌린다.
+ *
+ * 이 앱은 라우터 없이 한 페이지 안에서 조건부 렌더로 화면을 갈아끼운다. 그래서
+ * 브라우저의 스크롤 복원·초기화가 전혀 일어나지 않는다 — 목록을 내려 보다가
+ * 다른 화면을 열면 그 화면도 같은 높이에서 시작해 내용 중간이 보였다.
+ *
+ * 문서와 앱 셸을 모두 올린다. 셸(.app-shell)은 overflow-x:hidden 때문에
+ * overflow-y 가 auto 로 계산돼(CSS 표준) 상황에 따라 스크롤 주체가 될 수 있다.
+ *
+ * @param key 화면을 식별하는 값. 이 값이 바뀔 때만 올린다.
+ */
+export function useScrollToTop(key: string) {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.scrollTo(0, 0);
+    document.querySelector(".app-shell")?.scrollTo(0, 0);
+  }, [key]);
 }
 
 // ── 백엔드 가용성 ──────────────────────────────────────────────────────────

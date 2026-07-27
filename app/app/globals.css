@@ -14,8 +14,40 @@
 
 @font-face {
   font-family: "A2Z";
+  src: url("/font/에이투지체-1Thin.ttf") format("truetype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "A2Z";
+  src: url("/font/에이투지체-2ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "A2Z";
+  src: url("/font/에이투지체-3Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "A2Z";
   src: url("/font/에이투지체-4Regular.ttf") format("truetype");
-  font-weight: 100 500;
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "A2Z";
+  src: url("/font/에이투지체-5Medium.ttf") format("truetype");
+  font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
@@ -23,7 +55,31 @@
 @font-face {
   font-family: "A2Z";
   src: url("/font/에이투지체-6SemiBold.ttf") format("truetype");
-  font-weight: 600 900;
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "A2Z";
+  src: url("/font/에이투지체-7Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "A2Z";
+  src: url("/font/에이투지체-8ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "A2Z";
+  src: url("/font/에이투지체-9Black.ttf") format("truetype");
+  font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
@@ -200,9 +256,7 @@ html[data-canvas="white"] .home-feature-card:hover {
   border-color: color-mix(in srgb, var(--brand-green-dark) 32%, transparent);
 }
 
-html[data-canvas="white"] .feature-arrow,
-html[data-canvas="white"] .grades-feature .feature-icon,
-html[data-canvas="white"] .converter-feature .feature-icon {
+html[data-canvas="white"] .feature-arrow {
   color: var(--brand-green-dark);
   border-color: color-mix(in srgb, var(--brand-green-dark) 18%, transparent);
   background: color-mix(in srgb, var(--brand-green-dark) 14%, transparent);
@@ -752,7 +806,7 @@ body::-webkit-scrollbar,
   margin: 10px 10px 30px;
   color: #fff;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 7s00;
   letter-spacing: -0.03em;
 }
 
@@ -779,13 +833,13 @@ body::-webkit-scrollbar,
 
 .home-ai-copy p {
   font-size: 16px;
-  font-weight: 750;
+  font-weight: 600;
 }
 
 .home-ai-copy p em {
   color: var(--brand-lime);
   font-style: normal;
-  font-weight: 950;
+  font-weight: 900;
 }
 
 .home-ai-copy h1 {
@@ -793,7 +847,7 @@ body::-webkit-scrollbar,
   color: #fff;
   font-size: 17px;
   line-height: 1.4;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.04em;
 }
 
@@ -1213,11 +1267,12 @@ body::-webkit-scrollbar,
   box-shadow: 0 15px 32px rgba(7, 91, 63, 0.13);
 }
 
+/* 라벨 색은 아래 기능 카드(.home-feature-card small)와 같은 브랜드 그린으로 맞춘다 */
 .metric-card > span:not(.metric-icon) {
   margin-top: 40px;
-  color: var(--muted);
+  color: var(--brand-green-dark);
   font-size: 14px;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .metric-card strong {
@@ -1245,14 +1300,11 @@ body::-webkit-scrollbar,
   border-radius: 13px;
 }
 
-.metric-icon.mint {
-  color: #087d7a;
-  background: #dffbff;
-}
-
+/* 홈 카드의 아이콘 상자 — 배경 없이 브랜드 그린 아이콘만 놓는다 */
+.metric-icon.mint,
 .metric-icon.lime {
-  color: #637d0b;
-  background: #efffc3;
+  color: var(--brand-green);
+  background: transparent;
 }
 
 .insight-card {
@@ -1390,14 +1442,10 @@ body::-webkit-scrollbar,
   border-radius: 15px;
 }
 
-.grades-feature .feature-icon {
-  color: #fff;
-  background: var(--brand-green);
-}
-
+.grades-feature .feature-icon,
 .converter-feature .feature-icon {
-  color: #087c6c;
-  background: var(--brand-mint);
+  color: var(--brand-green);
+  background: transparent;
 }
 
 .claim-feature {
@@ -1416,8 +1464,8 @@ body::-webkit-scrollbar,
 
 .claim-feature .feature-icon {
   margin: 0;
-  color: #fff;
-  background: var(--brand-green);
+  color: var(--brand-green);
+  background: transparent;
   flex-shrink: 0;
 }
 
@@ -1429,8 +1477,8 @@ body::-webkit-scrollbar,
 
 .home-feature-card small {
   color: var(--brand-green-dark);
-  font-size: 10px;
-  font-weight: 850;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .home-feature-card strong {
@@ -1758,11 +1806,29 @@ body::-webkit-scrollbar,
   justify-content: flex-end;
 }
 
+/* 말풍선 + 그 아래 추천 질문을 함께 감싼다 (추천 질문은 흰 상자 바깥) */
+.message-stack {
+  min-width: 0;
+  max-width: 82%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.message-row.me .message-stack {
+  align-items: flex-end;
+}
+
+.message-stack .message {
+  max-width: 100%;
+}
+
 .message {
   max-width: 82%;
   padding: 13px 15px;
   border-radius: 18px;
   font-size: 13px;
+  font-weight: 300;
   line-height: 1.55;
 }
 
@@ -1988,11 +2054,12 @@ body::-webkit-scrollbar,
 }
 
 .grade-analysis-illustration {
-  width: 192px;
-  height: 192px;
+  flex: 0 0 170px;
+  width: 180px;
+  height: 170px;
   display: grid;
   place-items: center;
-  margin: auto 0;
+  margin: auto;
 }
 
 .grade-analysis-illustration img {
@@ -2107,32 +2174,27 @@ body::-webkit-scrollbar,
   object-fit: contain;
 }
 
-/* 도입(첫) 화면으로 돌아가는 버튼 */
+/* 도입(첫) 화면으로 돌아가는 버튼 — 다른 뒤로가기 버튼들과 같은 형태(테두리·배경 없는 텍스트형) */
 .tab-back {
-  height: 30px;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 0 10px 0 6px;
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: var(--radius-pill, 999px);
+  gap: 1px;
+  min-height: 25px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 0;
   color: #fff;
-  background: rgba(255, 255, 255, 0.16);
+  background: transparent;
   font-family: inherit;
-  font-size: 11.5px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 17px;
   white-space: nowrap;
   cursor: pointer;
 }
 
-.tab-back:active {
-  background: rgba(255, 255, 255, 0.28);
-}
-
 .brand-tab-header .tab-back {
-  border-color: var(--color-border);
   color: var(--brand-green-dark);
-  background: var(--color-brand-soft);
 }
 
 .page-header {
@@ -6104,6 +6166,26 @@ input.claim-input::placeholder {
   margin-top: 16px;
 }
 
+/* 보조 동작 두 개는 한 줄에 나란히 — 세로로 셋을 쌓으면 화면이 버튼으로 꽉 찬다 */
+.claim-btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.claim-btn-row .secondary-button {
+  width: 100%;
+}
+
+/* 증빙 첨부 장수 안내 */
+.claim-scan-count {
+  margin: 12px 0 0;
+  color: var(--brand-green-dark);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
 /* 등록 카드 확인 화면 — 카드가 늘어나 내용이 길어져도(새 카드 등록 후 등) 항상
    스크롤해서 보이도록 고정 여백만 둔다. (예전엔 margin-top:auto + 바깥 패딩 0으로
    화면 끝에 붙였는데, 카드가 3장 이상이면 넘친 콘텐츠가 하단 네비게이션 뒤로
@@ -6476,12 +6558,13 @@ input.claim-input::placeholder {
 
 .status-timeline p {
   display: grid;
-  gap: 2px;
-  margin: 2px 0 0;
+  gap: 0;
+  margin: 0;
 }
 
 .status-timeline strong {
   font-size: 13px;
+  line-height: 1.3;
 }
 
 .status-timeline span {
@@ -6781,6 +6864,33 @@ a {
   background: var(--color-insight-danger-bg);
 }
 
+/* LLM 실패 시 약관 발췌 폴백임을 알리는 줄 */
+.chat-fallback-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-insight-warning-text);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.chat-fallback-note svg {
+  flex: none;
+}
+
+/* 답변 본문의 ✅·📌·⚠️·💡 자리에 들어가는 아이콘 (RichText 가 바꿔 넣는다) */
+.chat-note-icon {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -2px;
+  margin-right: 3px;
+  color: var(--brand-green);
+}
+
 .chat-sources {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
@@ -6800,22 +6910,38 @@ a {
   width: 100%;
 }
 
+/* 상자 없이 글자만 — 조항 제목이 그대로 링크처럼 읽힌다 */
 .chat-sources a,
 .chat-sources button {
   font-family: inherit;
   font-size: 11px;
-  font-weight: 600;
-  color: var(--color-brand-deep);
-  background: var(--color-brand-soft);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  padding: 5px 10px;
+  font-weight: 700;
+  color: var(--brand-green-dark);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  text-align: left;
   text-decoration: none;
   cursor: pointer;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.chat-sources a:hover,
+.chat-sources button:hover,
+.chat-sources button:focus-visible {
+  text-decoration: underline;
+}
+
+/* 여러 개일 때 가운뎃점으로 끊어 준다 — 상자가 없어도 항목 경계가 보이도록 */
+.chat-sources button + button::before,
+.chat-sources a + a::before {
+  content: "·";
+  margin-right: var(--space-2);
+  color: var(--color-text-secondary);
 }
 
 /* ── 근거 약관 팝업 ─────────────────────────────────────────────────────── */
@@ -6895,6 +7021,71 @@ a {
   background: #fff;
 }
 
+/* 근거 조항 하나만 보여주는 팝업 — 조항 길이에 맞춰 높이가 줄어든다.
+   grid + height:auto 조합은 1fr 행의 가용 공간을 못 정해 본문이 넘치면
+   부모의 overflow:hidden 에 그대로 잘렸다 — flex 로 바꿔 본문만 스크롤한다. */
+.policy-clause-popup {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-height: 86svh;
+}
+
+.policy-clause-popup .policy-popup-head,
+.policy-clause-popup .policy-popup-foot {
+  flex: none;
+}
+
+.policy-clause-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+.policy-clause-body::-webkit-scrollbar {
+  display: none;
+}
+
+.policy-clause-status {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* 항(li) 단위로 나뉜 문단 — 굵기 한 단계 얇게, 문단 사이 간격으로 가독성 확보 */
+.policy-clause p {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.8;
+  letter-spacing: -0.005em;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+
+.policy-clause p:last-child {
+  margin-bottom: 0;
+}
+
+.policy-clause section {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.policy-clause h3 {
+  margin: 0 0 var(--space-2);
+  color: var(--brand-green-dark);
+  font-size: 12.5px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
 .policy-popup-foot {
   padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-border);
@@ -6908,13 +7099,324 @@ a {
   text-decoration: none;
 }
 
-.chat-sources a:hover,
-.chat-sources a:focus-visible {
-  border-color: var(--color-brand-primary);
+/* ── 보험금 청구 안내 팝업 ─────────────────────────────────────────────── */
+/* grid + height:auto 조합은 1fr 행의 가용 공간을 못 정해 카드 3장이 넘치면
+   부모의 overflow:hidden 에 그대로 잘렸다 — flex 로 바꿔 본문만 스크롤한다. */
+.claim-guide-popup {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-height: 88svh;
+}
+
+.claim-guide-popup .policy-popup-head,
+.claim-guide-popup .claim-guide-foot {
+  flex: none;
+}
+
+.claim-guide-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+.claim-guide-body::-webkit-scrollbar {
+  display: none;
+}
+
+/* 제목은 가운데, 닫기 버튼은 오른쪽에 겹쳐 둔다 — 좌우 여백을 넉넉히 잡아
+   제목이 버튼에 밀리지 않게 한다 */
+.claim-guide-head {
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 56px 14px;
+}
+
+.claim-guide-head strong {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+
+.claim-guide-head button {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+}
+
+.claim-guide-head em {
+  color: var(--brand-green);
+  font-style: normal;
+  font-weight: 900;
+}
+
+/* 본문 배경을 옅은 회색으로 깔아 흰 카드 3장이 떠 보이게 한다 */
+.claim-guide-body {
+  background: var(--canvas-gray);
+}
+
+.claim-guide-card {
+  padding: var(--space-4) var(--space-4) var(--space-5);
+  border-radius: var(--radius-card);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(18, 55, 43, 0.04);
+}
+
+.claim-guide-card + .claim-guide-card {
+  margin-top: var(--space-4);
+}
+
+.claim-guide-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.claim-guide-card-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+.claim-guide-card-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  color: var(--brand-green-dark);
+  background: var(--color-insight-positive-bg);
+}
+
+.claim-guide-card-meta {
+  margin-left: auto;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* 청구 가능 기간 — 달력 한 장 모양 카드 두 장을 좌우로 나란히.
+   진행 중인 창구만 초록으로 띄우고 나머지는 가라앉힌다 */
+.claim-guide-periods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.claim-guide-cal {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: var(--space-5) var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  text-align: center;
+}
+
+/* 달력 상단 바인더 링 두 개 */
+.claim-guide-cal::before,
+.claim-guide-cal::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #c7d0cc;
+}
+
+.claim-guide-cal::before { left: 28%; }
+.claim-guide-cal::after { right: 28%; }
+
+.claim-guide-cal.open {
+  border-color: color-mix(in srgb, var(--brand-green) 45%, transparent);
+  background: var(--color-insight-positive-bg);
+}
+
+.claim-guide-cal.open::before,
+.claim-guide-cal.open::after {
+  background: var(--brand-green);
+}
+
+.claim-guide-cal-top {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  color: var(--color-text-secondary);
+}
+
+.claim-guide-cal.open .claim-guide-cal-top {
+  color: var(--brand-green-dark);
+}
+
+.claim-guide-cal-month {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+}
+
+.claim-guide-cal-unit {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.claim-guide-cal-range {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.claim-guide-cal.open .claim-guide-cal-range {
+  color: var(--brand-green-dark);
+}
+
+.claim-guide-cal-covers {
+  color: var(--color-text-secondary);
+  font-size: 10.5px;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.claim-guide-pill {
+  flex: none;
+  margin-top: var(--space-2);
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--color-text-secondary);
+  background: #e5e8e7;
+}
+
+.claim-guide-pill.open {
+  color: #fff;
+  background: var(--brand-green);
+}
+
+.claim-guide-pill.closed {
+  color: #a5b0ab;
+  background: #edf0ef;
+}
+
+.claim-guide-caution {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.claim-guide-caution::before {
+  content: "※ ";
+}
+
+.claim-guide-caution-center {
+  text-align: center;
+}
+
+/* 진행 순서 — 번호 원을 세로선으로 이어 타임라인처럼 보여준다 */
+.claim-guide-steps {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: claim-step;
+}
+
+.claim-guide-steps li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: var(--space-3);
+  position: relative;
+  counter-increment: claim-step;
+}
+
+.claim-guide-steps li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 26px;
+  bottom: -16px;
+  width: 2px;
+  background: var(--color-insight-positive-bg);
+}
+
+.claim-guide-steps li::before {
+  content: counter(claim-step);
+  position: relative;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--brand-green);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.claim-guide-steps li > div {
+  display: grid;
+  gap: 3px;
+  padding-top: 3px;
+}
+
+.claim-guide-steps strong {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.claim-guide-steps span {
+  color: var(--color-text-secondary);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+/* 필수 준비물 */
+.claim-guide-items {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.claim-guide-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  background: var(--canvas-gray);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.claim-guide-item svg {
+  flex: none;
+  color: var(--brand-green-dark);
+}
+
+.claim-guide-foot {
+  padding: var(--space-3) var(--space-5) calc(var(--space-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border);
 }
 
 .chat-followups {
-  margin-top: var(--space-3);
+  margin-top: var(--space-2);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -7082,6 +7584,40 @@ a {
   align-items: flex-start;
   gap: var(--space-2);
   color: var(--color-text-secondary);
+}
+
+/* 등록 카드 없음 — 청구 1단계의 빈 상태 */
+.claim-card-empty {
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+}
+
+.claim-card-empty-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--brand-green);
+  background: var(--color-insight-positive-bg);
+}
+
+.claim-card-empty p {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+.claim-card-empty small {
+  color: var(--color-text-secondary);
+  font-size: 11.5px;
+  line-height: 1.6;
+  word-break: keep-all;
 }
 
 /* 청구 판정 사유 — 백엔드 anomaly_reasons 를 그대로 나열한다 */

@@ -31,6 +31,14 @@ class CardService:
             raise NotFoundError("활성 등록 카드를 찾을 수 없습니다.")
         return card
 
+    def list_for_user(
+        self, user_id: int, *, active_only: bool = False, limit: int = 20
+    ) -> list[dict]:
+        """등록 카드 목록. 없으면 빈 목록 — 카드 미등록은 오류가 아니다."""
+        return self.repository.list_for_user(
+            user_id, active_only=active_only, limit=limit
+        )
+
     def get(self, card_id: int) -> dict:
         card = self.repository.get(card_id)
         if card is None:

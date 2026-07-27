@@ -197,6 +197,27 @@ def create_receipt_router(
         except ReceiptVerificationError as exc:
             _raise_http(exc)
 
+    @router.get(
+        "/api/cards/users/{user_id}",
+        tags=["Receipt verification - cards"],
+        summary="사용자의 등록 카드 목록 조회",
+        description=(
+            "청구 1단계(등록 카드 확인) 화면이 고를 카드 목록입니다. 활성 카드가 "
+            "먼저 오고 그다음 최근 갱신 순입니다. 카드가 없으면 빈 목록을 "
+            "반환합니다(오류가 아닙니다)."
+        ),
+    )
+    def list_user_cards(
+        user_id: int, active_only: bool = False, limit: int = 20
+    ) -> dict:
+        rows = services.cards.list_for_user(
+            user_id, active_only=active_only, limit=min(max(limit, 1), 50)
+        )
+        return {
+            "cards": [CardResponse.model_validate(row).model_dump() for row in rows],
+            "user_id": user_id,
+        }
+
     @router.put(
         "/api/cards/{card_id}",
         response_model=CardResponse,

@@ -57,6 +57,26 @@ class CardRepository:
             (user_id, True),
         )
 
+    def list_for_user(
+        self, user_id: int, *, active_only: bool = False, limit: int = 20
+    ) -> list[dict[str, Any]]:
+        """사용자가 등록한 카드 목록. 활성 카드가 먼저, 그다음 최근 갱신 순.
+
+        청구 1단계(등록 카드 확인)가 고르게 할 목록이라 비활성 카드도 기본으로
+        포함한다 — 예전에 보험료를 냈던 카드로 학원비를 결제했을 수 있다.
+        """
+        clauses = ["user_id = ?"]
+        params: list[Any] = [user_id]
+        if active_only:
+            clauses.append("is_active = ?")
+            params.append(True)
+        params.append(limit)
+        return self.database.fetch_all(
+            f"SELECT * FROM jaesoo_registered_cards WHERE {' AND '.join(clauses)} "
+            "ORDER BY is_active DESC, updated_at DESC LIMIT ?",
+            tuple(params),
+        )
+
     def update(
         self, card_id: int, changes: dict[str, Any], updated_at: str
     ) -> dict[str, Any] | None:
