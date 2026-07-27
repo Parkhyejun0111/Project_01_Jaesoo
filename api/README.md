@@ -1,12 +1,18 @@
 # Project_01_Jaesoo
 
-재수생 대상 보험 서비스 프로토타입. 두 개의 독립적인 부분으로 구성됩니다.
+재수생 대상 보험 서비스의 백엔드. 이 폴더가 하나의 Vercel 프로젝트다
+(Root Directory `api`).
 
 | 구성 | 경로 | 배포 |
 |---|---|---|
-| 프론트엔드 (React + Vite) | `frontend/` | **Vercel** |
-| FastAPI 백엔드 + 경량 RAG | `main.py`, `rag_light.py` | 로컬/별도 서버 |
+| FastAPI 백엔드 + 경량 RAG | `main.py`, `rag_light.py` | **Vercel** |
 | 학원비 카드 영수증 검증 | `receipt_verification/` | FastAPI 백엔드에 통합 |
+| 돈워리 지역계수 배치 | `regional/` | 월 1회 수동 실행 → `config/*.json` |
+
+> 프론트엔드는 이 폴더가 아니라 저장소 루트의 `app/`(보호자용 앱) ·
+> `web/`(가입 웹) · `webapp/`(웹앱)에 있고 각각 별도 Vercel 프로젝트다.
+> 아래 "프론트엔드" 절이 가리키는 `frontend/` 는 `main` 브랜치의 초기 RAG
+> 프로토타입 경로라 이 브랜치에는 없다.
 
 ---
 
