@@ -6094,6 +6094,17 @@ input.claim-input::placeholder {
   padding: 20px 10px;
 }
 
+/* .claim-drop 을 label 로 쓰는 경우 (파일 선택 상자).
+   button 은 기본이 inline-block 이라 width:100% 가 먹지만 label 은 inline 이라
+   폭도 안 잡히고 padding 도 위아래로 새어나간다 — 눌러야 할 영역이 보이는 것과
+   달라진다. 안의 input[type=file] 이 position:absolute 라 기준점도 필요하다.
+   (.claim-drop-half 는 flex 부모 덕에 이미 블록처럼 동작해서 문제가 없었다) */
+label.claim-drop {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+}
+
 .claim-upload-error {
   margin: 12px 0 0;
   padding: 11px 13px;
