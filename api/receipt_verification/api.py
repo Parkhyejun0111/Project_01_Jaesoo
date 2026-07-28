@@ -113,11 +113,14 @@ def build_container(settings: ReceiptSettings) -> ServiceContainer:
     else:
         provider = ExternalOCRProvider()
     anomaly_service = AnomalyDetectionService(settings)
+    document_service = DocumentService(document_repository, settings)
     return ServiceContainer(
         cards=CardService(card_repository),
         claims=ClaimService(claim_repository, card_repository),
-        documents=DocumentService(document_repository, settings),
-        ocr=OCRService(ocr_repository, provider),
+        documents=document_service,
+        # OCR 은 문서 서비스와 같은 저장소를 본다 — 업로드가 Supabase·Blob 로
+        # 가면 locator 가 객체 키라서 로컬 경로로는 열리지 않는다.
+        ocr=OCRService(ocr_repository, provider, document_service.storage),
         verification=VerificationService(
             claim_repository,
             card_repository,

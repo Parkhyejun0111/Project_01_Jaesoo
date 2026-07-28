@@ -35,12 +35,16 @@ def redact_raw_text(value: Any) -> str | None:
 
 
 class OCRProvider(Protocol):
-    def extract_receipt(self, file_path: str) -> dict[str, Any]:
+    def extract_receipt(
+        self, file_path: str, data: bytes | None = None
+    ) -> dict[str, Any]:
         """Extract receipt fields without making card-issuer approval claims."""
 
 
 class MockOCRProvider:
-    def extract_receipt(self, file_path: str) -> dict[str, Any]:
+    def extract_receipt(
+        self, file_path: str, data: bytes | None = None
+    ) -> dict[str, Any]:
         return {
             "card_last4": None,
             "payment_amount": None,
@@ -54,7 +58,9 @@ class MockOCRProvider:
 
 
 class ExternalOCRProvider:
-    def extract_receipt(self, file_path: str) -> dict[str, Any]:
+    def extract_receipt(
+        self, file_path: str, data: bytes | None = None
+    ) -> dict[str, Any]:
         raise OCRUnavailableError(
             "ExternalOCRProvider가 설정되지 않았습니다. 실제 OCR 연동을 구현해야 합니다."
         )
@@ -105,7 +111,15 @@ class ClovaOCRProvider:
         self.secret_key = secret_key.strip()
         self.timeout = timeout or float(os.getenv("CLOVA_OCR_TIMEOUT_SEC", "20"))
 
-    def extract_receipt(self, file_path: str) -> dict[str, Any]:
+    def extract_receipt(
+        self, file_path: str, data: bytes | None = None
+    ) -> dict[str, Any]:
+        """data 를 주면 그 바이트를 쓴다.
+
+        업로드 파일은 로컬 디스크가 아니라 Supabase·Vercel Blob 에 있을 수 있다.
+        그 경우 file_path 는 객체 키라서 열리지 않으므로, 저장소가 읽어 온
+        바이트를 그대로 받는다. file_path 는 확장자 판별에만 쓴다.
+        """
         if not self.invoke_url or not self.secret_key:
             raise OCRUnavailableError(
                 "CLOVA_OCR_INVOKE_URL / CLOVA_OCR_SECRET_KEY 가 설정되지 않았습니다."
@@ -118,10 +132,14 @@ class ClovaOCRProvider:
         import httpx
 
         path = Path(file_path)
-        try:
-            blob = path.read_bytes()
-        except OSError as exc:
-            raise OCRUnavailableError(f"영수증 파일을 읽지 못했습니다: {exc}") from exc
+        if data is None:
+            try:
+                data = path.read_bytes()
+            except OSError as exc:
+                raise OCRUnavailableError(
+                    f"영수증 파일을 읽지 못했습니다: {exc}"
+                ) from exc
+        blob = data
 
         suffix = path.suffix.lower().lstrip(".") or "jpg"
         fmt = {"jpeg": "jpg"}.get(suffix, suffix)
@@ -307,14 +325,31 @@ def _find_merchant(lines: list[str]) -> str | None:
 
 
 class OCRService:
-    def __init__(self, repository: OCRRepository, provider: OCRProvider):
+    def __init__(
+        self,
+        repository: OCRRepository,
+        provider: OCRProvider,
+        storage: Any | None = None,
+    ):
         self.repository = repository
         self.provider = provider
+        # 저장소를 알면 원격(Supabase·Blob)에 올라간 파일도 읽어서 넘길 수 있다.
+        self.storage = storage
 
     def process_file(self, claim_id: int, locator: str | Path) -> dict:
-        """locator 는 저장소가 돌려준 값이다 — 로컬은 경로, 원격은 URL/객체 키."""
+        """locator 는 저장소가 돌려준 값이다 — 로컬은 경로, 원격은 URL/객체 키.
+
+        원격이면 경로로 열리지 않으므로 저장소에서 바이트를 읽어 프로바이더에
+        직접 넘긴다. (예전엔 로컬 경로로만 열어서 Supabase 저장 시 503 이 났다)
+        """
+        data: bytes | None = None
+        if self.storage is not None:
+            try:
+                data = self.storage.read(str(locator))
+            except Exception:  # noqa: BLE001 — 로컬 경로면 프로바이더가 직접 연다
+                data = None
         return self.save_normalized(
-            claim_id, self.provider.extract_receipt(str(locator))
+            claim_id, self.provider.extract_receipt(str(locator), data)
         )
 
     def save_normalized(self, claim_id: int, raw: dict[str, Any]) -> dict:
