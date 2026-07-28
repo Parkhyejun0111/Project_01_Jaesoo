@@ -1804,7 +1804,7 @@ class Component extends React.Component {
                             <div style={S("margin-top:9px")}>
                               <div style={S("font-size:10px;font-weight:600;color:#333")}>{qi+1}. {q[0]}</div>
                               <div style={S("display:flex;gap:6px;flex-wrap:wrap;margin-top:5px")}>
-                                {q[2].map((o,oi)=>(<div key={oi} onClick={()=>vm.setApply({[q[1]]:o})} style={S(`font-size:10px;font-weight:600;padding:7px 11px;border-radius:8px;cursor:pointer;border:1.5px solid ${vm.apply[q[1]]===o?'#5C6BC0':'#DDD'};background:${vm.apply[q[1]]===o?'rgba(92,107,192,0.1)':'#fff'};color:${vm.apply[q[1]]===o?'#3F51B5':'#666'}`)}>{o}</div>))}
+                                {q[2].map((o,oi)=>(<div key={oi} onClick={()=>vm.setApply({[q[1]]:o})} style={S(`font-size:10px;font-weight:600;padding:7px 11px;border-radius:8px;cursor:pointer;border:1.5px solid ${vm.apply[q[1]]===o?'#0B8F58':'#DDD'};background:${vm.apply[q[1]]===o?'rgba(11,143,88,0.08)':'#fff'};color:${vm.apply[q[1]]===o?'#0B8F58':'#666'}`)}>{o}</div>))}
                               </div>
                             </div>
                           </React.Fragment>
@@ -1812,7 +1812,7 @@ class Component extends React.Component {
                         <div style={S("display:flex;align-items:center;gap:8px;margin-top:9px")}>
                           <span style={S("flex:1;min-width:0;font-size:9.5px;color:#333;line-height:1.4")}>포트폴리오·통계 분석용 참고 문항의 수집·이용에 동의합니다</span>
                           <div style={S("display:flex;gap:5px;flex:none")}>
-                            {['동의','미동의'].map((o,oi)=>(<div key={oi} onClick={()=>vm.setApply({stat_consent:o})} style={S(`font-size:9.5px;font-weight:600;padding:6px 9px;border-radius:8px;cursor:pointer;border:1.5px solid ${vm.apply.stat_consent===o?'#5C6BC0':'#DDD'};background:${vm.apply.stat_consent===o?'rgba(92,107,192,0.1)':'#fff'};color:${vm.apply.stat_consent===o?'#3F51B5':'#666'}`)}>{o}</div>))}
+                            {['동의','미동의'].map((o,oi)=>(<div key={oi} onClick={()=>vm.setApply({stat_consent:o})} style={S(`font-size:9.5px;font-weight:600;padding:6px 9px;border-radius:8px;cursor:pointer;border:1.5px solid ${vm.apply.stat_consent===o?'#0B8F58':'#DDD'};background:${vm.apply.stat_consent===o?'rgba(11,143,88,0.08)':'#fff'};color:${vm.apply.stat_consent===o?'#0B8F58':'#666'}`)}>{o}</div>))}
                           </div>
                         </div>
                       </div>

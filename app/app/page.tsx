@@ -3964,6 +3964,8 @@ function ClaimFlow({
   // 빈 값으로 시작한다 — 1단계가 DB에서 불러온 카드 중 첫 장을 기본 선택한다
   const [cardLast4, setCardLast4] = useState("");
   const [resultPreview, setResultPreview] = useState<ClaimResultVariant>("matched");
+  // 카드사 이용내역(추가 증빙) — 고른 파일을 제출 버튼까지 들고 있는다.
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [appealFiled, setAppealFiled] = useState(false);
   const [appealSubmittedAt, setAppealSubmittedAt] = useState<Date | null>(null);
   const [captureContext, setCaptureContext] = useState<CaptureContext>("receipt");
@@ -4369,10 +4371,27 @@ function ClaimFlow({
           cardLast4={cardLast4}
           ocrResult={claimApi.ocrResult}
           reasons={claimApi.reasons}
-          onSubmit={() => setScreen("submitting")}
+          onSubmit={async () => {
+            // 카드사 이용내역을 고른 상태면 먼저 올린다. 백엔드는 이 파일을
+            // CARD_STATEMENT 로 저장하고 청구를 수동 심사로 넘긴다.
+            if (proofFile && claimApi.claimId) {
+              const res = await claimApi.uploadReceipt(claimApi.claimId, proofFile, "proof");
+              if (!res) {
+                setClaimUploadError("이용내역을 제출하지 못했어요. 파일 형식과 용량을 확인해 주세요.");
+                return;
+              }
+              setProofFile(null);
+            }
+            setScreen("submitting");
+          }}
           onRetryUpload={() => setScreen("step2")}
           onChangeCard={() => setScreen("cardChange")}
           onViewStatus={() => setScreen("status")}
+          onProofSelected={(file) => {
+            setClaimUploadError(null);
+            setProofFile(file);
+          }}
+          proofFileName={proofFile?.name ?? null}
         />
       )}
       {screen === "status" && (
@@ -5332,6 +5351,8 @@ function ClaimResult({
   onRetryUpload,
   onChangeCard,
   onViewStatus,
+  onProofSelected,
+  proofFileName,
 }: {
   variant: ClaimResultVariant;
   cardLast4: string;
@@ -5341,6 +5362,10 @@ function ClaimResult({
   onRetryUpload: () => void;
   onChangeCard: () => void;
   onViewStatus: () => void;
+  /** 카드사 이용내역 파일을 고른 순간 — 제출은 아래 버튼에서 한다. */
+  onProofSelected: (file: File) => void;
+  /** 고른 파일 이름. 없으면 아직 안 골랐다는 뜻이라 제출 버튼을 잠근다. */
+  proofFileName: string | null;
 }) {
   const receiptLast4 = ocrResult?.card_last4 ?? "확인되지 않음";
   const merchantName = ocrResult?.merchant_name ?? "학원명 확인 필요";
@@ -5491,18 +5516,36 @@ function ClaimResult({
             <span className="claim-tag warn">중복</span>
           </div>
         </section>
-        <button type="button" className="claim-drop">
+        {/* button 이었을 때는 onClick 이 없어 눌러도 아무 일이 없었다.
+            label + file input 으로 바꿔 파일 선택창이 뜨게 한다. */}
+        <label className="claim-drop">
           <FileText size={24} />
-          <strong>카드사 이용내역 올리기</strong>
+          <strong>{proofFileName ?? "카드사 이용내역 올리기"}</strong>
           <small>
-            {paymentMethod.provider} 앱 › 이용내역 › 기간 조회 후 PDF 저장
+            {proofFileName
+              ? "다시 누르면 다른 파일로 바꿀 수 있어요"
+              : `${paymentMethod.provider} 앱 › 이용내역 › 기간 조회 후 PDF 저장`}
             <br />
             12월 24일까지 제출해 주세요
           </small>
-        </button>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            className="claim-file-input"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) onProofSelected(file);
+              event.target.value = "";
+            }}
+          />
+        </label>
         <div className="claim-btn-stack">
-          <button className="primary-button claim-amber" onClick={onSubmit}>
-            이용내역 제출하기
+          <button
+            className="primary-button claim-amber"
+            onClick={onSubmit}
+            disabled={!proofFileName}
+          >
+            {proofFileName ? "이용내역 제출하기" : "파일을 먼저 골라주세요"}
           </button>
           <button className="secondary-button" onClick={onViewStatus}>
             나중에 하기
@@ -5777,7 +5820,8 @@ function AppShell() {
   const [tab, setTab] = useState<Tab>("home");
   const [homeScreen, setHomeScreen] = useState<HomeScreen>("main");
   const [chatQuestion, setChatQuestion] = useState("");
-  const [canvasTone, setCanvasTone] = useState<CanvasTone>("cream-white");
+  // 기본 테마는 회색 & 화이트. 크림은 마이 → 테마 설정에서 고를 수 있다.
+  const [canvasTone, setCanvasTone] = useState<CanvasTone>("gray-white");
   const [gradeScreen, setGradeScreen] = useState<GradeScreen>("intro");
   const [converterScreen, setConverterScreen] = useState<ConverterScreen>("intro");
   const [claimScreen, setClaimScreen] = useState<ClaimScreen | null>(null);
