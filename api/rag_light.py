@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import math
 import os
+import unicodedata
 import re
 from functools import lru_cache
 from html.parser import HTMLParser
@@ -83,7 +84,31 @@ _configured_policy_path = (
     or os.getenv("POLICY_PDF")  # 기존 설정과의 하위 호환
     or _DEFAULT_POLICY_DOCUMENT
 )
-POLICY_PATH = (
+def _resolve_policy_path(candidate: str) -> str:
+    """유니코드 정규화가 달라도 약관 파일을 찾아낸다.
+
+    macOS 는 파일명을 NFD 로 저장하는데 소스의 문자열 리터럴은 NFC 다. macOS 는
+    둘을 알아서 맞춰 주지만 Linux(=Vercel 함수)는 바이트 그대로 비교해서 못 찾는다.
+    그래서 로컬에서는 되고 배포에서만 "약관 문서를 찾을 수 없습니다" 가 났다.
+
+    정확히 있으면 그대로 쓰고, 없으면 같은 폴더에서 정규화 후 이름이 같은 파일을
+    찾는다.
+    """
+    if os.path.exists(candidate):
+        return candidate
+
+    directory = os.path.dirname(candidate)
+    target = unicodedata.normalize("NFC", os.path.basename(candidate))
+    try:
+        for name in os.listdir(directory):
+            if unicodedata.normalize("NFC", name) == target:
+                return os.path.join(directory, name)
+    except OSError:
+        pass
+    return candidate
+
+
+POLICY_PATH = _resolve_policy_path(
     _configured_policy_path
     if os.path.isabs(_configured_policy_path)
     else os.path.join(_BASE_DIR, _configured_policy_path)
@@ -547,7 +572,14 @@ class _CellAwareParser(_PolicyHTMLParser):
 def _document_sections() -> list[dict]:
     """약관 문서 → 조항 단위 섹션 [{anchor, title, text}, ...] (문서 순서)."""
     if not os.path.exists(POLICY_PATH):
-        raise FileNotFoundError(f"약관 문서를 찾을 수 없습니다: {POLICY_PATH}")
+        directory = os.path.dirname(POLICY_PATH)
+        try:
+            nearby = ", ".join(sorted(os.listdir(directory))[:10]) or "(빈 폴더)"
+        except OSError as exc:
+            nearby = f"(폴더를 열 수 없음: {exc})"
+        raise FileNotFoundError(
+            f"약관 문서를 찾을 수 없습니다: {POLICY_PATH} — 같은 폴더에 있는 파일: {nearby}"
+        )
 
     extension = os.path.splitext(POLICY_PATH)[1].lower()
     with open(POLICY_PATH, encoding="utf-8") as policy_file:
