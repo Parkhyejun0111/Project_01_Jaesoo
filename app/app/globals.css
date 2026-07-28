@@ -343,12 +343,6 @@ body::-webkit-scrollbar,
   transition: border-color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
 }
 
-/* 계약 전환 — 기간 토글 바로 아래에 같은 폭·모양으로 붙인다.
-   토글이 fixed(top 76px, 높이 44px)라 그 아래 8px 자리에 둔다. */
-.claim-phase-toggle.contract-switch {
-  top: calc(env(safe-area-inset-top) + 76px + 44px + 8px);
-}
-
 .claim-phase-toggle:hover {
   border-color: var(--brand-green);
   background: var(--color-insight-positive-bg);

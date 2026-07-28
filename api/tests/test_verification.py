@@ -41,16 +41,24 @@ def test_missing_approval_number_requests_proof(
     assert "MISSING_APPROVAL_NUMBER" in response.json()["anomaly_reasons"]
 
 
-def test_low_ocr_confidence_requests_proof(
+def test_low_ocr_confidence_is_recorded_but_does_not_block(
     client: TestClient, claim: dict
 ):
+    """글자가 흐린 것만으로는 추가 확인으로 보내지 않는다.
+
+    신뢰도는 사용자가 손쓸 수 있는 값이 아니고, 정말 못 읽었다면 MISSING_* 검사가
+    이미 잡는다. 예전에는 이것 하나로 멀쩡한 영수증이 계속 심사로 빠졌다.
+    탐지 사실 자체는 checks 에 남겨 심사팀이 볼 수 있게 한다.
+    """
     response = client.post(
         f"/api/claims/{claim['id']}/mock-ocr",
         json=valid_ocr(confidence_score=0.79),
     )
+    body = response.json()
 
-    assert response.json()["checks"]["ocr_confidence_valid"] is False
-    assert response.json()["status"] == "ADDITIONAL_PROOF_REQUIRED"
+    assert body["checks"]["ocr_confidence_valid"] is False
+    assert body["status"] == "VERIFIED"
+    assert "LOW_OCR_CONFIDENCE" not in (body.get("anomaly_reasons") or [])
 
 
 def test_duplicate_approval_number_is_detected(

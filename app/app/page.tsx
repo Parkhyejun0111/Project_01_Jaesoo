@@ -50,7 +50,6 @@ import {
   ChevronRight,
   CircleCheck,
   Clock3,
-  Users,
   CreditCard,
   FileText,
   ListOrdered,
@@ -765,26 +764,6 @@ function ClaimPhaseToggle({ phase, onCycle }: { phase: ClaimPhase; onCycle: () =
     <button className="claim-phase-toggle" type="button" onClick={onCycle} aria-label="청구 진행 단계 미리보기 전환">
       <Clock3 size={17} aria-hidden="true" />
       <span>{phaseInfo[phase].toggleLabel}</span>
-    </button>
-  );
-}
-
-/**
- * 계약 전환 — 로그인 화면(계약 선택)으로 돌아간다.
- *
- * 시연에서 중증·경증·비대상 세 계약을 번갈아 보여줘야 하는데, 예전에는 마이 탭
- * 맨 아래 로그아웃까지 내려가야 했다. 기간 토글 바로 아래에 둬서 한 번에 닿게 한다.
- */
-function ContractSwitchButton({ onSwitch }: { onSwitch: () => void }) {
-  return (
-    <button
-      className="claim-phase-toggle contract-switch"
-      type="button"
-      onClick={onSwitch}
-      aria-label="다른 계약으로 전환"
-    >
-      <Users size={17} aria-hidden="true" />
-      <span>계약 전환</span>
     </button>
   );
 }
@@ -5505,6 +5484,9 @@ const 사유설명: Record<string, string> = {
 };
 
 /** 결제일 줄에만 붙일 사유 — 나머지는 아래 '다시 볼 항목'에 모아 보여준다. */
+/** 화면에 굳이 띄우지 않는 사유 — 사용자가 손쓸 수 없고 판정도 막지 않는다. */
+const HIDDEN_REASON_CODES = new Set(["LOW_OCR_CONFIDENCE"]);
+
 const DATE_REASON_CODES = new Set([
   "MISSING_PAYMENT_DATE",
   "FUTURE_PAYMENT_DATE",
@@ -5630,11 +5612,15 @@ function ClaimResult({
       ? `${ocrResult.payment_amount.toLocaleString("ko-KR")}원`
       : "결제금액 확인 필요";
   const approvalNumber = ocrResult?.approval_number ?? "승인번호 확인 필요";
+  // 인식 신뢰도는 사용자가 손쓸 수 있는 게 아니고 판정도 막지 않으므로 감춘다.
+  const shownReasons = reasons.filter((code) => !HIDDEN_REASON_CODES.has(code));
   const reasonText =
-    reasons.length > 0 ? reasons.map(설명된사유).join(" · ") : "백엔드 자동 검증 결과";
+    shownReasons.length > 0
+      ? shownReasons.map(설명된사유).join(" · ")
+      : "백엔드 자동 검증 결과";
   // 결제일과 직접 관련된 사유만 그 줄에 붙인다 — 예전엔 사유 전체를 결제일
   // 아래에 쏟아서, 신뢰도·중복 문제가 날짜 문제처럼 보였다.
-  const dateReasons = reasons.filter((code) => DATE_REASON_CODES.has(code));
+  const dateReasons = shownReasons.filter((code) => DATE_REASON_CODES.has(code));
 
   if (variant === "matched") {
     return (
@@ -5747,11 +5733,11 @@ function ClaimResult({
           </div>
         </section>
 
-        {reasons.length > 0 && (
+        {shownReasons.length > 0 && (
           <section className="claim-reason-card">
             <b>다시 볼 항목</b>
             <ul>
-              {reasons.map((code) => (
+              {shownReasons.map((code) => (
                 <li key={code}>{설명된사유(code)}</li>
               ))}
             </ul>
@@ -6114,16 +6100,6 @@ function AppShell() {
         {stage === "app" && (
           <>
             <ClaimPhaseToggle phase={claimPhase} onCycle={cycleClaimPhase} />
-            <ContractSwitchButton
-              onSwitch={() => {
-                setStage("login");
-                setTab("home");
-                setHomeScreen("main");
-                setGradeScreen("intro");
-                setConverterScreen("intro");
-                setClaimScreen(null);
-              }}
-            />
             {notifications ? (
               <NotificationPage close={() => setNotifications(false)} />
             ) : visibleClaimScreen ? (

@@ -15,6 +15,25 @@ class AnomalyDecision:
     anomaly_reasons: list[str]
 
 
+# 자동 통과를 막는 사유 — 지급 자체가 불가능하거나 부정 신호인 것만 넣는다.
+#   · 카드 불일치      다른 사람 카드로 결제된 영수증
+#   · 금액 없음/이상   지급액을 정할 수 없다
+#   · 미래·기간초과일  청구 요건을 벗어난다
+#   · 중복             같은 결제로 두 번 받으려는 시도
+#   · 정지 카드        결제수단이 유효하지 않다
+# 나머지는 사유로 기록만 하고 통과시킨다(상호·승인번호를 못 읽은 정도).
+BLOCKING_REASONS = frozenset({
+    "CARD_LAST4_MISMATCH",
+    "MISSING_PAYMENT_AMOUNT",
+    "INVALID_PAYMENT_AMOUNT",
+    "FUTURE_PAYMENT_DATE",
+    "PAYMENT_TOO_OLD",
+    "DUPLICATE_APPROVAL_NUMBER",
+    "DUPLICATE_FILE_HASH",
+    "REGISTERED_CARD_INACTIVE",
+})
+
+
 class AnomalyDetectionService:
     def __init__(self, settings: ReceiptSettings):
         self.settings = settings
@@ -72,12 +91,14 @@ class AnomalyDetectionService:
         if not business_valid:
             reasons.append("INVALID_BUSINESS_NUMBER")
 
+        # 인식 신뢰도는 기록만 하고 사유로 올리지 않는다.
+        # 글자가 조금 흐린 건 그 자체로 문제가 아니고, 정말 못 읽었으면 위쪽의
+        # MISSING_* 검사가 이미 잡는다. 예전에는 이것 때문에 멀쩡한 영수증이
+        # 계속 '추가 확인'으로 빠졌다.
         confidence_valid = (
             float(ocr.get("confidence_score") or 0)
             >= self.settings.ocr_confidence_threshold
         )
-        if not confidence_valid:
-            reasons.append("LOW_OCR_CONFIDENCE")
 
         # 시연 모드에서는 중복을 사유로 올리지 않는다. 여러 사람이 같은 영수증
         # 샘플로 청구를 돌려봐야 해서다. checks 에는 탐지 사실을 그대로 남겨
@@ -102,8 +123,12 @@ class AnomalyDetectionService:
             "duplicate_transaction_detected": duplicate_detected,
             "ocr_confidence_valid": confidence_valid,
         }
+        # 사람이 다시 봐야 하는 건 '지급을 막는 문제'나 '부정 신호'뿐이다.
+        # 나머지(승인번호·상호를 못 읽음, 사업자번호 형식 등)는 사유로 남겨
+        # 화면에 보여주되 자동 통과를 막지는 않는다 — 심사팀이 서류로 확인한다.
+        blocking = [code for code in reasons if code in BLOCKING_REASONS]
         final_result = (
-            FinalResult.MATCHED if not reasons else FinalResult.REVIEW_REQUIRED
+            FinalResult.MATCHED if not blocking else FinalResult.REVIEW_REQUIRED
         )
         return AnomalyDecision(checks, final_result, reasons)
 
