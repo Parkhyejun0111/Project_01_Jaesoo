@@ -95,8 +95,14 @@ class ClovaOCRProvider:
     ) -> None:
         import os
 
-        self.invoke_url = (invoke_url or os.getenv("CLOVA_OCR_INVOKE_URL", "")).strip()
-        self.secret_key = (secret_key or os.getenv("CLOVA_OCR_SECRET_KEY", "")).strip()
+        # None 일 때만 환경변수를 본다. 빈 문자열을 넘기면 '설정 안 함'으로 취급해야
+        # 테스트에서 미설정 상황을 만들 수 있다 (or 로 묶으면 ""가 환경변수로 새어든다).
+        if invoke_url is None:
+            invoke_url = os.getenv("CLOVA_OCR_INVOKE_URL", "")
+        if secret_key is None:
+            secret_key = os.getenv("CLOVA_OCR_SECRET_KEY", "")
+        self.invoke_url = invoke_url.strip()
+        self.secret_key = secret_key.strip()
         self.timeout = timeout or float(os.getenv("CLOVA_OCR_TIMEOUT_SEC", "20"))
 
     def extract_receipt(self, file_path: str) -> dict[str, Any]:
@@ -221,20 +227,51 @@ def _find_card_last4(lines: list[str]) -> str | None:
     return None
 
 
+# 금액으로 착각하기 쉬운 줄 — 승인번호·사업자번호·카드번호·날짜가 붙은 줄은 건너뛴다.
+# (승인번호 87654321 이 합계 8,250,000 보다 커서 총액으로 잡히는 사고가 있었다)
+_NOT_AMOUNT = re.compile(
+    r"승인\s*번호|approval|사업자|등록번호|카드|card|\d{3}-\d{2}-\d{5}"
+    r"|20\d{2}\s*[-./년]",
+    re.I,
+)
+
+
+def _amounts_in(line: str) -> list[int]:
+    """줄에서 금액 후보를 뽑는다. 금액이 아닌 맥락의 줄은 아예 보지 않는다."""
+    if _NOT_AMOUNT.search(line):
+        return []
+    found: list[int] = []
+    for value in _AMOUNT.findall(line):
+        digits = value.replace(",", "").split(".")[0]
+        if digits.isdigit():
+            found.append(int(digits))
+    return found
+
+
 def _find_amount(lines: list[str]) -> str | None:
-    """합계·결제금액 줄을 우선하고, 없으면 가장 큰 숫자를 총액으로 본다."""
+    """총액을 찾는다.
+
+    CLOVA 는 '합계'와 '8,250,000' 을 서로 다른 줄로 끊어 주기도 한다. 그래서
+    라벨이 있는 줄에 숫자가 없으면 바로 다음 줄까지 본다.
+
+    라벨을 못 찾으면 가장 큰 수를 쓰되, 승인번호·사업자번호처럼 금액이 아닌
+    숫자가 섞인 줄은 후보에서 제외한다 — 예전에는 승인번호가 합계보다 커서
+    그대로 결제금액이 돼 버렸다.
+    """
+    for index, line in enumerate(lines):
+        if not _TOTAL_HINT.search(line):
+            continue
+        same_line = _amounts_in(line)
+        if same_line:
+            return str(max(same_line))
+        for following in lines[index + 1 : index + 3]:
+            nearby = _amounts_in(following)
+            if nearby:
+                return str(max(nearby))
+
     candidates: list[int] = []
     for line in lines:
-        found = [
-            int(value.replace(",", "").split(".")[0])
-            for value in _AMOUNT.findall(line)
-            if value.replace(",", "").split(".")[0].isdigit()
-        ]
-        if not found:
-            continue
-        if _TOTAL_HINT.search(line):
-            return str(max(found))
-        candidates.extend(found)
+        candidates.extend(_amounts_in(line))
     return str(max(candidates)) if candidates else None
 
 
