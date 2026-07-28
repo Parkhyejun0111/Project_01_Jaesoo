@@ -41,7 +41,12 @@ from .services import (
     VerificationService,
 )
 from .services.errors import ReceiptVerificationError
-from .services.ocr import ExternalOCRProvider, MockOCRProvider
+from .services.ocr import (
+    ClovaOCRProvider,
+    ExternalOCRProvider,
+    MockOCRProvider,
+    OCRProvider,
+)
 
 _ERROR_RESPONSES = {
     400: {"model": ErrorResponse, "description": "잘못된 요청 또는 파일"},
@@ -101,11 +106,12 @@ def build_container(settings: ReceiptSettings) -> ServiceContainer:
     document_repository = DocumentRepository(database)
     ocr_repository = OCRRepository(database)
     verification_repository = VerificationRepository(database)
-    provider = (
-        MockOCRProvider()
-        if settings.ocr_provider == "mock"
-        else ExternalOCRProvider()
-    )
+    if settings.ocr_provider == "mock":
+        provider: OCRProvider = MockOCRProvider()
+    elif settings.ocr_provider == "clova":
+        provider = ClovaOCRProvider()
+    else:
+        provider = ExternalOCRProvider()
     anomaly_service = AnomalyDetectionService(settings)
     return ServiceContainer(
         cards=CardService(card_repository),
