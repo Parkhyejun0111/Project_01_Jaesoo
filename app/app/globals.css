@@ -343,6 +343,12 @@ body::-webkit-scrollbar,
   transition: border-color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
 }
 
+/* 계약 전환 — 기간 토글 바로 아래에 같은 폭·모양으로 붙인다.
+   토글이 fixed(top 76px, 높이 44px)라 그 아래 8px 자리에 둔다. */
+.claim-phase-toggle.contract-switch {
+  top: calc(env(safe-area-inset-top) + 76px + 44px + 8px);
+}
+
 .claim-phase-toggle:hover {
   border-color: var(--brand-green);
   background: var(--color-insight-positive-bg);
@@ -7273,6 +7279,108 @@ a {
 .chat-sources button:hover,
 .chat-sources button:focus-visible {
   text-decoration: underline;
+}
+
+/* ── 위·변조 경고 팝업 (청구 최종 제출 전) ────────────────────────────────
+   약관 팝업의 바텀시트를 쓰되, 경고라는 게 한눈에 들어오도록 머리 부분만
+   붉은 계열로 세운다. 동의 체크 전에는 접수 버튼이 잠긴다. */
+.policy-popup.fraud-warning {
+  height: auto;
+  max-height: 88svh;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.fraud-warning-head {
+  border-bottom: 1px solid var(--line);
+}
+
+.fraud-warning-head span {
+  color: #c0304a;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.fraud-warning-head strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.fraud-warning-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+}
+
+.fraud-warning-lead {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.fraud-warning-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 9px;
+  color: var(--color-text-primary);
+  font-size: 12.5px;
+  font-weight: 300;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.fraud-warning-list b {
+  color: #c0304a;
+  font-weight: 800;
+}
+
+.fraud-warning-note {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f6f8f7;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.fraud-warning-foot {
+  padding: 14px 20px 20px;
+  border-top: 1px solid var(--line);
+}
+
+/* 체크박스와 문장을 한 덩어리로 — 문장을 눌러도 체크된다. */
+.fraud-warning-agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 14px;
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.55;
+  word-break: keep-all;
+  cursor: pointer;
+}
+
+.fraud-warning-agree input {
+  flex: none;
+  width: 19px;
+  height: 19px;
+  margin-top: 1px;
+  accent-color: var(--brand-green);
+  cursor: pointer;
+}
+
+/* 동의 전에는 접수 버튼이 눌리지 않는다는 걸 시각적으로도 알린다. */
+.fraud-warning-foot .primary-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* ── 근거 약관 팝업 ─────────────────────────────────────────────────────── */

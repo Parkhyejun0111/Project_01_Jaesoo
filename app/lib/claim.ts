@@ -18,7 +18,7 @@ import { api, CLAIM_STATUS_VARIANT, CLAIM_VARIANT } from "@jaesoo/api-client";
  *   REJECTED        → rejected
  */
 
-export type ClaimVariant = "matched" | "review" | "proof" | "rejected";
+export type ClaimVariant = "matched" | "review" | "rejected";
 
 export type ClaimOCRResult = {
   card_last4?: string | null;

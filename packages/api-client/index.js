@@ -297,10 +297,13 @@ export const CLAIM_VARIANT = {
   REVIEW_REQUIRED: "review",
   REJECTED: "rejected",
 };
+// 추가 증빙(카드사 이용내역) 단계는 화면에서 없앴다 — 영수증 OCR 이 실제로
+// 동작하므로, 자동 대조가 안 끝난 건은 사람이 보는 '심사 중'으로 합친다.
+// 백엔드 상태값 자체는 그대로 두므로 심사팀 화면·통계는 영향이 없다.
 export const CLAIM_STATUS_VARIANT = {
   VERIFIED: "matched",
-  ADDITIONAL_PROOF_REQUIRED: "proof",
-  ADDITIONAL_PROOF_UPLOADED: "proof",
+  ADDITIONAL_PROOF_REQUIRED: "review",
+  ADDITIONAL_PROOF_UPLOADED: "review",
   MANUAL_REVIEW: "review",
   REJECTED: "rejected",
 };

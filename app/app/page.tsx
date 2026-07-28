@@ -50,6 +50,7 @@ import {
   ChevronRight,
   CircleCheck,
   Clock3,
+  Users,
   CreditCard,
   FileText,
   ListOrdered,
@@ -101,7 +102,7 @@ type ClaimScreen =
   | "scanResult"
   | "receiptQualityFail"
   | "receiptContinue";
-type ClaimResultVariant = "matched" | "review" | "proof" | "rejected";
+type ClaimResultVariant = "matched" | "review" | "rejected";
 type EligibilityResult = "none" | "mild" | "severe";
 type QualityScenario = "ok" | "blurry" | "dark" | "cropped" | "small_text" | "duplicate";
 type ReceiptSource = "capture" | "file";
@@ -764,6 +765,26 @@ function ClaimPhaseToggle({ phase, onCycle }: { phase: ClaimPhase; onCycle: () =
     <button className="claim-phase-toggle" type="button" onClick={onCycle} aria-label="청구 진행 단계 미리보기 전환">
       <Clock3 size={17} aria-hidden="true" />
       <span>{phaseInfo[phase].toggleLabel}</span>
+    </button>
+  );
+}
+
+/**
+ * 계약 전환 — 로그인 화면(계약 선택)으로 돌아간다.
+ *
+ * 시연에서 중증·경증·비대상 세 계약을 번갈아 보여줘야 하는데, 예전에는 마이 탭
+ * 맨 아래 로그아웃까지 내려가야 했다. 기간 토글 바로 아래에 둬서 한 번에 닿게 한다.
+ */
+function ContractSwitchButton({ onSwitch }: { onSwitch: () => void }) {
+  return (
+    <button
+      className="claim-phase-toggle contract-switch"
+      type="button"
+      onClick={onSwitch}
+      aria-label="다른 계약으로 전환"
+    >
+      <Users size={17} aria-hidden="true" />
+      <span>계약 전환</span>
     </button>
   );
 }
@@ -3889,6 +3910,18 @@ function MyPage({
   onChangeCanvasTone: (tone: CanvasTone) => void;
 }) {
   const [detail, setDetail] = useState<string | null>(null);
+  // 가입 정보는 DB 에서 온다 — 예전에는 policyInfo 목데이터를 그대로 찍어서
+  // 스탠다드 계약에도 보장 상한이 1,400만원(플러스 값)으로 보였다.
+  const { profile } = useSession();
+  const account = useClaimAccount();
+  const student = profile.data?.student;
+  const enrollment = (student as { enrollment?: { created_at?: string } } | undefined)?.enrollment;
+  const joinedAt = enrollment?.created_at ?? (student as { created_at?: string } | undefined)?.created_at;
+  const joinedDate = joinedAt ? new Date(joinedAt) : policyInfo.joinedDate;
+  const studentName = String(student?.name ?? studentProfile.name);
+  const studentGrade = String(
+    (student as { grade_year?: string } | undefined)?.grade_year ?? studentProfile.grade,
+  );
 
   // 마이 상세는 AppShell 이 모르는 자체 상태라 여기서 따로 올린다
   useScrollToTop(detail ?? "-");
@@ -3911,12 +3944,15 @@ function MyPage({
       <BrandTabHeader onNotification={onNotification} hasUnread={hasUnread} />
       <main className="mypage-content">
         <div className="profile">
-          <h1>{studentProfile.name} 학생 <em>{studentProfile.grade}</em></h1>
+          <h1>{studentName} 학생 <em>{studentGrade}</em></h1>
         </div>
         <section className="membership-card" aria-label="가입 정보">
-          <div><small>가입 상품</small><strong>{policyInfo.tier}</strong></div>
-          <div><small>보장 상한</small><strong>{policyInfo.coverageCapManwon.toLocaleString("ko-KR")}만원</strong></div>
-          <div><small>가입일</small><strong>{formatDotDate(policyInfo.joinedDate)}</strong></div>
+          <div><small>가입 상품</small><strong>{account.tier}</strong></div>
+          <div>
+            <small>보장 상한</small>
+            <strong>{account.capManwon.toLocaleString("ko-KR")}만원</strong>
+          </div>
+          <div><small>가입일</small><strong>{formatDotDate(joinedDate)}</strong></div>
         </section>
         <div className="grouped-menu">
           <section className="menu-card">
@@ -3965,8 +4001,8 @@ function ClaimFlow({
   // 빈 값으로 시작한다 — 1단계가 DB에서 불러온 카드 중 첫 장을 기본 선택한다
   const [cardLast4, setCardLast4] = useState("");
   const [resultPreview, setResultPreview] = useState<ClaimResultVariant>("matched");
-  // 카드사 이용내역(추가 증빙) — 고른 파일을 제출 버튼까지 들고 있는다.
-  const [proofFile, setProofFile] = useState<File | null>(null);
+  // 위·변조 경고 팝업 — 최종 제출 직전에 띄우고, 동의해야 접수된다.
+  const [fraudWarning, setFraudWarning] = useState(false);
   const [appealFiled, setAppealFiled] = useState(false);
   const [appealSubmittedAt, setAppealSubmittedAt] = useState<Date | null>(null);
   const [captureContext, setCaptureContext] = useState<CaptureContext>("receipt");
@@ -4390,27 +4426,20 @@ function ClaimFlow({
           cardLast4={cardLast4}
           ocrResult={claimApi.ocrResult}
           reasons={claimApi.reasons}
-          onSubmit={async () => {
-            // 카드사 이용내역을 고른 상태면 먼저 올린다. 백엔드는 이 파일을
-            // CARD_STATEMENT 로 저장하고 청구를 수동 심사로 넘긴다.
-            if (proofFile && claimApi.claimId) {
-              const res = await claimApi.uploadReceipt(claimApi.claimId, proofFile, "proof");
-              if (!res) {
-                setClaimUploadError("이용내역을 제출하지 못했어요. 파일 형식과 용량을 확인해 주세요.");
-                return;
-              }
-              setProofFile(null);
-            }
-            setScreen("submitting");
-          }}
+          // 최종 제출 전에 위·변조 경고를 띄운다. 동의해야 접수된다.
+          onSubmit={() => setFraudWarning(true)}
           onRetryUpload={() => setScreen("step2")}
           onChangeCard={() => setScreen("cardChange")}
           onViewStatus={() => setScreen("status")}
-          onProofSelected={(file) => {
-            setClaimUploadError(null);
-            setProofFile(file);
+        />
+      )}
+      {fraudWarning && (
+        <ClaimFraudWarning
+          onCancel={() => setFraudWarning(false)}
+          onConfirm={() => {
+            setFraudWarning(false);
+            setScreen("submitting");
           }}
-          proofFileName={proofFile?.name ?? null}
         />
       )}
       {screen === "status" && (
@@ -5450,6 +5479,103 @@ function ClaimOCRConfirm({
   );
 }
 
+/**
+ * 위·변조 경고 — 최종 접수 직전에 띄운다.
+ *
+ * 영수증은 보험금 지급의 유일한 증빙이라, 제출 전에 무엇에 쓰이고 위조 시
+ * 무엇을 감수하는지 분명히 알린다. 체크 없이는 접수 버튼이 열리지 않는다.
+ * (약관 제15조 보험금 부지급 · 제18조 계약 해지 · 보험사기방지 특별법 제8조)
+ */
+function ClaimFraudWarning({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const [agreed, setAgreed] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  return (
+    <div
+      className="policy-popup-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="영수증 위·변조 관련 안내"
+      onClick={onCancel}
+    >
+      <div className="policy-popup fraud-warning" onClick={(e) => e.stopPropagation()}>
+        <header className="policy-popup-head fraud-warning-head">
+          <div>
+            <span>제출 전 확인</span>
+            <strong>영수증 위·변조 안내</strong>
+          </div>
+          <button type="button" onClick={onCancel} aria-label="닫기">
+            <X size={18} />
+          </button>
+        </header>
+
+        <div className="fraud-warning-body">
+          <p className="fraud-warning-lead">
+            제출하신 영수증은 <b>보험금 심사팀의 위·변조 심사</b>에 사용됩니다.
+          </p>
+          <ul className="fraud-warning-list">
+            <li>
+              이미지 편집 프로그램이나 생성형 AI 로 금액·날짜·승인번호를 고치는 행위는
+              <b> 보험사기</b>에 해당합니다.
+            </li>
+            <li>
+              위·변조가 확인되면 <b>보험금이 지급되지 않고</b>, 이미 지급된 보험금은
+              전액 환수됩니다 (약관 제15조).
+            </li>
+            <li>
+              <b>계약이 해지</b>되며, 이후 재가입이 제한될 수 있습니다 (약관 제18조).
+            </li>
+            <li>
+              보험사기방지 특별법에 따라 <b>10년 이하의 징역 또는 5천만원 이하의 벌금</b>에
+              처해질 수 있고, 회사는 수사기관에 고발할 수 있습니다.
+            </li>
+          </ul>
+          <p className="fraud-warning-note">
+            제출한 영수증 이미지와 인식 결과는 심사 목적으로 보관되며, 동일 영수증의
+            중복 청구 여부도 함께 확인됩니다.
+          </p>
+        </div>
+
+        <div className="fraud-warning-foot">
+          <label className="fraud-warning-agree">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(event) => setAgreed(event.target.checked)}
+            />
+            <span>위 내용을 모두 확인했으며, 제출하는 영수증이 위·변조되지 않은 진본임을 확인합니다.</span>
+          </label>
+          <div className="claim-btn-stack">
+            <button
+              className="primary-button button-flat-primary"
+              onClick={onConfirm}
+              disabled={!agreed}
+            >
+              동의하고 청구 접수하기
+            </button>
+            <button className="secondary-button" onClick={onCancel}>
+              돌아가기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ClaimResult({
   variant,
   cardLast4,
@@ -5459,8 +5585,6 @@ function ClaimResult({
   onRetryUpload,
   onChangeCard,
   onViewStatus,
-  onProofSelected,
-  proofFileName,
 }: {
   variant: ClaimResultVariant;
   cardLast4: string;
@@ -5470,10 +5594,6 @@ function ClaimResult({
   onRetryUpload: () => void;
   onChangeCard: () => void;
   onViewStatus: () => void;
-  /** 카드사 이용내역 파일을 고른 순간 — 제출은 아래 버튼에서 한다. */
-  onProofSelected: (file: File) => void;
-  /** 고른 파일 이름. 없으면 아직 안 골랐다는 뜻이라 제출 버튼을 잠근다. */
-  proofFileName: string | null;
 }) {
   const receiptLast4 = ocrResult?.card_last4 ?? "확인되지 않음";
   const merchantName = ocrResult?.merchant_name ?? "학원명 확인 필요";
@@ -5599,69 +5719,6 @@ function ClaimResult({
     );
   }
 
-  if (variant === "proof") {
-    return (
-      <main className="sub-page claim-step">
-        <section className="claim-result-head warn">
-          <span className="icon">
-            <Plus size={20} />
-          </span>
-          <h2>카드사 이용내역이 필요해요</h2>
-          <p>
-            영수증만으로는 실제 결제를 확인하기 어려워요.
-            <br />
-            공식 이용내역을 올려주시면 바로 처리됩니다.
-          </p>
-        </section>
-        <section className="white-card">
-          <h2>이상으로 잡힌 항목</h2>
-          <div className="claim-match-row">
-            <div>
-              <div className="label">결제금액</div>
-              <div className="value">{paymentAmount}</div>
-              <div className="sub">{reasonText}</div>
-            </div>
-            <span className="claim-tag warn">중복</span>
-          </div>
-        </section>
-        {/* button 이었을 때는 onClick 이 없어 눌러도 아무 일이 없었다.
-            label + file input 으로 바꿔 파일 선택창이 뜨게 한다. */}
-        <label className="claim-drop">
-          <FileText size={24} />
-          <strong>{proofFileName ?? "카드사 이용내역 올리기"}</strong>
-          <small>
-            {proofFileName
-              ? "다시 누르면 다른 파일로 바꿀 수 있어요"
-              : `${paymentMethod.provider} 앱 › 이용내역 › 기간 조회 후 PDF 저장`}
-            <br />
-            12월 24일까지 제출해 주세요
-          </small>
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            className="claim-file-input"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) onProofSelected(file);
-              event.target.value = "";
-            }}
-          />
-        </label>
-        <div className="claim-btn-stack">
-          <button
-            className="primary-button claim-amber"
-            onClick={onSubmit}
-            disabled={!proofFileName}
-          >
-            {proofFileName ? "이용내역 제출하기" : "파일을 먼저 골라주세요"}
-          </button>
-          <button className="secondary-button" onClick={onViewStatus}>
-            나중에 하기
-          </button>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="sub-page claim-step">
@@ -6005,6 +6062,16 @@ function AppShell() {
         {stage === "app" && (
           <>
             <ClaimPhaseToggle phase={claimPhase} onCycle={cycleClaimPhase} />
+            <ContractSwitchButton
+              onSwitch={() => {
+                setStage("login");
+                setTab("home");
+                setHomeScreen("main");
+                setGradeScreen("intro");
+                setConverterScreen("intro");
+                setClaimScreen(null);
+              }}
+            />
             {notifications ? (
               <NotificationPage close={() => setNotifications(false)} />
             ) : visibleClaimScreen ? (
