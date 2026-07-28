@@ -3762,6 +3762,12 @@ body::-webkit-scrollbar,
 }
 
 
+/* 인식하지 못한 항목 — 값 자리에 안내 문구가 들어가므로 톤을 낮춰 구분한다. */
+.claim-match-row .value.claim-ocr-missing {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 /* 출처·갱신시점 각주. 화면 맨 아래에서 숫자의 근거를 밝힌다.
    위아래 여백을 같게 둔다 — 아래를 0 으로 두면 STEP2 에서 각주가 바로 밑의
    '우리 집 기준으로 환산하기' 버튼에 달라붙어 버튼 캡션처럼 읽힌다.

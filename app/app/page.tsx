@@ -97,6 +97,7 @@ type ClaimScreen =
   | "appealStatus"
   | "capture"
   | "scanning"
+  | "ocrConfirm"
   | "scanResult"
   | "receiptQualityFail"
   | "receiptContinue";
@@ -4088,8 +4089,11 @@ function ClaimFlow({
       }
     }
 
+    // 인식 결과를 사용자에게 먼저 보여주고 확인을 받는다. 확인 화면에서
+    // '이대로 등록'을 눌러야 판정 결과로 넘어간다 — 잘못 읽힌 영수증을 그대로
+    // 접수해 버리는 일을 막는다.
     setResultPreview(toVariant(lastResult?.status, lastResult?.verification?.final_result) ?? "review");
-    setScreen("result");
+    setScreen("ocrConfirm");
   }
 
   useEffect(() => {
@@ -4116,6 +4120,8 @@ function ClaimFlow({
     cardChange: "step1",
     step2: "step1",
     verifying: null,
+    // 확인 화면에서 뒤로 가면 다시 찍는 자리(업로드)로 돌아간다.
+    ocrConfirm: "step2",
     result: "step2",
     submitting: null,
     done: null,
@@ -4139,7 +4145,8 @@ function ClaimFlow({
     step1: "청구 안내",
     cardChange: "카드 확인",
     step2: "카드 확인",
-    result: "영수증 업로드",
+    ocrConfirm: "영수증 업로드",
+    result: "인식 결과 확인",
     status: "보험금 청구",
     eligibilityDetail: "보험금 청구",
     appeal: "보장 자격 상세",
@@ -4362,6 +4369,18 @@ function ClaimFlow({
             setProofCount((n) => n + 1);
             setProofCaptured(true);
             setScreen("capture");
+          }}
+        />
+      )}
+      {screen === "ocrConfirm" && (
+        <ClaimOCRConfirm
+          ocrResult={claimApi.ocrResult}
+          cardLast4={cardLast4}
+          onConfirm={() => setScreen("result")}
+          onRetake={() => {
+            setReceipts([]);
+            setClaimUploadError(null);
+            setScreen("step2");
           }}
         />
       )}
@@ -5339,6 +5358,95 @@ function ClaimVerifying() {
         </section>
       </main>
     </div>
+  );
+}
+
+/**
+ * 영수증 인식 결과 확인 — 등록 전에 사용자가 눈으로 대조하는 단계.
+ *
+ * OCR 이 붙기 전에는 업로드하면 곧장 판정 결과로 넘어갔다. 이제 실제로 글자를
+ * 읽어 오므로, 잘못 읽힌 값이 그대로 접수되지 않도록 한 번 확인을 받는다.
+ * 못 읽은 항목은 '인식 실패'로 드러내서 다시 찍을지 사용자가 판단하게 한다.
+ */
+function ClaimOCRConfirm({
+  ocrResult,
+  cardLast4,
+  onConfirm,
+  onRetake,
+}: {
+  ocrResult: ClaimOCRResult | null;
+  cardLast4: string;
+  onConfirm: () => void;
+  onRetake: () => void;
+}) {
+  const amount =
+    typeof ocrResult?.payment_amount === "number"
+      ? `${ocrResult.payment_amount.toLocaleString("ko-KR")}원`
+      : null;
+  const rows: Array<{ label: string; value: string | null; note?: string }> = [
+    {
+      label: "학원",
+      value: ocrResult?.merchant_name ?? null,
+      note: ocrResult?.business_number ? `사업자 ${ocrResult.business_number}` : undefined,
+    },
+    { label: "결제금액", value: amount },
+    { label: "결제일", value: ocrResult?.payment_date ?? null },
+    { label: "승인번호", value: ocrResult?.approval_number ?? null },
+    {
+      label: "카드 뒤 4자리",
+      value: ocrResult?.card_last4 ?? null,
+      note: `등록 카드 ${cardLast4}`,
+    },
+  ];
+  const missing = rows.filter((row) => !row.value).length;
+
+  return (
+    <main className="sub-page claim-step">
+      <section className="claim-result-head">
+        <span className="icon">
+          <FileText size={20} />
+        </span>
+        <h2>이 내용이 맞나요?</h2>
+        <p>
+          영수증에서 읽어낸 값이에요.
+          <br />
+          맞으면 그대로 등록하고, 다르면 다시 찍어주세요.
+        </p>
+      </section>
+
+      <section className="white-card">
+        {rows.map((row) => (
+          <div className="claim-match-row" key={row.label}>
+            <div>
+              <div className="label">{row.label}</div>
+              <div className={`value${row.value ? "" : " claim-ocr-missing"}`}>
+                {row.value ?? "인식하지 못했어요"}
+              </div>
+              {row.note && <div className="sub">{row.note}</div>}
+            </div>
+            <span className={`claim-tag ${row.value ? "ok" : "warn"}`}>
+              {row.value ? "인식" : "실패"}
+            </span>
+          </div>
+        ))}
+      </section>
+
+      {missing > 0 && (
+        <p className="claim-upload-hint">
+          {missing}개 항목을 읽지 못했어요. 글자가 잘리거나 흐리지 않게 다시 찍으면
+          더 정확해집니다. 이대로 등록해도 심사는 진행되지만 확인이 길어질 수 있어요.
+        </p>
+      )}
+
+      <div className="claim-btn-stack">
+        <button className="primary-button button-flat-primary" onClick={onConfirm}>
+          이대로 등록하기
+        </button>
+        <button className="secondary-button" onClick={onRetake}>
+          다시 촬영하기
+        </button>
+      </div>
+    </main>
   );
 }
 
