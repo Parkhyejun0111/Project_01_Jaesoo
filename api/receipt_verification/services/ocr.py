@@ -78,7 +78,8 @@ _BIZNUM = re.compile(r"(\d{3}-\d{2}-\d{5})")
 _DATE = re.compile(r"(20\d{2})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})")
 # 금액 앞에 붙는 말 — '합계 15,000,000' 처럼 총액을 가리키는 줄을 우선한다.
 _TOTAL_HINT = re.compile(r"합\s*계|총\s*액|결제\s*금액|승인\s*금액|total", re.I)
-_MERCHANT_HINT = re.compile(r"상\s*호|가맹점|사업자\s*명")
+# 라벨 사이에 OCR 잡음이 끼기도 한다 — '상& 호 : 메가스터디' 처럼 읽힌 적이 있다.
+_MERCHANT_HINT = re.compile(r"상\s*[&·.,]?\s*호|가\s*맹\s*점|사업자\s*명|업\s*소\s*명")
 
 
 class ClovaOCRProvider:
@@ -312,12 +313,27 @@ def _find_business_number(text: str) -> str | None:
 
 
 def _find_merchant(lines: list[str]) -> str | None:
-    """'상호 OO학원' 처럼 라벨이 붙은 줄을 먼저 보고, 없으면 '학원'이 든 줄."""
+    """'상호: 메가스터디 입시학원' 처럼 라벨이 붙은 줄에서 값만 뽑는다.
+
+    라벨 글자 사이에 OCR 잡음이 끼어 정규식이 빗나가는 경우가 있어(예: '상& 호'),
+    구분자(:, |, -)가 있으면 그 뒤를 값으로 본다. 구분자가 없을 때만 라벨을
+    지운다. 예전에는 지우기에만 의존해서 '상& 호 : 메가스터디 입시학원' 이
+    그대로 학원명이 됐다.
+    """
     for line in lines:
-        if _MERCHANT_HINT.search(line):
-            cleaned = _MERCHANT_HINT.sub("", line).strip(" :;·")
-            if cleaned:
-                return cleaned
+        if not _MERCHANT_HINT.search(line):
+            continue
+        value = line
+        # 구분자 뒤가 값이다. 여러 개면 마지막 것 뒤를 쓴다.
+        for separator in (":", "：", "|"):
+            if separator in value:
+                value = value.rsplit(separator, 1)[1]
+                break
+        else:
+            value = _MERCHANT_HINT.sub("", value)
+        value = value.strip(" :：;·|-&.,")
+        if value:
+            return value
     for line in lines:
         if "학원" in line:
             return line.strip()

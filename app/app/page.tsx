@@ -5486,6 +5486,33 @@ function ClaimOCRConfirm({
  * 무엇을 감수하는지 분명히 알린다. 체크 없이는 접수 버튼이 열리지 않는다.
  * (약관 제15조 보험금 부지급 · 제18조 계약 해지 · 보험사기방지 특별법 제8조)
  */
+/** 자동 검증 사유 코드 → 사용자가 읽는 말 (receipt_verification/services/anomaly.py). */
+const 사유설명: Record<string, string> = {
+  MISSING_CARD_LAST4: "영수증에서 카드번호를 찾지 못했어요",
+  CARD_LAST4_MISMATCH: "등록 카드와 영수증의 카드번호가 달라요",
+  MISSING_PAYMENT_AMOUNT: "결제금액을 찾지 못했어요",
+  INVALID_PAYMENT_AMOUNT: "결제금액을 숫자로 읽지 못했어요",
+  MISSING_PAYMENT_DATE: "결제일을 찾지 못했어요",
+  FUTURE_PAYMENT_DATE: "결제일이 미래로 읽혔어요",
+  PAYMENT_TOO_OLD: "청구 가능 기간이 지난 결제예요",
+  MISSING_APPROVAL_NUMBER: "승인번호를 찾지 못했어요",
+  MISSING_MERCHANT_NAME: "학원 이름을 찾지 못했어요",
+  INVALID_BUSINESS_NUMBER: "사업자번호 형식이 맞지 않아요",
+  LOW_OCR_CONFIDENCE: "글자가 흐려 인식 정확도가 낮아요",
+  DUPLICATE_APPROVAL_NUMBER: "같은 승인번호로 이미 청구된 내역이 있어요",
+  DUPLICATE_FILE_HASH: "같은 영수증 이미지가 이미 제출됐어요",
+  REGISTERED_CARD_INACTIVE: "등록 카드가 사용 중지 상태예요",
+};
+
+/** 결제일 줄에만 붙일 사유 — 나머지는 아래 '다시 볼 항목'에 모아 보여준다. */
+const DATE_REASON_CODES = new Set([
+  "MISSING_PAYMENT_DATE",
+  "FUTURE_PAYMENT_DATE",
+  "PAYMENT_TOO_OLD",
+]);
+
+const 설명된사유 = (code: string) => 사유설명[code] ?? code;
+
 function ClaimFraudWarning({
   onCancel,
   onConfirm,
@@ -5603,7 +5630,11 @@ function ClaimResult({
       ? `${ocrResult.payment_amount.toLocaleString("ko-KR")}원`
       : "결제금액 확인 필요";
   const approvalNumber = ocrResult?.approval_number ?? "승인번호 확인 필요";
-  const reasonText = reasons.length > 0 ? reasons.join(" · ") : "백엔드 자동 검증 결과";
+  const reasonText =
+    reasons.length > 0 ? reasons.map(설명된사유).join(" · ") : "백엔드 자동 검증 결과";
+  // 결제일과 직접 관련된 사유만 그 줄에 붙인다 — 예전엔 사유 전체를 결제일
+  // 아래에 쏟아서, 신뢰도·중복 문제가 날짜 문제처럼 보였다.
+  const dateReasons = reasons.filter((code) => DATE_REASON_CODES.has(code));
 
   if (variant === "matched") {
     return (
@@ -5706,15 +5737,36 @@ function ClaimResult({
             <div>
               <div className="label">결제일</div>
               <div className="value">{ocrResult?.payment_date ?? "결제일 확인 필요"}</div>
-              <div className="sub">{reasonText}</div>
+              {dateReasons.length > 0 && (
+                <div className="sub">{dateReasons.map(설명된사유).join(" · ")}</div>
+              )}
             </div>
-            <span className="claim-tag warn">확인</span>
+            <span className={`claim-tag ${dateReasons.length > 0 ? "warn" : "ok"}`}>
+              {dateReasons.length > 0 ? "확인" : "정상"}
+            </span>
           </div>
         </section>
-        <div className="claim-note warn">검토가 끝나면 알림으로 알려드려요. 추가로 하실 일은 없어요.</div>
-        <button className="primary-button claim-amber" onClick={onViewStatus}>
-          진행 상황 보기
-        </button>
+
+        {reasons.length > 0 && (
+          <section className="claim-reason-card">
+            <b>다시 볼 항목</b>
+            <ul>
+              {reasons.map((code) => (
+                <li key={code}>{설명된사유(code)}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <div className="claim-note warn">1영업일 안에 결과를 알림으로 보내드릴게요.</div>
+        <div className="claim-btn-stack">
+          <button className="primary-button claim-amber" onClick={onSubmit}>
+            제출하기
+          </button>
+          <button className="secondary-button" onClick={onViewStatus}>
+            진행 상황 보기
+          </button>
+        </div>
       </main>
     );
   }

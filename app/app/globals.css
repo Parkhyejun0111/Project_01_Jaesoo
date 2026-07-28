@@ -7281,6 +7281,36 @@ a {
   text-decoration: underline;
 }
 
+/* 자동 검증에서 걸린 사유 목록 — 결제일 줄에 몰아넣던 것을 따로 세운 자리.
+   신뢰도·중복 같은 사유가 날짜 문제처럼 보이던 것을 막는다. */
+.claim-reason-card {
+  margin-top: 12px;
+  padding: 13px 15px;
+  border: 1px solid #f0e0bd;
+  border-radius: var(--radius-control);
+  background: #fdf8ee;
+}
+
+.claim-reason-card b {
+  display: block;
+  margin-bottom: 7px;
+  color: #8a6414;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.claim-reason-card ul {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 5px;
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 300;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
 /* ── 위·변조 경고 팝업 (청구 최종 제출 전) ────────────────────────────────
    약관 팝업의 바텀시트를 쓰되, 경고라는 게 한눈에 들어오도록 머리 부분만
    붉은 계열로 세운다. 동의 체크 전에는 접수 버튼이 잠긴다. */
