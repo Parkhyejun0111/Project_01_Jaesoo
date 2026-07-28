@@ -22,6 +22,10 @@ class ReceiptSettings:
     max_upload_size_mb: int
     max_payment_age_days: int
     mock_ocr_endpoint_enabled: bool
+    # 시연에서 여러 사람이 같은 영수증으로 청구를 돌려봐야 할 때 켠다.
+    # 운영에서는 반드시 꺼둘 것 — 중복 청구를 잡는 유일한 자동 장치다.
+    # 기본값을 둬서 기존 호출부(테스트 픽스처 등)가 그대로 동작하게 한다.
+    allow_duplicate_receipts: bool = False
 
     @property
     def max_upload_size_bytes(self) -> int:
@@ -48,5 +52,8 @@ class ReceiptSettings:
             max_payment_age_days=int(os.getenv("MAX_PAYMENT_AGE_DAYS", "365")),
             mock_ocr_endpoint_enabled=_as_bool(
                 os.getenv("ENABLE_MOCK_OCR_ENDPOINT"), default_mock_enabled
+            ),
+            allow_duplicate_receipts=_as_bool(
+                os.getenv("ALLOW_DUPLICATE_RECEIPTS"), False
             ),
         )

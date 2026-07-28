@@ -79,6 +79,11 @@ class AnomalyDetectionService:
         if not confidence_valid:
             reasons.append("LOW_OCR_CONFIDENCE")
 
+        # 시연 모드에서는 중복을 사유로 올리지 않는다. 여러 사람이 같은 영수증
+        # 샘플로 청구를 돌려봐야 해서다. checks 에는 탐지 사실을 그대로 남겨
+        # 심사 화면·통계에서는 여전히 보이게 한다.
+        if self.settings.allow_duplicate_receipts:
+            duplicate_approval = duplicate_file = False
         duplicate_detected = duplicate_approval or duplicate_file
         if duplicate_approval:
             reasons.append("DUPLICATE_APPROVAL_NUMBER")
